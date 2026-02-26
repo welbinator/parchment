@@ -72,6 +72,7 @@ export default function PageEditor() {
                 index={index}
                 focusBlockId={focusBlockId}
                 onFocusHandled={() => setFocusBlockId(null)}
+                onNewBlock={(id) => setFocusBlockId(id)}
               />
             ))}
           </div>

@@ -19,7 +19,7 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
-  const { init, loading: storeLoading, reset } = useAppStore();
+  const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
 
   useEffect(() => {
     if (user) {
@@ -28,6 +28,32 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       reset();
     }
   }, [user, authLoading]);
+
+  // Refetch on tab focus / visibility change
+  useEffect(() => {
+    if (!user) return;
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refetch();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', () => refetch());
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', refetch);
+    };
+  }, [user, refetch]);
+
+  // Setup realtime subscriptions
+  useEffect(() => {
+    if (!user) return;
+    const cleanup = setupRealtime();
+    return cleanup;
+  }, [user, setupRealtime]);
 
   if (authLoading || (user && storeLoading)) {
     return (

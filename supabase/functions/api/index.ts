@@ -5,6 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
 }
 
+const MAX_BLOCK_CONTENT_BYTES = 10 * 1024 // 10KB per block
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -29,6 +31,33 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid or expired API key' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    // Rate limiting — look up key ID from hash
+    const keyHash = await hashKeyServer(apiKey)
+    const { data: keyRecord } = await supabase
+      .from('api_keys')
+      .select('id')
+      .eq('key_hash', keyHash)
+      .eq('revoked', false)
+      .single()
+
+    if (keyRecord) {
+      const { data: rateLimitResult } = await supabase.rpc('check_and_increment_rate_limit', {
+        p_api_key_id: keyRecord.id,
+      })
+
+      if (rateLimitResult && !rateLimitResult.allowed) {
+        return new Response(JSON.stringify({
+          error: rateLimitResult.reason,
+          retry_after: rateLimitResult.retry_after,
+          daily_count: rateLimitResult.daily_count,
+          minute_count: rateLimitResult.minute_count,
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': rateLimitResult.retry_after === 'tomorrow' ? '86400' : '60' },
+        })
+      }
     }
 
     const userId = validation.user_id
@@ -65,7 +94,6 @@ Deno.serve(async (req) => {
       case 'delete_collection': {
         if (!permissions.can_delete_collections) return deny(corsHeaders)
         const { collection_id } = body
-        // Verify ownership
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
         if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
         const { error } = await supabase.from('collections').delete().eq('id', collection_id)
@@ -85,14 +113,12 @@ Deno.serve(async (req) => {
       case 'create_page': {
         if (!permissions.can_create_pages) return deny(corsHeaders)
         const { collection_id, title, type } = body
-        // Verify collection ownership
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
         if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
         const { data: page, error } = await supabase.from('pages').insert({
           user_id: userId, collection_id, title: title || 'Untitled', type: type || 'blank',
         }).select().single()
         if (error) return json({ error: error.message }, corsHeaders, 400)
-        // Create default block
         await supabase.from('blocks').insert({ page_id: page.id, type: 'text', content: '', position: 0 })
         return json({ page }, corsHeaders)
       }
@@ -119,10 +145,19 @@ Deno.serve(async (req) => {
       case 'update_blocks': {
         if (!permissions.can_write_blocks) return deny(corsHeaders)
         const { page_id, blocks } = body
-        // Verify page ownership
         const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
         if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
-        // Upsert blocks
+
+        // Validate block content size
+        for (const block of blocks) {
+          if (block.content && new TextEncoder().encode(block.content).length > MAX_BLOCK_CONTENT_BYTES) {
+            return json({
+              error: `Block content exceeds maximum size of ${MAX_BLOCK_CONTENT_BYTES / 1024}KB`,
+              block_id: block.id || 'new',
+            }, corsHeaders, 413)
+          }
+        }
+
         for (const block of blocks) {
           await supabase.from('blocks').upsert({
             id: block.id || undefined,
@@ -148,6 +183,12 @@ Deno.serve(async (req) => {
     })
   }
 })
+
+async function hashKeyServer(key: string): Promise<string> {
+  const encoded = new TextEncoder().encode(key)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoded)
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
 
 function json(data: any, headers: Record<string, string>, status = 200) {
   return new Response(JSON.stringify(data), {

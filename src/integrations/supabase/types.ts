@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_key_usage: {
+        Row: {
+          api_key_id: string
+          id: string
+          last_request_at: string | null
+          minute_requests: number
+          minute_window: string | null
+          request_count: number
+          usage_date: string
+        }
+        Insert: {
+          api_key_id: string
+          id?: string
+          last_request_at?: string | null
+          minute_requests?: number
+          minute_window?: string | null
+          request_count?: number
+          usage_date?: string
+        }
+        Update: {
+          api_key_id?: string
+          id?: string
+          last_request_at?: string | null
+          minute_requests?: number
+          minute_window?: string | null
+          request_count?: number
+          usage_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_key_usage_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           can_create_collections: boolean
@@ -209,6 +247,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_increment_rate_limit: {
+        Args: {
+          p_api_key_id: string
+          p_max_per_day?: number
+          p_max_per_minute?: number
+        }
+        Returns: Json
+      }
       validate_api_key: { Args: { p_key: string }; Returns: Json }
     }
     Enums: {

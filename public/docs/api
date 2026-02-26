@@ -1,0 +1,48 @@
+# Parchment API
+
+Programmatically manage your collections, pages, and blocks.
+
+## Base URL
+https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api
+
+## Authentication
+All requests require header: x-api-key
+
+## Permissions
+- can_read_pages
+- can_create_collections
+- can_delete_collections
+- can_create_pages
+- can_delete_pages
+- can_write_blocks
+
+## Rate limits
+- 60 requests/minute per API key
+- 1000 requests/day per API key
+- 10KB max block content
+
+## Actions
+- list_collections
+- create_collection
+- delete_collection
+- list_pages
+- create_page
+- delete_page
+- get_page
+- update_blocks
+- delete_block
+
+## delete_block example
+curl -X POST https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"delete_block","page_id":"<page_id>","block_id":"<block_id>"}'
+
+## Error codes
+- 400 bad request / unknown action
+- 401 missing or invalid API key
+- 403 permission denied
+- 404 resource not found
+- 413 block too large (>10KB)
+- 429 rate limit exceeded
+- 500 internal server error

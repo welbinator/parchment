@@ -72,7 +72,7 @@ export default function Reports() {
     { key: 'users', label: 'Unique Users', value: data?.unique_users ?? 0, icon: Users, clickable: true },
     { key: 'collections', label: 'Total Collections', value: data?.total_collections ?? 0, icon: FolderOpen, clickable: false },
     { key: 'pages', label: 'Total Pages', value: data?.total_pages ?? 0, icon: FileText, clickable: false },
-    { key: 'api_keys', label: 'Total API Keys', value: data?.total_api_keys ?? 0, icon: Key, clickable: false },
+    { key: 'api_keys', label: 'Active API Keys', value: data?.total_api_keys ?? 0, icon: Key, clickable: false },
   ];
 
   return (

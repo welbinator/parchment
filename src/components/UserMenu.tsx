@@ -42,14 +42,13 @@ export default function UserMenu() {
             <Settings size={14} />
             Settings
           </button>
-          <a
-            href="/docs/api"
-            onClick={() => setOpen(false)}
+          <button
+            onClick={() => { setOpen(false); navigate('/docs/api'); }}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
           >
             <BookOpen size={14} />
             API Docs
-          </a>
+          </button>
           <button
             onClick={() => { setOpen(false); signOut(); }}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-destructive transition-colors"

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, KeyboardEvent } from 'react';
+import { useRef, useEffect, useState, useCallback, KeyboardEvent } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import type { Block, BlockType } from '@/types';
 import {
@@ -40,8 +40,24 @@ interface BlockItemProps {
 export default function BlockItem({ block, pageId, index, focusBlockId, onFocusHandled }: BlockItemProps) {
   const { updateBlock, deleteBlock, addBlock, changeBlockType } = useAppStore();
   const ref = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
+
+  // Set initial content only once on mount or when block type changes
+  useEffect(() => {
+    if (ref.current && !initializedRef.current) {
+      ref.current.innerText = block.content;
+      initializedRef.current = true;
+    }
+  }, []);
+
+  // Sync content when block type changes (slash command)
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.innerText = block.content;
+    }
+  }, [block.type]);
 
   useEffect(() => {
     if (focusBlockId === block.id && ref.current) {
@@ -185,10 +201,9 @@ export default function BlockItem({ block, pageId, index, focusBlockId, onFocusH
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         data-placeholder={block.type === 'heading1' ? 'Heading 1' : block.type === 'heading2' ? 'Heading 2' : block.type === 'heading3' ? 'Heading 3' : "Type '/' for commands..."}
-        className={`flex-1 outline-none min-h-[1.5em] empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50 ${
+      className={`flex-1 outline-none min-h-[1.5em] empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50 ${
           blockStyles[block.type] || blockStyles.text
         } ${block.checked ? 'line-through text-muted-foreground' : ''}`}
-        dangerouslySetInnerHTML={{ __html: block.content }}
       />
 
       {/* Delete */}

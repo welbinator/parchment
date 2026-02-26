@@ -64,17 +64,33 @@ export default function PageEditor() {
 
           {/* Blocks */}
           <div className="space-y-1">
-            {page.blocks.map((block, index) => (
-              <BlockItem
-                key={block.id}
-                block={block}
-                pageId={page.id}
-                index={index}
-                focusBlockId={focusBlockId}
-                onFocusHandled={() => setFocusBlockId(null)}
-                onNewBlock={(id) => setFocusBlockId(id)}
-              />
-            ))}
+            {page.blocks.map((block, index) => {
+              // Calculate numbered list index: count consecutive numbered_list blocks before this one
+              let listIndex = 0;
+              if (block.type === 'numbered_list') {
+                for (let i = index; i >= 0; i--) {
+                  if (page.blocks[i].type === 'numbered_list') {
+                    listIndex = i === index ? 0 : listIndex;
+                    if (i < index) listIndex++;
+                  } else break;
+                }
+                // Recount from the start of the consecutive run
+                let start = index;
+                while (start > 0 && page.blocks[start - 1].type === 'numbered_list') start--;
+                listIndex = index - start;
+              }
+              return (
+                <BlockItem
+                  key={block.id}
+                  block={block}
+                  pageId={page.id}
+                  listIndex={listIndex}
+                  focusBlockId={focusBlockId}
+                  onFocusHandled={() => setFocusBlockId(null)}
+                  onNewBlock={(id) => setFocusBlockId(id)}
+                />
+              );
+            })}
           </div>
 
           {/* Add block button */}

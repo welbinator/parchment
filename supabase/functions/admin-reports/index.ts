@@ -40,9 +40,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Check for specific report request
-    let body: any = {}
-    try { body = await req.json() } catch { /* no body is fine */ }
+    // Parse request body for specific report type
+    let body: Record<string, unknown> = {}
+    try { body = await req.json() } catch (_) { /* no body = summary */ }
 
     if (body.report === 'users') {
       const { data: users } = await supabase

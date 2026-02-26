@@ -35,9 +35,10 @@ interface BlockItemProps {
   index: number;
   focusBlockId: string | null;
   onFocusHandled: () => void;
+  onNewBlock: (newBlockId: string) => void;
 }
 
-export default function BlockItem({ block, pageId, index, focusBlockId, onFocusHandled }: BlockItemProps) {
+export default function BlockItem({ block, pageId, index, focusBlockId, onFocusHandled, onNewBlock }: BlockItemProps) {
   const { updateBlock, deleteBlock, addBlock, changeBlockType } = useAppStore();
   const ref = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
@@ -116,7 +117,8 @@ export default function BlockItem({ block, pageId, index, focusBlockId, onFocusH
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       const newType: BlockType = block.type === 'todo' ? 'todo' : block.type === 'bullet_list' ? 'bullet_list' : block.type === 'numbered_list' ? 'numbered_list' : 'text';
-      addBlock(pageId, block.id, newType);
+      const newId = addBlock(pageId, block.id, newType);
+      onNewBlock(newId);
     }
 
     if (e.key === 'Backspace' && ref.current?.innerText === '') {

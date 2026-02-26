@@ -11,6 +11,7 @@ import Landing from "./pages/Landing";
 import AuthPage from "./pages/Auth";
 import Settings from "./pages/Settings";
 import ApiDocs from "./pages/ApiDocs";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from 'lucide-react';
 
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/docs/api" element={<ApiDocs />} />
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

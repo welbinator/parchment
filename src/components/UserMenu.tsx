@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Settings, LogOut, User, BookOpen } from 'lucide-react';
+import { Settings, LogOut, User, BookOpen, BarChart3 } from 'lucide-react';
 
 export default function UserMenu() {
   const { user, signOut } = useAuth();
@@ -49,6 +49,15 @@ export default function UserMenu() {
             <BookOpen size={14} />
             API Docs
           </button>
+          {user.email === 'james.welbes@gmail.com' && (
+            <button
+              onClick={() => { setOpen(false); navigate('/reports'); }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+            >
+              <BarChart3 size={14} />
+              Reports
+            </button>
+          )}
           <button
             onClick={() => { setOpen(false); signOut(); }}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-destructive transition-colors"

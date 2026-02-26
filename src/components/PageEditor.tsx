@@ -63,7 +63,7 @@ export default function PageEditor() {
           />
 
           {/* Blocks */}
-          <div className="space-y-1">
+          <div className="space-y-3">
             {page.blocks.map((block, index) => {
               // Calculate numbered list index, resetting at listStart or non-numbered blocks
               let listIndex = 0;

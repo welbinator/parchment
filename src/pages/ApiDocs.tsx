@@ -1,8 +1,30 @@
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import UserMenu from '@/components/UserMenu';
+
 const API_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/api`;
 
 export default function ApiDocs() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <main className="min-h-screen bg-background text-foreground">
+      {user && (
+        <div className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b border-border">
+          <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
+            <button
+              onClick={() => navigate('/app')}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft size={16} />
+              Back to workspace
+            </button>
+            <UserMenu />
+          </div>
+        </div>
+      )}
       <div className="max-w-3xl mx-auto px-6 py-12">
         <header className="mb-10">
           <h1 className="text-4xl font-bold font-display mb-3">Parchment API</h1>

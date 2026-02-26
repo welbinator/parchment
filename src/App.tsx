@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { useAppStore } from '@/store/useAppStore';
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
 import AuthPage from "./pages/Auth";
 import Settings from "./pages/Settings";
 import ApiDocs from "./pages/ApiDocs";
@@ -48,8 +49,21 @@ function AuthRoute() {
       </div>
     );
   }
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/app" replace />;
   return <AuthPage />;
+}
+
+function LandingOrApp() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 size={24} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (user) return <Navigate to="/app" replace />;
+  return <Landing />;
 }
 
 const App = () => (
@@ -61,7 +75,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/" element={<LandingOrApp />} />
+            <Route path="/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/docs/api" element={<ApiDocs />} />
             <Route path="*" element={<NotFound />} />

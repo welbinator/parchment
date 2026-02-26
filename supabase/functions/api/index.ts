@@ -171,10 +171,23 @@ Deno.serve(async (req) => {
         return json({ success: true }, corsHeaders)
       }
 
+      case 'delete_block': {
+        if (!permissions.can_write_blocks) return deny(corsHeaders)
+        const { page_id, block_id } = body
+        if (!page_id || !block_id) return json({ error: 'page_id and block_id are required' }, corsHeaders, 400)
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+        const { data: blk } = await supabase.from('blocks').select('id').eq('id', block_id).eq('page_id', page_id).single()
+        if (!blk) return json({ error: 'Block not found' }, corsHeaders, 404)
+        const { error } = await supabase.from('blocks').delete().eq('id', block_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
+      }
+
       default:
         return json({ error: `Unknown action: ${action}`, available_actions: [
           'list_collections', 'create_collection', 'delete_collection',
-          'list_pages', 'create_page', 'delete_page', 'get_page', 'update_blocks',
+          'list_pages', 'create_page', 'delete_page', 'get_page', 'update_blocks', 'delete_block',
         ]}, corsHeaders, 400)
     }
   } catch (err) {

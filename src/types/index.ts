@@ -15,6 +15,7 @@ export interface Block {
   type: BlockType;
   content: string;
   checked?: boolean;
+  listStart?: boolean;
 }
 
 export type PageType = 'blank' | 'notes' | 'roadmap' | 'checklist';

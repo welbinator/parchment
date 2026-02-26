@@ -251,7 +251,7 @@ curl -s -X POST ${API_BASE} \\
         </section>
 
         <footer className="text-center text-xs text-muted-foreground pb-8">
-          <a href="/" className="hover:text-primary transition-colors inline-flex items-center gap-1">
+          <a href="https://theparchment.app" className="hover:text-primary transition-colors inline-flex items-center gap-1">
             ← Back to Parchment <ExternalLink size={10} />
           </a>
         </footer>

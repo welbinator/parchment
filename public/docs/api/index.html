@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parchment API Documentation</title>
+  <meta name="description" content="API documentation for Parchment. Programmatically manage collections, pages, and blocks.">
+  <style>
+    :root {
+      --bg: #0c0d10;
+      --surface: #14151a;
+      --border: #23252d;
+      --text: #e4e4e7;
+      --muted: #8b8d98;
+      --primary: #c0a0ff;
+      --primary-dim: rgba(192,160,255,0.12);
+      --code-bg: #0a0b0e;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 3rem 1.5rem;
+    }
+    .container { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    h1 span { color: var(--primary); }
+    h2 { font-size: 1.5rem; font-weight: 600; margin-top: 3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.5rem; color: var(--primary); font-family: 'SF Mono', 'Fira Code', monospace; }
+    p { margin-bottom: 1rem; color: var(--muted); }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--primary-dim);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      color: var(--text);
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; }
+    ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+    li { margin-bottom: 0.35rem; color: var(--muted); }
+    li strong { color: var(--text); }
+    .endpoint {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .endpoint h3 { margin-top: 0; }
+    .endpoint p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .perm {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 0.75rem;
+      background: var(--primary-dim);
+      color: var(--primary);
+      padding: 0.15em 0.5em;
+      border-radius: 4px;
+      margin-right: 0.25rem;
+    }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border: 1px solid var(--border); font-size: 0.9rem; }
+    th { background: var(--surface); color: var(--muted); font-weight: 500; }
+    td code { font-size: 0.85em; }
+    .subtitle { font-size: 1.1rem; color: var(--muted); margin-bottom: 2rem; }
+    footer { margin-top: 4rem; text-align: center; color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<h1><span>Parchment</span> API</h1>
+<p class="subtitle">Programmatically manage your collections, pages, and blocks. Perfect for bots, CLI tools, and integrations.</p>
+
+<h2>Authentication</h2>
+<p>All requests require an API key passed via the <code>x-api-key</code> header. Generate keys from <strong>Settings → API Keys</strong> in your Parchment account.</p>
+<p>Each key has granular permissions. A request will return <code>403</code> if the key lacks the required permission.</p>
+
+<p><strong>Available permissions:</strong></p>
+<ul>
+  <li><code>can_read_pages</code> — Read collections, pages, and blocks</li>
+  <li><code>can_create_collections</code> — Create new collections</li>
+  <li><code>can_delete_collections</code> — Delete collections</li>
+  <li><code>can_create_pages</code> — Create new pages</li>
+  <li><code>can_delete_pages</code> — Delete pages</li>
+  <li><code>can_write_blocks</code> — Create, update, and delete blocks</li>
+</ul>
+
+<h2>Base URL</h2>
+<p>All requests are <code>POST</code> to a single endpoint:</p>
+<pre><code>https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api</code></pre>
+<p>The <code>action</code> field in the JSON body determines the operation.</p>
+
+<h2>Rate Limits</h2>
+<ul>
+  <li><strong>60 requests per minute</strong> per API key</li>
+  <li><strong>1,000 requests per day</strong> per API key</li>
+  <li>Exceeding limits returns <code>429 Too Many Requests</code> with a <code>Retry-After</code> header</li>
+</ul>
+
+<h2>Endpoints</h2>
+
+<div class="endpoint">
+  <h3>list_collections</h3>
+  <p>List all collections owned by the API key holder.</p>
+  <p><span class="perm">can_read_pages</span></p>
+  <p><strong>Body:</strong> <code>{ "action": "list_collections" }</code></p>
+  <p><strong>Response:</strong></p>
+  <pre><code>{ "collections": [{ "id": "uuid", "name": "My Collection", "icon": null, "position": 0, "created_at": "..." }] }</code></pre>
+</div>
+
+<div class="endpoint">
+  <h3>create_collection</h3>
+  <p>Create a new collection.</p>
+  <p><span class="perm">can_create_collections</span></p>
+  <p><strong>Body:</strong></p>
+  <ul>
+    <li><code>name</code> — string (optional, defaults to "Untitled")</li>
+  </ul>
+  <pre><code>{ "action": "create_collection", "name": "My Collection" }</code></pre>
+  <p><strong>Response:</strong> <code>{ "collection": { "id": "uuid", "name": "My Collection", ... } }</code></p>
+</div>
+
+<div class="endpoint">
+  <h3>delete_collection</h3>
+  <p>Delete a collection and all its pages.</p>
+  <p><span class="perm">can_delete_collections</span></p>
+  <p><strong>Body:</strong></p>
+  <ul>
+    <li><code>collection_id</code> — uuid (required)</li>
+  </ul>
+  <pre><code>{ "action": "delete_collection", "collection_id": "uuid" }</code></pre>
+  <p><strong>Response:</strong> <code>{ "success": true }</code></p>
+</div>
+
+<div class="endpoint">
+  <h3>list_pages</h3>
+  <p>List pages, optionally filtered by collection.</p>
+  <p><span class="perm">can_read_pages</span></p>
+  <p><strong>Body:</strong></p>
+  <ul>
+    <li><code>collection_id</code> — uuid (optional)</li>
+  </ul>
+  <pre><code>{ "action": "list_pages", "collection_id": "uuid" }</code></pre>
+  <p><strong>Response:</strong> <code>{ "pages": [{ "id": "uuid", "title": "My Page", "type": "blank", "collection_id": "uuid", ... }] }</code></p>
+</div>
+
+<div class="endpoint">
+  <h3>create_page</h3>
+  <p>Create a new page in a collection.</p>
+  <p><span class="perm">can_create_pages</span></p>
+  <p><strong>Body:</strong></p>
+  <ul>
+    <li><code>collection_id</code> — uuid (required)</li>
+    <li><code>title</code> — string (optional)</li>
+    <li><code>type</code> — "blank" | "notes" | "checklist" | "roadmap" (optional)</li>
+  </ul>
+  <pre><code>{ "action": "create_page", "collection_id": "uuid", "title": "My Page" }</code></pre>
+  <p><strong>Response:</strong> <code>{ "page": { "id": "uuid", "title": "My Page", ... } }</code></p>
+</div>
+
+<div class="endpoint">
+  <h3>delete_page</h3>
+  <p>Delete a page and all its blocks.</p>
+  <p><span class="perm">can_delete_pages</span></p>
+  <p><strong>Body:</strong></p>
+  <ul>
+    <li><code>page_id</code> — uuid (required)</li>
+  </ul>
+  <pre><code>{ "action": "delete_page", "page_id": "uuid" }</code></pre>
+  <p><strong>Response:</strong> <code>{ "success": true }</code></p>
+</div>
+
+<div class="endpoint">
+  <h3>get_page</h3>
+  <p>Get a page with all its blocks.</p>
+  <p><span class="perm">can_read_pages</span></p>
+  <p><strong>Body:</strong></p>
+  <ul>
+    <li><code>page_id</code> — uuid (required)</li>
+  </ul>
+  <pre><code>{ "action": "get_page", "page_id": "uuid" }</code></pre>
+  <p><strong>Response:</strong> <code>{ "page": { ... }, "blocks": [{ "id": "uuid", "type": "text", "content": "...", "position": 0, ... }] }</code></p>
+</div>
+
+<div class="endpoint">
+  <h3>update_blocks</h3>
+  <p>Create or update blocks on a page. Max 10KB per block.</p>
+  <p><span class="perm">can_write_blocks</span></p>
+  <p><strong>Body:</strong></p>
+  <ul>
+    <li><code>page_id</code> — uuid (required)</li>
+    <li><code>blocks</code> — array of <code>{ id?, type, content, checked?, position }</code></li>
+  </ul>
+  <pre><code>{ "action": "update_blocks", "page_id": "uuid", "blocks": [
+  { "type": "heading1", "content": "Hello", "position": 0 },
+  { "type": "text", "content": "World", "position": 1 }
+] }</code></pre>
+  <p><strong>Response:</strong> <code>{ "success": true }</code></p>
+</div>
+
+<div class="endpoint">
+  <h3>delete_block</h3>
+  <p>Delete a single block from a page.</p>
+  <p><span class="perm">can_write_blocks</span></p>
+  <p><strong>Body:</strong></p>
+  <ul>
+    <li><code>page_id</code> — uuid (required)</li>
+    <li><code>block_id</code> — uuid (required)</li>
+  </ul>
+  <pre><code>{ "action": "delete_block", "page_id": "uuid", "block_id": "uuid" }</code></pre>
+  <p><strong>Response:</strong> <code>{ "success": true }</code></p>
+</div>
+
+<h2>Block Types</h2>
+<ul>
+  <li><code>text</code> — Plain text paragraph</li>
+  <li><code>heading1</code> — Large heading</li>
+  <li><code>heading2</code> — Medium heading</li>
+  <li><code>heading3</code> — Small heading</li>
+  <li><code>bullet_list</code> — Bulleted list item</li>
+  <li><code>numbered_list</code> — Numbered list item</li>
+  <li><code>todo</code> — Checkbox item (use <code>checked: true/false</code>)</li>
+  <li><code>quote</code> — Block quote</li>
+  <li><code>divider</code> — Horizontal divider</li>
+  <li><code>code</code> — Code block</li>
+</ul>
+
+<h2>Quick Start</h2>
+<pre><code># 1. List collections
+curl -s -X POST https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action": "list_collections"}'
+
+# 2. Create a page
+curl -s -X POST https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action": "create_page", "collection_id": "&lt;id&gt;", "title": "Bot Notes"}'
+
+# 3. Write blocks
+curl -s -X POST https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action": "update_blocks", "page_id": "&lt;id&gt;", "blocks": [
+    {"type": "heading1", "content": "Hello from the API", "position": 0},
+    {"type": "text", "content": "This was created programmatically.", "position": 1}
+  ]}'
+
+# 4. Delete a block
+curl -s -X POST https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action": "delete_block", "page_id": "&lt;id&gt;", "block_id": "&lt;block_id&gt;"}'</code></pre>
+
+<h2>Error Codes</h2>
+<table>
+  <thead>
+    <tr><th>Code</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
+    <tr><td><code>403</code></td><td>Key lacks required permission</td></tr>
+    <tr><td><code>404</code></td><td>Resource not found or not owned by key holder</td></tr>
+    <tr><td><code>400</code></td><td>Bad request or unknown action</td></tr>
+    <tr><td><code>413</code></td><td>Block content exceeds 10KB size limit</td></tr>
+    <tr><td><code>429</code></td><td>Rate limit exceeded (60/min or 1000/day)</td></tr>
+    <tr><td><code>500</code></td><td>Internal server error</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  <a href="https://theparchment.app">← Back to Parchment</a>
+</footer>
+
+</div>
+</body>
+</html>

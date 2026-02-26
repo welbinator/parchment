@@ -32,13 +32,13 @@ const blockTypeOptions: { type: BlockType; label: string; icon: React.ReactNode 
 interface BlockItemProps {
   block: Block;
   pageId: string;
-  index: number;
+  listIndex: number;
   focusBlockId: string | null;
   onFocusHandled: () => void;
   onNewBlock: (newBlockId: string) => void;
 }
 
-export default function BlockItem({ block, pageId, index, focusBlockId, onFocusHandled, onNewBlock }: BlockItemProps) {
+export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock }: BlockItemProps) {
   const { updateBlock, deleteBlock, addBlock, changeBlockType } = useAppStore();
   const ref = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
@@ -191,7 +191,7 @@ export default function BlockItem({ block, pageId, index, focusBlockId, onFocusH
       {/* Numbered list index */}
       {block.type === 'numbered_list' && (
         <span className="mt-0.5 text-sm text-muted-foreground shrink-0 w-5 text-right pr-1">
-          {index + 1}.
+          {listIndex + 1}.
         </span>
       )}
 

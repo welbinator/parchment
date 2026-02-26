@@ -9,6 +9,7 @@ import { useAppStore } from '@/store/useAppStore';
 import Index from "./pages/Index";
 import AuthPage from "./pages/Auth";
 import Settings from "./pages/Settings";
+import ApiDocs from "./pages/ApiDocs";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from 'lucide-react';
 
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/docs/api" element={<ApiDocs />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

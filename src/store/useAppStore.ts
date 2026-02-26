@@ -1,147 +1,243 @@
 import { create } from 'zustand';
-import type { Collection, Page, Block, BlockType, PageType } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import type { Block, BlockType, PageType } from '@/types';
 
-function uid() {
-  return crypto.randomUUID();
+interface DbCollection {
+  id: string;
+  name: string;
+  icon: string | null;
+  position: number;
+  created_at: string;
+  user_id: string;
 }
 
-function now() {
-  return new Date().toISOString();
+interface DbPage {
+  id: string;
+  title: string;
+  type: string;
+  collection_id: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
 }
 
-function createDefaultBlocks(type: PageType): Block[] {
-  switch (type) {
-    case 'checklist':
-      return [
-        { id: uid(), type: 'todo', content: '', checked: false },
-      ];
-    case 'roadmap':
-      return [
-        { id: uid(), type: 'heading2', content: 'Phase 1' },
-        { id: uid(), type: 'todo', content: '', checked: false },
-      ];
-    default:
-      return [
-        { id: uid(), type: 'text', content: '' },
-      ];
-  }
+interface DbBlock {
+  id: string;
+  page_id: string;
+  type: string;
+  content: string;
+  checked: boolean | null;
+  list_start: boolean | null;
+  position: number;
+  created_at: string;
 }
 
 interface AppState {
-  collections: Collection[];
-  pages: Page[];
+  collections: DbCollection[];
+  pages: DbPage[];
+  blocks: DbBlock[];
   activePageId: string | null;
   activeCollectionId: string | null;
   sidebarOpen: boolean;
+  loading: boolean;
+  userId: string | null;
 
-  // Actions
+  // Init
+  init: (userId: string) => Promise<void>;
+  reset: () => void;
+
+  // UI
   setSidebarOpen: (open: boolean) => void;
   setActivePage: (id: string | null) => void;
   setActiveCollection: (id: string | null) => void;
 
-  addCollection: (name: string) => string;
-  renameCollection: (id: string, name: string) => void;
-  deleteCollection: (id: string) => void;
+  // Collections
+  addCollection: (name: string) => Promise<string>;
+  renameCollection: (id: string, name: string) => Promise<void>;
+  deleteCollection: (id: string) => Promise<void>;
 
-  addPage: (collectionId: string, type?: PageType) => string;
-  updatePageTitle: (id: string, title: string) => void;
-  deletePage: (id: string) => void;
+  // Pages
+  addPage: (collectionId: string, type?: PageType) => Promise<string>;
+  updatePageTitle: (id: string, title: string) => Promise<void>;
+  deletePage: (id: string) => Promise<void>;
 
+  // Blocks
   addBlock: (pageId: string, afterBlockId: string | null, type?: BlockType) => string;
   updateBlock: (pageId: string, blockId: string, updates: Partial<Block>) => void;
   deleteBlock: (pageId: string, blockId: string) => void;
   changeBlockType: (pageId: string, blockId: string, type: BlockType) => void;
 }
 
-const defaultCollectionId = uid();
-const defaultPageId = uid();
+function uid() {
+  return crypto.randomUUID();
+}
+
+// Debounce map for block saves
+const blockSaveTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function debounceSaveBlock(block: DbBlock) {
+  const existing = blockSaveTimers.get(block.id);
+  if (existing) clearTimeout(existing);
+  blockSaveTimers.set(block.id, setTimeout(async () => {
+    blockSaveTimers.delete(block.id);
+    await supabase.from('blocks').update({
+      content: block.content,
+      checked: block.checked,
+      list_start: block.list_start,
+      type: block.type,
+      position: block.position,
+    }).eq('id', block.id);
+  }, 500));
+}
+
+// Debounce for page title
+let titleTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useAppStore = create<AppState>((set, get) => ({
-  collections: [
-    { id: defaultCollectionId, name: 'Getting Started', createdAt: now() },
-  ],
-  pages: [
-    {
-      id: defaultPageId,
-      title: 'Welcome',
-      type: 'blank',
-      collectionId: defaultCollectionId,
-      createdAt: now(),
-      updatedAt: now(),
-      blocks: [
-        { id: uid(), type: 'heading1', content: 'Welcome to Parchment' },
-        { id: uid(), type: 'text', content: 'A simple place for your thoughts. No databases, no complexity — just pages.' },
-        { id: uid(), type: 'divider', content: '' },
-        { id: uid(), type: 'heading2', content: 'Quick start' },
-        { id: uid(), type: 'todo', content: 'Create a new collection in the sidebar', checked: false },
-        { id: uid(), type: 'todo', content: 'Add a page to your collection', checked: false },
-        { id: uid(), type: 'todo', content: 'Start writing — press / for block types', checked: false },
-        { id: uid(), type: 'divider', content: '' },
-        { id: uid(), type: 'quote', content: 'Simplicity is the ultimate sophistication.' },
-      ],
-    },
-  ],
-  activePageId: defaultPageId,
-  activeCollectionId: defaultCollectionId,
+  collections: [],
+  pages: [],
+  blocks: [],
+  activePageId: null,
+  activeCollectionId: null,
   sidebarOpen: true,
+  loading: true,
+  userId: null,
+
+  init: async (userId: string) => {
+    set({ loading: true, userId });
+
+    const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
+      supabase.from('collections').select('*').eq('user_id', userId).order('position'),
+      supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
+      supabase.from('blocks').select('*, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
+    ]);
+
+    const collections = (collectionsRes.data ?? []) as DbCollection[];
+    const pages = (pagesRes.data ?? []) as DbPage[];
+    const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
+
+    // If new user, create a welcome collection + page
+    if (collections.length === 0) {
+      const colId = uid();
+      const pageId = uid();
+      const { data: col } = await supabase.from('collections').insert({ id: colId, user_id: userId, name: 'Getting Started', position: 0 }).select().single();
+      const { data: page } = await supabase.from('pages').insert({ id: pageId, user_id: userId, collection_id: colId, title: 'Welcome', type: 'blank' }).select().single();
+
+      const welcomeBlocks = [
+        { id: uid(), page_id: pageId, type: 'heading1', content: 'Welcome to Parchment', position: 0 },
+        { id: uid(), page_id: pageId, type: 'text', content: 'A simple place for your thoughts. No databases, no complexity — just pages.', position: 1 },
+        { id: uid(), page_id: pageId, type: 'divider', content: '', position: 2 },
+        { id: uid(), page_id: pageId, type: 'heading2', content: 'Quick start', position: 3 },
+        { id: uid(), page_id: pageId, type: 'todo', content: 'Create a new collection in the sidebar', checked: false, position: 4 },
+        { id: uid(), page_id: pageId, type: 'todo', content: 'Add a page to your collection', checked: false, position: 5 },
+        { id: uid(), page_id: pageId, type: 'todo', content: "Start writing — press / for block types", checked: false, position: 6 },
+        { id: uid(), page_id: pageId, type: 'divider', content: '', position: 7 },
+        { id: uid(), page_id: pageId, type: 'quote', content: 'Simplicity is the ultimate sophistication.', position: 8 },
+      ];
+
+      await supabase.from('blocks').insert(welcomeBlocks);
+
+      set({
+        collections: col ? [col] : [],
+        pages: page ? [page] : [],
+        blocks: welcomeBlocks as DbBlock[],
+        activePageId: pageId,
+        activeCollectionId: colId,
+        loading: false,
+      });
+      return;
+    }
+
+    set({
+      collections,
+      pages,
+      blocks,
+      activePageId: pages[0]?.id ?? null,
+      activeCollectionId: collections[0]?.id ?? null,
+      loading: false,
+    });
+  },
+
+  reset: () => set({
+    collections: [],
+    pages: [],
+    blocks: [],
+    activePageId: null,
+    activeCollectionId: null,
+    loading: false,
+    userId: null,
+  }),
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActivePage: (id) => set({ activePageId: id }),
   setActiveCollection: (id) => set({ activeCollectionId: id }),
 
-  addCollection: (name) => {
+  addCollection: async (name) => {
+    const { userId, collections } = get();
+    if (!userId) return '';
     const id = uid();
-    set((s) => ({
-      collections: [...s.collections, { id, name, createdAt: now() }],
-      activeCollectionId: id,
-    }));
+    const position = collections.length;
+    const { data } = await supabase.from('collections').insert({ id, user_id: userId, name, position }).select().single();
+    if (data) {
+      set((s) => ({ collections: [...s.collections, data], activeCollectionId: id }));
+    }
     return id;
   },
 
-  renameCollection: (id, name) => {
-    set((s) => ({
-      collections: s.collections.map((c) => (c.id === id ? { ...c, name } : c)),
-    }));
+  renameCollection: async (id, name) => {
+    await supabase.from('collections').update({ name }).eq('id', id);
+    set((s) => ({ collections: s.collections.map((c) => (c.id === id ? { ...c, name } : c)) }));
   },
 
-  deleteCollection: (id) => {
+  deleteCollection: async (id) => {
+    await supabase.from('collections').delete().eq('id', id);
     set((s) => ({
       collections: s.collections.filter((c) => c.id !== id),
-      pages: s.pages.filter((p) => p.collectionId !== id),
+      pages: s.pages.filter((p) => p.collection_id !== id),
+      blocks: s.blocks.filter((b) => {
+        const pageIds = s.pages.filter((p) => p.collection_id === id).map((p) => p.id);
+        return !pageIds.includes(b.page_id);
+      }),
       activeCollectionId: s.activeCollectionId === id ? null : s.activeCollectionId,
-      activePageId: s.pages.find((p) => p.id === s.activePageId)?.collectionId === id ? null : s.activePageId,
+      activePageId: s.pages.find((p) => p.id === s.activePageId)?.collection_id === id ? null : s.activePageId,
     }));
   },
 
-  addPage: (collectionId, type = 'blank') => {
+  addPage: async (collectionId, type = 'blank') => {
+    const { userId } = get();
+    if (!userId) return '';
     const id = uid();
-    set((s) => ({
-      pages: [...s.pages, {
-        id,
-        title: 'Untitled',
-        type,
-        collectionId,
-        createdAt: now(),
-        updatedAt: now(),
-        blocks: createDefaultBlocks(type),
-      }],
-      activePageId: id,
-      activeCollectionId: collectionId,
-    }));
+    const { data: page } = await supabase.from('pages').insert({ id, user_id: userId, collection_id: collectionId, title: 'Untitled', type }).select().single();
+
+    const defaultBlock = { id: uid(), page_id: id, type: type === 'checklist' ? 'todo' : 'text', content: '', position: 0, checked: type === 'checklist' ? false : null };
+    await supabase.from('blocks').insert(defaultBlock);
+
+    if (page) {
+      set((s) => ({
+        pages: [...s.pages, page],
+        blocks: [...s.blocks, defaultBlock as DbBlock],
+        activePageId: id,
+        activeCollectionId: collectionId,
+      }));
+    }
     return id;
   },
 
-  updatePageTitle: (id, title) => {
-    set((s) => ({
-      pages: s.pages.map((p) => (p.id === id ? { ...p, title, updatedAt: now() } : p)),
-    }));
+  updatePageTitle: async (id, title) => {
+    set((s) => ({ pages: s.pages.map((p) => (p.id === id ? { ...p, title } : p)) }));
+    if (titleTimer) clearTimeout(titleTimer);
+    titleTimer = setTimeout(async () => {
+      await supabase.from('pages').update({ title }).eq('id', id);
+    }, 500);
   },
 
-  deletePage: (id) => {
+  deletePage: async (id) => {
+    await supabase.from('pages').delete().eq('id', id);
     set((s) => {
       const remaining = s.pages.filter((p) => p.id !== id);
       return {
         pages: remaining,
+        blocks: s.blocks.filter((b) => b.page_id !== id),
         activePageId: s.activePageId === id ? (remaining[0]?.id ?? null) : s.activePageId,
       };
     });
@@ -149,55 +245,93 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   addBlock: (pageId, afterBlockId, type = 'text') => {
     const blockId = uid();
-    set((s) => ({
-      pages: s.pages.map((p) => {
-        if (p.id !== pageId) return p;
-        const newBlock: Block = { id: blockId, type, content: '', ...(type === 'todo' ? { checked: false } : {}) };
-        if (!afterBlockId) return { ...p, blocks: [...p.blocks, newBlock], updatedAt: now() };
-        const idx = p.blocks.findIndex((b) => b.id === afterBlockId);
-        const blocks = [...p.blocks];
-        blocks.splice(idx + 1, 0, newBlock);
-        return { ...p, blocks, updatedAt: now() };
-      }),
-    }));
+    set((s) => {
+      const pageBlocks = s.blocks.filter((b) => b.page_id === pageId).sort((a, b) => a.position - b.position);
+      let insertIdx = pageBlocks.length;
+      if (afterBlockId) {
+        const idx = pageBlocks.findIndex((b) => b.id === afterBlockId);
+        if (idx >= 0) insertIdx = idx + 1;
+      }
+
+      const newBlock: DbBlock = {
+        id: blockId,
+        page_id: pageId,
+        type,
+        content: '',
+        checked: type === 'todo' ? false : null,
+        list_start: null,
+        position: insertIdx,
+        created_at: new Date().toISOString(),
+      };
+
+      // Reposition
+      const updatedBlocks = [...pageBlocks];
+      updatedBlocks.splice(insertIdx, 0, newBlock);
+      const repositioned = updatedBlocks.map((b, i) => ({ ...b, position: i }));
+
+      // Save to db
+      supabase.from('blocks').insert({ ...newBlock, position: insertIdx }).then(() => {
+        // Update positions of shifted blocks
+        repositioned.forEach((b) => {
+          if (b.id !== blockId) {
+            supabase.from('blocks').update({ position: b.position }).eq('id', b.id);
+          }
+        });
+      });
+
+      const otherBlocks = s.blocks.filter((b) => b.page_id !== pageId);
+      return { blocks: [...otherBlocks, ...repositioned] };
+    });
     return blockId;
   },
 
   updateBlock: (pageId, blockId, updates) => {
-    set((s) => ({
-      pages: s.pages.map((p) => {
-        if (p.id !== pageId) return p;
+    set((s) => {
+      const newBlocks = s.blocks.map((b) => {
+        if (b.id !== blockId) return b;
         return {
-          ...p,
-          blocks: p.blocks.map((b) => (b.id === blockId ? { ...b, ...updates } : b)),
-          updatedAt: now(),
+          ...b,
+          content: updates.content !== undefined ? updates.content : b.content,
+          checked: updates.checked !== undefined ? updates.checked : b.checked,
+          list_start: updates.listStart !== undefined ? updates.listStart : b.list_start,
+          type: updates.type !== undefined ? updates.type : b.type,
         };
-      }),
-    }));
+      });
+      const updated = newBlocks.find((b) => b.id === blockId);
+      if (updated) debounceSaveBlock(updated);
+      return { blocks: newBlocks };
+    });
   },
 
   deleteBlock: (pageId, blockId) => {
-    set((s) => ({
-      pages: s.pages.map((p) => {
-        if (p.id !== pageId) return p;
-        const blocks = p.blocks.filter((b) => b.id !== blockId);
-        return { ...p, blocks: blocks.length ? blocks : [{ id: uid(), type: 'text', content: '' }], updatedAt: now() };
-      }),
-    }));
+    supabase.from('blocks').delete().eq('id', blockId);
+    set((s) => {
+      const remaining = s.blocks.filter((b) => b.id !== blockId);
+      const pageBlocks = remaining.filter((b) => b.page_id === pageId);
+      if (pageBlocks.length === 0) {
+        const newBlock: DbBlock = {
+          id: uid(),
+          page_id: pageId,
+          type: 'text',
+          content: '',
+          checked: null,
+          list_start: null,
+          position: 0,
+          created_at: new Date().toISOString(),
+        };
+        supabase.from('blocks').insert(newBlock);
+        return { blocks: [...remaining, newBlock] };
+      }
+      return { blocks: remaining };
+    });
   },
 
   changeBlockType: (pageId, blockId, type) => {
     set((s) => ({
-      pages: s.pages.map((p) => {
-        if (p.id !== pageId) return p;
-        return {
-          ...p,
-          blocks: p.blocks.map((b) =>
-            b.id === blockId ? { ...b, type, ...(type === 'todo' ? { checked: false } : {}) } : b
-          ),
-          updatedAt: now(),
-        };
-      }),
+      blocks: s.blocks.map((b) =>
+        b.id === blockId ? { ...b, type, checked: type === 'todo' ? false : b.checked } : b
+      ),
     }));
+    supabase.from('blocks').update({ type, checked: type === 'todo' ? false : null }).eq('id', blockId);
   },
 }));

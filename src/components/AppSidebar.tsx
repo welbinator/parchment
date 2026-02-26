@@ -3,18 +3,19 @@ import { useAppStore } from '@/store/useAppStore';
 import {
   Plus,
   ChevronRight,
-  FileText,
   Trash2,
   FolderOpen,
   PanelLeftClose,
-  MoreHorizontal,
   CheckSquare,
   Map,
   File,
+  FileText,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import type { PageType } from '@/types';
 
-const pageTypeIcons: Record<PageType, React.ReactNode> = {
+const pageTypeIcons: Record<string, React.ReactNode> = {
   blank: <File size={14} />,
   notes: <FileText size={14} />,
   roadmap: <Map size={14} />,
@@ -36,6 +37,7 @@ export default function AppSidebar() {
     deleteCollection,
     deletePage,
   } = useAppStore();
+  const { signOut, user } = useAuth();
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
     new Set(collections.map((c) => c.id))
@@ -50,10 +52,9 @@ export default function AppSidebar() {
     });
   };
 
-  const handleAddCollection = () => {
-    const name = 'New Collection';
-    const id = addCollection(name);
-    setExpandedCollections((prev) => new Set(prev).add(id));
+  const handleAddCollection = async () => {
+    const id = await addCollection('New Collection');
+    if (id) setExpandedCollections((prev) => new Set(prev).add(id));
   };
 
   const handleAddPage = (collectionId: string, type: PageType = 'blank') => {
@@ -82,11 +83,10 @@ export default function AppSidebar() {
       <div className="flex-1 overflow-y-auto py-2">
         {collections.map((collection) => {
           const isExpanded = expandedCollections.has(collection.id);
-          const collectionPages = pages.filter((p) => p.collectionId === collection.id);
+          const collectionPages = pages.filter((p) => p.collection_id === collection.id);
 
           return (
             <div key={collection.id} className="animate-fade-in">
-              {/* Collection header */}
               <div
                 className={`group flex items-center gap-1 px-3 py-1.5 mx-1 rounded-md cursor-pointer transition-colors ${
                   activeCollectionId === collection.id
@@ -126,7 +126,6 @@ export default function AppSidebar() {
                 </div>
               </div>
 
-              {/* New page type menu */}
               {showNewPageMenu === collection.id && (
                 <div className="mx-3 ml-8 mb-1 bg-popover border border-border rounded-md p-1 animate-fade-in">
                   {(['blank', 'notes', 'checklist', 'roadmap'] as PageType[]).map((type) => (
@@ -142,7 +141,6 @@ export default function AppSidebar() {
                 </div>
               )}
 
-              {/* Pages */}
               {isExpanded && (
                 <div className="ml-4">
                   {collectionPages.map((page) => (
@@ -155,7 +153,7 @@ export default function AppSidebar() {
                           : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                       }`}
                     >
-                      {pageTypeIcons[page.type]}
+                      {pageTypeIcons[page.type] || pageTypeIcons.blank}
                       <span className="truncate flex-1 text-left">{page.title}</span>
                       <button
                         onClick={(e) => {
@@ -179,13 +177,20 @@ export default function AppSidebar() {
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-sidebar-border">
+      <div className="p-2 border-t border-sidebar-border space-y-1">
         <button
           onClick={handleAddCollection}
           className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
         >
           <Plus size={14} />
           New Collection
+        </button>
+        <button
+          onClick={signOut}
+          className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors"
+        >
+          <LogOut size={14} />
+          Sign Out
         </button>
       </div>
     </aside>

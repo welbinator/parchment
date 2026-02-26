@@ -131,7 +131,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     setShowSlashMenu(false);
     if (ref.current) ref.current.innerText = '';
     changeBlockType(pageId, block.id, type);
-    updateBlock(pageId, block.id, { content: '' });
+    updateBlock(pageId, block.id, { content: '', listStart: type === 'numbered_list' ? true : undefined });
     setTimeout(() => ref.current?.focus(), 0);
   };
 

@@ -65,19 +65,22 @@ export default function PageEditor() {
           {/* Blocks */}
           <div className="space-y-1">
             {page.blocks.map((block, index) => {
-              // Calculate numbered list index: count consecutive numbered_list blocks before this one
+              // Calculate numbered list index, resetting at listStart or non-numbered blocks
               let listIndex = 0;
               if (block.type === 'numbered_list') {
-                for (let i = index; i >= 0; i--) {
-                  if (page.blocks[i].type === 'numbered_list') {
-                    listIndex = i === index ? 0 : listIndex;
-                    if (i < index) listIndex++;
-                  } else break;
+                let count = 0;
+                for (let i = index - 1; i >= 0; i--) {
+                  if (page.blocks[i].type !== 'numbered_list' || page.blocks[i + 1]?.listStart) break;
+                  count++;
                 }
-                // Recount from the start of the consecutive run
-                let start = index;
-                while (start > 0 && page.blocks[start - 1].type === 'numbered_list') start--;
-                listIndex = index - start;
+                // Check if current block itself is a listStart
+                if (block.listStart) {
+                  listIndex = 0;
+                } else {
+                  let start = index;
+                  while (start > 0 && page.blocks[start - 1].type === 'numbered_list' && !page.blocks[start].listStart) start--;
+                  listIndex = index - start;
+                }
               }
               return (
                 <BlockItem

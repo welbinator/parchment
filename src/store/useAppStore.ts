@@ -77,11 +77,21 @@ function uid() {
 // Debounce map for block saves
 const blockSaveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
+// Track local mutation cooldown to suppress realtime refetch flicker
+let localMutationCooldown = 0;
+function markLocalMutation() {
+  localMutationCooldown = Date.now() + 2000; // suppress refetch for 2s after local mutation
+}
+function isInLocalCooldown() {
+  return Date.now() < localMutationCooldown;
+}
+
 function debounceSaveBlock(block: DbBlock) {
   const existing = blockSaveTimers.get(block.id);
   if (existing) clearTimeout(existing);
   blockSaveTimers.set(block.id, setTimeout(async () => {
     blockSaveTimers.delete(block.id);
+    markLocalMutation();
     await supabase.from('blocks').update({
       content: block.content,
       checked: block.checked,
@@ -187,21 +197,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { userId } = get();
     if (!userId) return () => {};
 
+    const handleRealtimeChange = () => {
+      // Skip refetch if we just made a local mutation (prevents flash)
+      if (isInLocalCooldown()) return;
+      clearTimeout((window as any).__syncTimer);
+      (window as any).__syncTimer = setTimeout(() => {
+        if (!isInLocalCooldown()) get().refetch();
+      }, 1000);
+    };
+
     const channel = supabase
       .channel('sync-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks' }, () => {
-        // Debounce refetch to avoid overwriting in-flight saves
-        clearTimeout((window as any).__syncTimer);
-        (window as any).__syncTimer = setTimeout(() => get().refetch(), 1000);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pages' }, () => {
-        clearTimeout((window as any).__syncTimer);
-        (window as any).__syncTimer = setTimeout(() => get().refetch(), 1000);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'collections' }, () => {
-        clearTimeout((window as any).__syncTimer);
-        (window as any).__syncTimer = setTimeout(() => get().refetch(), 1000);
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks' }, handleRealtimeChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pages' }, handleRealtimeChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collections' }, handleRealtimeChange)
       .subscribe();
 
     return () => {
@@ -321,6 +330,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const repositioned = updatedBlocks.map((b, i) => ({ ...b, position: i }));
 
       // Save to db
+      markLocalMutation();
       supabase.from('blocks').insert({ ...newBlock, position: insertIdx }).then(() => {
         // Update positions of shifted blocks
         repositioned.forEach((b) => {
@@ -355,7 +365,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteBlock: (pageId, blockId) => {
-    // Delete from DB first, then update local state
+    // Mark cooldown to prevent realtime refetch from flashing the deleted block
+    markLocalMutation();
     supabase.from('blocks').delete().eq('id', blockId).then(() => {
       // DB delete confirmed
     });
@@ -381,6 +392,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   changeBlockType: (pageId, blockId, type) => {
+    markLocalMutation();
     set((s) => ({
       blocks: s.blocks.map((b) =>
         b.id === blockId ? { ...b, type, checked: type === 'todo' ? false : b.checked } : b

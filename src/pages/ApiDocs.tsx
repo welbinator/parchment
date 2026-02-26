@@ -63,9 +63,16 @@ const ENDPOINTS: EndpointProps[] = [
   },
   {
     action: 'update_blocks',
-    description: 'Create or update blocks on a page.',
+    description: 'Create or update blocks on a page. Max 10KB per block.',
     permissions: ['can_write_blocks'],
     body: { page_id: 'uuid (required)', blocks: 'array of { id?, type, content, checked?, position }' },
+    response: `{ "success": true }`,
+  },
+  {
+    action: 'delete_block',
+    description: 'Delete a single block from a page.',
+    permissions: ['can_write_blocks'],
+    body: { page_id: 'uuid (required)', block_id: 'uuid (required)' },
     response: `{ "success": true }`,
   },
 ];
@@ -244,6 +251,8 @@ curl -s -X POST ${API_BASE} \\
                 <tr><td className="px-4 py-2 font-mono text-foreground">403</td><td className="px-4 py-2 text-muted-foreground">Key lacks required permission</td></tr>
                 <tr><td className="px-4 py-2 font-mono text-foreground">404</td><td className="px-4 py-2 text-muted-foreground">Resource not found or not owned by key holder</td></tr>
                 <tr><td className="px-4 py-2 font-mono text-foreground">400</td><td className="px-4 py-2 text-muted-foreground">Bad request or unknown action</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-foreground">413</td><td className="px-4 py-2 text-muted-foreground">Block content exceeds 10KB size limit</td></tr>
+                <tr><td className="px-4 py-2 font-mono text-foreground">429</td><td className="px-4 py-2 text-muted-foreground">Rate limit exceeded (60/min or 1000/day)</td></tr>
                 <tr><td className="px-4 py-2 font-mono text-foreground">500</td><td className="px-4 py-2 text-muted-foreground">Internal server error</td></tr>
               </tbody>
             </table>

@@ -35,12 +35,26 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Use service role for counting across all users
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
+    // Check for specific report request
+    let body: any = {}
+    try { body = await req.json() } catch { /* no body is fine */ }
+
+    if (body.report === 'users') {
+      const { data: users } = await supabase
+        .from('profiles')
+        .select('user_id, email, display_name, avatar_url, created_at')
+        .order('created_at', { ascending: false })
+      return new Response(JSON.stringify({ users: users ?? [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Default: summary counts
     const [usersRes, collectionsRes, pagesRes, apiKeysRes] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('collections').select('id', { count: 'exact', head: true }),

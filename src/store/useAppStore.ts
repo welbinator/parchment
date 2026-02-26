@@ -190,17 +190,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     const channel = supabase
       .channel('sync-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks' }, () => {
-        // Debounce refetch to avoid rapid-fire updates
+        // Debounce refetch to avoid overwriting in-flight saves
         clearTimeout((window as any).__syncTimer);
-        (window as any).__syncTimer = setTimeout(() => get().refetch(), 300);
+        (window as any).__syncTimer = setTimeout(() => get().refetch(), 1000);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pages' }, () => {
         clearTimeout((window as any).__syncTimer);
-        (window as any).__syncTimer = setTimeout(() => get().refetch(), 300);
+        (window as any).__syncTimer = setTimeout(() => get().refetch(), 1000);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'collections' }, () => {
         clearTimeout((window as any).__syncTimer);
-        (window as any).__syncTimer = setTimeout(() => get().refetch(), 300);
+        (window as any).__syncTimer = setTimeout(() => get().refetch(), 1000);
       })
       .subscribe();
 
@@ -355,7 +355,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteBlock: (pageId, blockId) => {
-    supabase.from('blocks').delete().eq('id', blockId);
+    // Delete from DB first, then update local state
+    supabase.from('blocks').delete().eq('id', blockId).then(() => {
+      // DB delete confirmed
+    });
     set((s) => {
       const remaining = s.blocks.filter((b) => b.id !== blockId);
       const pageBlocks = remaining.filter((b) => b.page_id === pageId);

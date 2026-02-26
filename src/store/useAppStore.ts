@@ -44,6 +44,8 @@ interface AppState {
 
   // Init
   init: (userId: string) => Promise<void>;
+  refetch: () => Promise<void>;
+  setupRealtime: () => () => void;
   reset: () => void;
 
   // UI
@@ -156,6 +158,55 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeCollectionId: collections[0]?.id ?? null,
       loading: false,
     });
+  },
+
+  refetch: async () => {
+    const { userId } = get();
+    if (!userId) return;
+
+    const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
+      supabase.from('collections').select('*').eq('user_id', userId).order('position'),
+      supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
+      supabase.from('blocks').select('*, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
+    ]);
+
+    const collections = (collectionsRes.data ?? []) as DbCollection[];
+    const pages = (pagesRes.data ?? []) as DbPage[];
+    const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
+
+    set((s) => ({
+      collections,
+      pages,
+      blocks,
+      activePageId: s.activePageId && pages.some((p) => p.id === s.activePageId) ? s.activePageId : (pages[0]?.id ?? null),
+      activeCollectionId: s.activeCollectionId && collections.some((c) => c.id === s.activeCollectionId) ? s.activeCollectionId : (collections[0]?.id ?? null),
+    }));
+  },
+
+  setupRealtime: () => {
+    const { userId } = get();
+    if (!userId) return () => {};
+
+    const channel = supabase
+      .channel('sync-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks' }, () => {
+        // Debounce refetch to avoid rapid-fire updates
+        clearTimeout((window as any).__syncTimer);
+        (window as any).__syncTimer = setTimeout(() => get().refetch(), 300);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pages' }, () => {
+        clearTimeout((window as any).__syncTimer);
+        (window as any).__syncTimer = setTimeout(() => get().refetch(), 300);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'collections' }, () => {
+        clearTimeout((window as any).__syncTimer);
+        (window as any).__syncTimer = setTimeout(() => get().refetch(), 300);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   },
 
   reset: () => set({

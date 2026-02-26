@@ -25,6 +25,40 @@
 
   <body>
     <div id="root"></div>
+    <noscript>
+      <article id="api-docs-crawlable" aria-label="Parchment API Documentation">
+# Parchment API
+Programmatically manage your collections, pages, and blocks.
+
+## Base URL
+https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api
+
+## Authentication
+All requests require header: x-api-key
+
+## Rate limits
+- 60 requests/minute per API key
+- 1000 requests/day per API key
+- 10KB max block content
+
+## Actions
+- list_collections
+- create_collection
+- delete_collection
+- list_pages
+- create_page
+- delete_page
+- get_page
+- update_blocks
+- delete_block
+
+## delete_block example
+curl -X POST https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"delete_block","page_id":"<page_id>","block_id":"<block_id>"}'
+      </article>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

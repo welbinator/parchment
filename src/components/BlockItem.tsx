@@ -114,6 +114,13 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       return;
     }
 
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      const newId = addBlock(pageId, block.id, 'text');
+      onNewBlock(newId);
+      return;
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       const newType: BlockType = block.type === 'todo' ? 'todo' : block.type === 'bullet_list' ? 'bullet_list' : block.type === 'numbered_list' ? 'numbered_list' : 'text';

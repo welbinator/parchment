@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import BlockItem from './BlockItem';
+import UserMenu from './UserMenu';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 export default function PageEditor() {
@@ -52,6 +53,7 @@ export default function PageEditor() {
         </div>
         <div className="flex-1" />
         <span className="text-xs text-muted-foreground font-mono capitalize">{page.type}</span>
+        <UserMenu />
       </div>
 
       {/* Editor area */}

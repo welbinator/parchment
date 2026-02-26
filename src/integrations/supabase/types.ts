@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          can_create_collections: boolean
+          can_create_pages: boolean
+          can_delete_collections: boolean
+          can_delete_pages: boolean
+          can_read_pages: boolean
+          can_write_blocks: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          revoked: boolean
+          user_id: string
+        }
+        Insert: {
+          can_create_collections?: boolean
+          can_create_pages?: boolean
+          can_delete_collections?: boolean
+          can_delete_pages?: boolean
+          can_read_pages?: boolean
+          can_write_blocks?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name?: string
+          revoked?: boolean
+          user_id: string
+        }
+        Update: {
+          can_create_collections?: boolean
+          can_create_pages?: boolean
+          can_delete_collections?: boolean
+          can_delete_pages?: boolean
+          can_read_pages?: boolean
+          can_write_blocks?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          revoked?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       blocks: {
         Row: {
           checked: boolean | null
@@ -155,7 +209,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      validate_api_key: { Args: { p_key: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never

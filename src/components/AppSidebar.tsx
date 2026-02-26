@@ -10,9 +10,7 @@ import {
   Map,
   File,
   FileText,
-  LogOut,
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import type { PageType } from '@/types';
 
 const pageTypeIcons: Record<string, React.ReactNode> = {
@@ -37,7 +35,7 @@ export default function AppSidebar() {
     deleteCollection,
     deletePage,
   } = useAppStore();
-  const { signOut, user } = useAuth();
+  
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
     new Set(collections.map((c) => c.id))
@@ -184,13 +182,6 @@ export default function AppSidebar() {
         >
           <Plus size={14} />
           New Collection
-        </button>
-        <button
-          onClick={signOut}
-          className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors"
-        >
-          <LogOut size={14} />
-          Sign Out
         </button>
       </div>
     </aside>

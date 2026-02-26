@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { useAppStore } from '@/store/useAppStore';
 import Index from "./pages/Index";
 import AuthPage from "./pages/Auth";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from 'lucide-react';
 
@@ -60,6 +61,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

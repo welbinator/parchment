@@ -1,0 +1,160 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const apiKey = req.headers.get('x-api-key')
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'Missing x-api-key header' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    // Validate key
+    const { data: validation, error: valError } = await supabase.rpc('validate_api_key', { p_key: apiKey })
+    if (valError || !validation?.valid) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired API key' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const userId = validation.user_id
+    const permissions = {
+      can_create_collections: validation.can_create_collections,
+      can_delete_collections: validation.can_delete_collections,
+      can_create_pages: validation.can_create_pages,
+      can_delete_pages: validation.can_delete_pages,
+      can_read_pages: validation.can_read_pages,
+      can_write_blocks: validation.can_write_blocks,
+    }
+
+    const body = await req.json()
+    const { action } = body
+
+    // Route actions
+    switch (action) {
+      case 'list_collections': {
+        if (!permissions.can_read_pages) return deny(corsHeaders)
+        const { data } = await supabase.from('collections').select('id, name, icon, position, created_at').eq('user_id', userId).order('position')
+        return json({ collections: data }, corsHeaders)
+      }
+
+      case 'create_collection': {
+        if (!permissions.can_create_collections) return deny(corsHeaders)
+        const { name } = body
+        const { data: existing } = await supabase.from('collections').select('position').eq('user_id', userId).order('position', { ascending: false }).limit(1)
+        const position = (existing?.[0]?.position ?? -1) + 1
+        const { data, error } = await supabase.from('collections').insert({ user_id: userId, name: name || 'Untitled', position }).select().single()
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ collection: data }, corsHeaders)
+      }
+
+      case 'delete_collection': {
+        if (!permissions.can_delete_collections) return deny(corsHeaders)
+        const { collection_id } = body
+        // Verify ownership
+        const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
+        if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
+        const { error } = await supabase.from('collections').delete().eq('id', collection_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
+      }
+
+      case 'list_pages': {
+        if (!permissions.can_read_pages) return deny(corsHeaders)
+        const { collection_id } = body
+        let query = supabase.from('pages').select('id, title, type, collection_id, created_at, updated_at').eq('user_id', userId)
+        if (collection_id) query = query.eq('collection_id', collection_id)
+        const { data } = await query.order('created_at')
+        return json({ pages: data }, corsHeaders)
+      }
+
+      case 'create_page': {
+        if (!permissions.can_create_pages) return deny(corsHeaders)
+        const { collection_id, title, type } = body
+        // Verify collection ownership
+        const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
+        if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
+        const { data: page, error } = await supabase.from('pages').insert({
+          user_id: userId, collection_id, title: title || 'Untitled', type: type || 'blank',
+        }).select().single()
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        // Create default block
+        await supabase.from('blocks').insert({ page_id: page.id, type: 'text', content: '', position: 0 })
+        return json({ page }, corsHeaders)
+      }
+
+      case 'delete_page': {
+        if (!permissions.can_delete_pages) return deny(corsHeaders)
+        const { page_id } = body
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+        const { error } = await supabase.from('pages').delete().eq('id', page_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
+      }
+
+      case 'get_page': {
+        if (!permissions.can_read_pages) return deny(corsHeaders)
+        const { page_id } = body
+        const { data: page } = await supabase.from('pages').select('*').eq('id', page_id).eq('user_id', userId).single()
+        if (!page) return json({ error: 'Page not found' }, corsHeaders, 404)
+        const { data: pageBlocks } = await supabase.from('blocks').select('*').eq('page_id', page_id).order('position')
+        return json({ page, blocks: pageBlocks }, corsHeaders)
+      }
+
+      case 'update_blocks': {
+        if (!permissions.can_write_blocks) return deny(corsHeaders)
+        const { page_id, blocks } = body
+        // Verify page ownership
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+        // Upsert blocks
+        for (const block of blocks) {
+          await supabase.from('blocks').upsert({
+            id: block.id || undefined,
+            page_id,
+            type: block.type || 'text',
+            content: block.content || '',
+            checked: block.checked ?? null,
+            position: block.position ?? 0,
+          })
+        }
+        return json({ success: true }, corsHeaders)
+      }
+
+      default:
+        return json({ error: `Unknown action: ${action}`, available_actions: [
+          'list_collections', 'create_collection', 'delete_collection',
+          'list_pages', 'create_page', 'delete_page', 'get_page', 'update_blocks',
+        ]}, corsHeaders, 400)
+    }
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+})
+
+function json(data: any, headers: Record<string, string>, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status, headers: { ...headers, 'Content-Type': 'application/json' },
+  })
+}
+
+function deny(headers: Record<string, string>) {
+  return json({ error: 'Permission denied for this API key' }, headers, 403)
+}

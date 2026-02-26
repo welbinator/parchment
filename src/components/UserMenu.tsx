@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Settings, LogOut, User } from 'lucide-react';
+import { Settings, LogOut, User, BookOpen } from 'lucide-react';
 
 export default function UserMenu() {
   const { user, signOut } = useAuth();
@@ -41,6 +41,13 @@ export default function UserMenu() {
           >
             <Settings size={14} />
             Settings
+          </button>
+          <button
+            onClick={() => { setOpen(false); navigate('/docs/api'); }}
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+          >
+            <BookOpen size={14} />
+            API Docs
           </button>
           <button
             onClick={() => { setOpen(false); signOut(); }}

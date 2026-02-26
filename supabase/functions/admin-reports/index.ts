@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('collections').select('id', { count: 'exact', head: true }),
       supabase.from('pages').select('id', { count: 'exact', head: true }),
-      supabase.from('api_keys').select('id', { count: 'exact', head: true }),
+      supabase.from('api_keys').select('id', { count: 'exact', head: true }).eq('revoked', false),
     ])
 
     return new Response(JSON.stringify({

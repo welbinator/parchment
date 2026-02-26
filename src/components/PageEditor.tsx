@@ -1,13 +1,17 @@
-import { useState, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import BlockItem from './BlockItem';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 export default function PageEditor() {
-  const { pages, activePageId, updatePageTitle, addBlock, sidebarOpen, setSidebarOpen } = useAppStore();
+  const { pages, blocks, activePageId, updatePageTitle, addBlock, sidebarOpen, setSidebarOpen } = useAppStore();
   const page = pages.find((p) => p.id === activePageId);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
-  const titleRef = useRef<HTMLInputElement>(null);
+
+  const pageBlocks = useMemo(() => {
+    if (!page) return [];
+    return blocks.filter((b) => b.page_id === page.id).sort((a, b) => a.position - b.position);
+  }, [blocks, page]);
 
   if (!page) {
     return (
@@ -22,12 +26,12 @@ export default function PageEditor() {
   }
 
   const handleAddBlock = () => {
-    const lastBlock = page.blocks[page.blocks.length - 1];
+    const lastBlock = pageBlocks[pageBlocks.length - 1];
     const newId = addBlock(page.id, lastBlock?.id ?? null);
     setFocusBlockId(newId);
   };
 
-  const updated = new Date(page.updatedAt);
+  const updated = new Date(page.updated_at);
   const timeStr = updated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
@@ -53,39 +57,35 @@ export default function PageEditor() {
       {/* Editor area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-12">
-          {/* Page title */}
           <input
-            ref={titleRef}
             value={page.title}
             onChange={(e) => updatePageTitle(page.id, e.target.value)}
             placeholder="Untitled"
             className="w-full text-4xl font-bold font-display bg-transparent outline-none text-foreground placeholder:text-muted-foreground/40 mb-8"
           />
 
-          {/* Blocks */}
           <div className="space-y-3">
-            {page.blocks.map((block, index) => {
-              // Calculate numbered list index, resetting at listStart or non-numbered blocks
+            {pageBlocks.map((block, index) => {
               let listIndex = 0;
               if (block.type === 'numbered_list') {
-                let count = 0;
-                for (let i = index - 1; i >= 0; i--) {
-                  if (page.blocks[i].type !== 'numbered_list' || page.blocks[i + 1]?.listStart) break;
-                  count++;
-                }
-                // Check if current block itself is a listStart
-                if (block.listStart) {
+                if (block.list_start) {
                   listIndex = 0;
                 } else {
                   let start = index;
-                  while (start > 0 && page.blocks[start - 1].type === 'numbered_list' && !page.blocks[start].listStart) start--;
+                  while (start > 0 && pageBlocks[start - 1].type === 'numbered_list' && !pageBlocks[start].list_start) start--;
                   listIndex = index - start;
                 }
               }
               return (
                 <BlockItem
                   key={block.id}
-                  block={block}
+                  block={{
+                    id: block.id,
+                    type: block.type as any,
+                    content: block.content,
+                    checked: block.checked ?? undefined,
+                    listStart: block.list_start ?? undefined,
+                  }}
                   pageId={page.id}
                   listIndex={listIndex}
                   focusBlockId={focusBlockId}
@@ -96,7 +96,6 @@ export default function PageEditor() {
             })}
           </div>
 
-          {/* Add block button */}
           <button
             onClick={handleAddBlock}
             className="flex items-center gap-2 mt-4 px-2 py-2 text-sm text-muted-foreground/50 hover:text-muted-foreground rounded-md transition-colors"

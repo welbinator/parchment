@@ -96,7 +96,8 @@ function markLocalMutation() {
   localMutationCooldown = Date.now() + 2000; // suppress refetch for 2s after local mutation
 }
 function isInLocalCooldown() {
-  return Date.now() < localMutationCooldown;
+  // Also consider pending if any block save timers are active
+  return Date.now() < localMutationCooldown || blockSaveTimers.size > 0;
 }
 
 function debounceSaveBlock(block: DbBlock) {

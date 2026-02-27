@@ -23,6 +23,10 @@ export default function FloatingToolbar({ containerRef, onContentChange }: Float
   const [showColors, setShowColors] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
+  const isTouchDevice = useCallback(() => {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  }, []);
+
   const updatePosition = useCallback(() => {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || !selection.rangeCount) {
@@ -42,12 +46,16 @@ export default function FloatingToolbar({ containerRef, onContentChange }: Float
     const rect = range.getBoundingClientRect();
     const containerRect = containerRef.current.getBoundingClientRect();
 
+    const isTouch = isTouchDevice();
     setPosition({
-      top: rect.top - containerRect.top - 44,
+      // On touch devices, show below selection to avoid native context menu
+      top: isTouch
+        ? rect.bottom - containerRect.top + 8
+        : rect.top - containerRect.top - 44,
       left: rect.left - containerRect.left + rect.width / 2,
     });
     setVisible(true);
-  }, [containerRef]);
+  }, [containerRef, isTouchDevice]);
 
   useEffect(() => {
     document.addEventListener('selectionchange', updatePosition);

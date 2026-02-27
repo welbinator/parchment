@@ -5,6 +5,7 @@ import { useState } from 'react';
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
   { label: 'API', href: '/docs/api' },
+  { label: 'Changelog', href: '/changelog' },
 ];
 
 function Navbar() {
@@ -175,6 +176,9 @@ export default function Landing() {
         <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">© {new Date().getFullYear()} Parchment</span>
           <div className="flex gap-6">
+            <Link to="/changelog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Changelog
+            </Link>
             <Link to="/docs/api" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               API Docs
             </Link>

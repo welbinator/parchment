@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
+import EditableName from './EditableName';
 import {
   Plus,
   ChevronRight,
@@ -36,6 +37,8 @@ export default function AppSidebar() {
     addPage,
     deleteCollection,
     deletePage,
+    renameCollection,
+    updatePageTitle,
     trashedPages,
     trashedCollections,
   } = useAppStore();
@@ -110,7 +113,11 @@ export default function AppSidebar() {
                   className={`transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
                 />
                 <FolderOpen size={14} className="shrink-0 text-primary/70" />
-                <span className="text-sm truncate flex-1">{collection.name}</span>
+                <EditableName
+                  value={collection.name}
+                  onSave={(name) => renameCollection(collection.id, name)}
+                  className="text-sm"
+                />
                 <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => {
@@ -164,7 +171,11 @@ export default function AppSidebar() {
                       }`}
                     >
                       {pageTypeIcons[page.type] || pageTypeIcons.blank}
-                      <span className="truncate flex-1 text-left">{page.title}</span>
+                      <EditableName
+                        value={page.title}
+                        onSave={(title) => updatePageTitle(page.id, title)}
+                        className="text-left"
+                      />
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

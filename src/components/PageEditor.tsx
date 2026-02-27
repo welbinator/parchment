@@ -1,13 +1,28 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import BlockItem from './BlockItem';
 import UserMenu from './UserMenu';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 export default function PageEditor() {
-  const { pages, blocks, activePageId, updatePageTitle, addBlock, sidebarOpen, setSidebarOpen } = useAppStore();
+  const { pages, blocks, activePageId, updatePageTitle, addBlock, sidebarOpen, setSidebarOpen, undoDeleteBlock, lastDeletedBlock } = useAppStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
+
+  // Ctrl+Z to undo block deletion
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        const store = useAppStore.getState();
+        if (store.lastDeletedBlock) {
+          e.preventDefault();
+          store.undoDeleteBlock();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const pageBlocks = useMemo(() => {
     if (!page) return [];

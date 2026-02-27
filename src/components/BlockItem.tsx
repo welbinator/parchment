@@ -207,13 +207,15 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     }
   };
 
-  // Intercept link clicks to open in new tab instead of navigating inside editor
+  // Only open links on Ctrl+click / Cmd+click
   const handleClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'A') {
-      e.preventDefault();
-      const href = (target as HTMLAnchorElement).href;
-      if (href) window.open(href, '_blank', 'noopener,noreferrer');
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const href = (target as HTMLAnchorElement).href;
+        if (href) window.open(href, '_blank', 'noopener,noreferrer');
+      }
     }
   };
 

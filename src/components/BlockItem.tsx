@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback, KeyboardEvent } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
 import {
   GripVertical,
@@ -39,11 +40,22 @@ interface BlockItemProps {
 }
 
 export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock }: BlockItemProps) {
-  const { updateBlock, deleteBlock, addBlock, changeBlockType } = useAppStore();
+  const { updateBlock, deleteBlock, addBlock, changeBlockType, undoDeleteBlock } = useAppStore();
   const ref = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
+
+  const handleDeleteBlock = useCallback(() => {
+    deleteBlock(pageId, block.id);
+    toast('Block deleted', {
+      action: {
+        label: 'Undo',
+        onClick: () => undoDeleteBlock(),
+      },
+      duration: 5000,
+    });
+  }, [deleteBlock, undoDeleteBlock, pageId, block.id]);
 
   // Set initial content only once on mount or when block type changes
   useEffect(() => {
@@ -130,7 +142,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
 
     if (e.key === 'Backspace' && ref.current?.innerText === '') {
       e.preventDefault();
-      deleteBlock(pageId, block.id);
+      handleDeleteBlock();
     }
   };
 
@@ -147,7 +159,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       <div className="group flex items-center py-2">
         <div className="flex-1 border-t border-border" />
         <button
-          onClick={() => deleteBlock(pageId, block.id)}
+          onClick={handleDeleteBlock}
           className="ml-2 p-0.5 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
         >
           <Trash2 size={12} />
@@ -217,7 +229,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
 
       {/* Delete */}
       <button
-        onClick={() => deleteBlock(pageId, block.id)}
+        onClick={handleDeleteBlock}
         className="pt-1 p-0.5 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all shrink-0"
       >
         <Trash2 size={12} />

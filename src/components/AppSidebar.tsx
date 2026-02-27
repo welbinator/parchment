@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
 import {
   Plus,
@@ -10,6 +11,7 @@ import {
   Map,
   File,
   FileText,
+  Archive,
 } from 'lucide-react';
 import type { PageType } from '@/types';
 
@@ -34,8 +36,15 @@ export default function AppSidebar() {
     addPage,
     deleteCollection,
     deletePage,
+    trashedPages,
+    trashedCollections,
   } = useAppStore();
-  
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const activeCollections = collections.filter((c) => !c.deleted_at);
+  const activePages = pages.filter((p) => !p.deleted_at);
+  const trashCount = trashedPages().length + trashedCollections().length;
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
     new Set(collections.map((c) => c.id))
@@ -79,9 +88,9 @@ export default function AppSidebar() {
 
       {/* Collections */}
       <div className="flex-1 overflow-y-auto py-2">
-        {collections.map((collection) => {
+        {activeCollections.map((collection) => {
           const isExpanded = expandedCollections.has(collection.id);
-          const collectionPages = pages.filter((p) => p.collection_id === collection.id);
+          const collectionPages = activePages.filter((p) => p.collection_id === collection.id);
 
           return (
             <div key={collection.id} className="animate-fade-in">
@@ -176,6 +185,22 @@ export default function AppSidebar() {
 
       {/* Footer */}
       <div className="p-2 border-t border-sidebar-border space-y-1">
+        <button
+          onClick={() => navigate('/app/trash')}
+          className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm transition-colors ${
+            location.pathname === '/app/trash'
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent'
+          }`}
+        >
+          <Archive size={14} />
+          Trash
+          {trashCount > 0 && (
+            <span className="ml-auto text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
+              {trashCount}
+            </span>
+          )}
+        </button>
         <button
           onClick={handleAddCollection}
           className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"

@@ -6,7 +6,7 @@ import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 export default function PageEditor() {
   const { pages, blocks, activePageId, updatePageTitle, addBlock, sidebarOpen, setSidebarOpen } = useAppStore();
-  const page = pages.find((p) => p.id === activePageId);
+  const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
 
   const pageBlocks = useMemo(() => {

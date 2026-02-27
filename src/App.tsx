@@ -11,6 +11,7 @@ import Landing from "./pages/Landing";
 import AuthPage from "./pages/Auth";
 import Settings from "./pages/Settings";
 import ApiDocs from "./pages/ApiDocs";
+import Changelog from "./pages/Changelog";
 import Reports from "./pages/Reports";
 import Trash from "./pages/Trash";
 import NotFound from "./pages/NotFound";
@@ -109,6 +110,7 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/docs/api" element={<ApiDocs />} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/changelog" element={<Changelog />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

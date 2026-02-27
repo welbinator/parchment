@@ -13,6 +13,29 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.1.0',
+    date: '2026-02-27',
+    title: 'Rich Text & Links',
+    changes: [
+      {
+        type: 'feature',
+        description: 'Inline formatting toolbar — select text to bold, italicize, strikethrough, change color, or turn it into a link.',
+      },
+      {
+        type: 'feature',
+        description: 'Auto-linkify — URLs typed into blocks automatically become clickable links when you leave the block.',
+      },
+      {
+        type: 'feature',
+        description: 'Ctrl+click (Cmd+click on Mac) to open links — regular clicks place the cursor for editing.',
+      },
+      {
+        type: 'improvement',
+        description: 'Mobile-friendly toolbar positioning — on touch devices the toolbar appears below the selection to avoid clashing with native OS menus.',
+      },
+    ],
+  },
+  {
     version: '1.0.2',
     date: '2026-02-27',
     title: 'Keyboard Undo for Blocks',

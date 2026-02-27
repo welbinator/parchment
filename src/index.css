@@ -101,11 +101,11 @@
 
 /* Rich text editor link styles */
 [contenteditable] a {
-  color: hsl(168 65% 48%);
+  color: hsl(210 70% 55%);
   text-decoration: underline;
   text-underline-offset: 2px;
-  cursor: pointer;
+  cursor: text;
 }
 [contenteditable] a:hover {
-  color: hsl(168 65% 58%);
+  color: hsl(210 70% 65%);
 }

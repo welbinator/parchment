@@ -16,6 +16,24 @@ export default function EditableName({ value, onSave, className = '' }: Editable
     if (editing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
+
+      // On mobile, tapping elsewhere may not fire blur reliably.
+      // Listen for any touch/click outside to close.
+      const handleOutsideInteraction = (e: Event) => {
+        if (inputRef.current && !inputRef.current.contains(e.target as Node)) {
+          inputRef.current.blur();
+        }
+      };
+      // Use a small delay so the opening touch doesn't immediately close it
+      const timer = setTimeout(() => {
+        document.addEventListener('touchstart', handleOutsideInteraction, true);
+        document.addEventListener('mousedown', handleOutsideInteraction, true);
+      }, 100);
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('touchstart', handleOutsideInteraction, true);
+        document.removeEventListener('mousedown', handleOutsideInteraction, true);
+      };
     }
   }, [editing]);
 

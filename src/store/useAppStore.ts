@@ -9,6 +9,7 @@ interface DbCollection {
   position: number;
   created_at: string;
   user_id: string;
+  deleted_at: string | null;
 }
 
 interface DbPage {
@@ -19,6 +20,7 @@ interface DbPage {
   created_at: string;
   updated_at: string;
   user_id: string;
+  deleted_at: string | null;
 }
 
 interface DbBlock {
@@ -41,6 +43,7 @@ interface AppState {
   sidebarOpen: boolean;
   loading: boolean;
   userId: string | null;
+  lastDeletedBlock: { block: DbBlock; pageId: string } | null;
 
   // Init
   init: (userId: string) => Promise<void>;
@@ -67,7 +70,17 @@ interface AppState {
   addBlock: (pageId: string, afterBlockId: string | null, type?: BlockType) => string;
   updateBlock: (pageId: string, blockId: string, updates: Partial<Block>) => void;
   deleteBlock: (pageId: string, blockId: string) => void;
+  undoDeleteBlock: () => void;
   changeBlockType: (pageId: string, blockId: string, type: BlockType) => void;
+
+  // Trash
+  trashedPages: () => DbPage[];
+  trashedCollections: () => DbCollection[];
+  restorePage: (id: string) => Promise<void>;
+  restoreCollection: (id: string) => Promise<void>;
+  permanentlyDeletePage: (id: string) => Promise<void>;
+  permanentlyDeleteCollection: (id: string) => Promise<void>;
+  emptyTrash: () => Promise<void>;
 }
 
 function uid() {
@@ -114,6 +127,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   sidebarOpen: true,
   loading: true,
   userId: null,
+  lastDeletedBlock: null,
 
   init: async (userId: string) => {
     set({ loading: true, userId });
@@ -226,6 +240,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     activeCollectionId: null,
     loading: false,
     userId: null,
+    lastDeletedBlock: null,
   }),
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -250,14 +265,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteCollection: async (id) => {
-    await supabase.from('collections').delete().eq('id', id);
+    const now = new Date().toISOString();
+    markLocalMutation();
+    await supabase.from('collections').update({ deleted_at: now }).eq('id', id);
+    // Also soft-delete pages in this collection
+    await supabase.from('pages').update({ deleted_at: now }).match({ collection_id: id, deleted_at: null });
     set((s) => ({
-      collections: s.collections.filter((c) => c.id !== id),
-      pages: s.pages.filter((p) => p.collection_id !== id),
-      blocks: s.blocks.filter((b) => {
-        const pageIds = s.pages.filter((p) => p.collection_id === id).map((p) => p.id);
-        return !pageIds.includes(b.page_id);
-      }),
+      collections: s.collections.map((c) => c.id === id ? { ...c, deleted_at: now } : c),
+      pages: s.pages.map((p) => p.collection_id === id ? { ...p, deleted_at: now } : p),
       activeCollectionId: s.activeCollectionId === id ? null : s.activeCollectionId,
       activePageId: s.pages.find((p) => p.id === s.activePageId)?.collection_id === id ? null : s.activePageId,
     }));
@@ -292,13 +307,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deletePage: async (id) => {
-    await supabase.from('pages').delete().eq('id', id);
+    const now = new Date().toISOString();
+    markLocalMutation();
+    await supabase.from('pages').update({ deleted_at: now }).eq('id', id);
     set((s) => {
-      const remaining = s.pages.filter((p) => p.id !== id);
+      const activePages = s.pages.filter((p) => p.id !== id && !p.deleted_at);
       return {
-        pages: remaining,
-        blocks: s.blocks.filter((b) => b.page_id !== id),
-        activePageId: s.activePageId === id ? (remaining[0]?.id ?? null) : s.activePageId,
+        pages: s.pages.map((p) => p.id === id ? { ...p, deleted_at: now } : p),
+        activePageId: s.activePageId === id ? (activePages[0]?.id ?? null) : s.activePageId,
       };
     });
   },
@@ -365,14 +381,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   deleteBlock: (pageId, blockId) => {
-    // Mark cooldown to prevent realtime refetch from flashing the deleted block
+    const deletedBlock = get().blocks.find((b) => b.id === blockId);
     markLocalMutation();
-    supabase.from('blocks').delete().eq('id', blockId).then(() => {
-      // DB delete confirmed
-    });
+    supabase.from('blocks').delete().eq('id', blockId);
     set((s) => {
       const remaining = s.blocks.filter((b) => b.id !== blockId);
       const pageBlocks = remaining.filter((b) => b.page_id === pageId);
+      const newState: Partial<AppState> = {
+        blocks: remaining,
+        lastDeletedBlock: deletedBlock ? { block: deletedBlock, pageId } : null,
+      };
       if (pageBlocks.length === 0) {
         const newBlock: DbBlock = {
           id: uid(),
@@ -385,10 +403,30 @@ export const useAppStore = create<AppState>((set, get) => ({
           created_at: new Date().toISOString(),
         };
         supabase.from('blocks').insert(newBlock);
-        return { blocks: [...remaining, newBlock] };
+        newState.blocks = [...remaining, newBlock];
       }
-      return { blocks: remaining };
+      return newState as any;
     });
+  },
+
+  undoDeleteBlock: () => {
+    const { lastDeletedBlock } = get();
+    if (!lastDeletedBlock) return;
+    const { block } = lastDeletedBlock;
+    markLocalMutation();
+    supabase.from('blocks').insert({
+      id: block.id,
+      page_id: block.page_id,
+      type: block.type,
+      content: block.content,
+      checked: block.checked,
+      list_start: block.list_start,
+      position: block.position,
+    });
+    set((s) => ({
+      blocks: [...s.blocks, block],
+      lastDeletedBlock: null,
+    }));
   },
 
   changeBlockType: (pageId, blockId, type) => {
@@ -399,5 +437,68 @@ export const useAppStore = create<AppState>((set, get) => ({
       ),
     }));
     supabase.from('blocks').update({ type, checked: type === 'todo' ? false : null }).eq('id', blockId);
+  },
+
+  // Trash methods
+  trashedPages: () => get().pages.filter((p) => p.deleted_at !== null),
+  trashedCollections: () => get().collections.filter((c) => c.deleted_at !== null),
+
+  restorePage: async (id) => {
+    markLocalMutation();
+    await supabase.from('pages').update({ deleted_at: null }).eq('id', id);
+    set((s) => ({
+      pages: s.pages.map((p) => p.id === id ? { ...p, deleted_at: null } : p),
+    }));
+  },
+
+  restoreCollection: async (id) => {
+    markLocalMutation();
+    await supabase.from('collections').update({ deleted_at: null }).eq('id', id);
+    // Also restore pages that were soft-deleted with this collection
+    await supabase.from('pages').update({ deleted_at: null }).eq('collection_id', id);
+    set((s) => ({
+      collections: s.collections.map((c) => c.id === id ? { ...c, deleted_at: null } : c),
+      pages: s.pages.map((p) => p.collection_id === id ? { ...p, deleted_at: null } : p),
+    }));
+  },
+
+  permanentlyDeletePage: async (id) => {
+    markLocalMutation();
+    await supabase.from('pages').delete().eq('id', id);
+    set((s) => ({
+      pages: s.pages.filter((p) => p.id !== id),
+      blocks: s.blocks.filter((b) => b.page_id !== id),
+    }));
+  },
+
+  permanentlyDeleteCollection: async (id) => {
+    markLocalMutation();
+    const pageIds = get().pages.filter((p) => p.collection_id === id).map((p) => p.id);
+    await supabase.from('collections').delete().eq('id', id);
+    set((s) => ({
+      collections: s.collections.filter((c) => c.id !== id),
+      pages: s.pages.filter((p) => p.collection_id !== id),
+      blocks: s.blocks.filter((b) => !pageIds.includes(b.page_id)),
+    }));
+  },
+
+  emptyTrash: async () => {
+    const { trashedPages, trashedCollections } = get();
+    const deletedPages = trashedPages();
+    const deletedCollections = trashedCollections();
+    markLocalMutation();
+    for (const p of deletedPages) {
+      await supabase.from('pages').delete().eq('id', p.id);
+    }
+    for (const c of deletedCollections) {
+      await supabase.from('collections').delete().eq('id', c.id);
+    }
+    const deletedPageIds = deletedPages.map((p) => p.id);
+    const deletedColIds = deletedCollections.map((c) => c.id);
+    set((s) => ({
+      pages: s.pages.filter((p) => !deletedPageIds.includes(p.id)),
+      collections: s.collections.filter((c) => !deletedColIds.includes(c.id)),
+      blocks: s.blocks.filter((b) => !deletedPageIds.includes(b.page_id)),
+    }));
   },
 }));

@@ -13,6 +13,17 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.0.2',
+    date: '2026-02-27',
+    title: 'Keyboard Undo for Blocks',
+    changes: [
+      {
+        type: 'feature',
+        description: 'Ctrl+Z / Cmd+Z now undoes the last block deletion — no need to click the toast, just press undo like you normally would.',
+      },
+    ],
+  },
+  {
     version: '1.0.1',
     date: '2026-02-27',
     title: 'Trash & Recovery',

@@ -13,6 +13,21 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.2.0',
+    date: '2026-02-27',
+    title: 'Inline Rename',
+    changes: [
+      {
+        type: 'feature',
+        description: 'Double-click (or long-press on mobile) any page or collection name in the sidebar to rename it inline.',
+      },
+      {
+        type: 'fix',
+        description: 'Fixed an issue on mobile where tapping outside the rename input wouldn\'t exit edit mode.',
+      },
+    ],
+  },
+  {
     version: '1.1.0',
     date: '2026-02-27',
     title: 'Rich Text & Links',

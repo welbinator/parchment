@@ -153,7 +153,10 @@ export default function AppSidebar() {
                   {collectionPages.map((page) => (
                     <button
                       key={page.id}
-                      onClick={() => setActivePage(page.id)}
+                      onClick={() => {
+                        setActivePage(page.id);
+                        if (location.pathname !== '/app') navigate('/app');
+                      }}
                       className={`group flex items-center gap-2 w-full px-3 py-1.5 mx-1 rounded-md text-sm transition-colors ${
                         activePageId === page.id
                           ? 'bg-primary/10 text-primary'

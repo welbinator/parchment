@@ -50,7 +50,7 @@ export default function FloatingToolbar({ containerRef, onContentChange }: Float
     setPosition({
       // On touch devices, show below selection to avoid native context menu
       top: isTouch
-        ? rect.bottom - containerRect.top + 8
+        ? rect.bottom - containerRect.top + 28
         : rect.top - containerRect.top - 44,
       left: rect.left - containerRect.left + rect.width / 2,
     });

@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback, KeyboardEvent } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
+import FloatingToolbar from './FloatingToolbar';
 import {
   GripVertical,
   Trash2,
@@ -30,6 +31,31 @@ const blockTypeOptions: { type: BlockType; label: string; icon: React.ReactNode 
   { type: 'code', label: 'Code', icon: <Code size={14} /> },
 ];
 
+// URL regex for auto-linkify
+const URL_REGEX = /(?<!\S)(https?:\/\/[^\s<]+[^\s<.,;:!?)"'\]])/g;
+
+function autoLinkify(html: string): string {
+  // Don't linkify inside existing anchor tags
+  const parts: string[] = [];
+  let lastIndex = 0;
+  const tagRegex = /<a\b[^>]*>[\s\S]*?<\/a>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagRegex.exec(html)) !== null) {
+    // Process text before this anchor
+    const before = html.slice(lastIndex, match.index);
+    parts.push(before.replace(URL_REGEX, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'));
+    // Keep anchor as-is
+    parts.push(match[0]);
+    lastIndex = match.index + match[0].length;
+  }
+  // Process remaining text
+  const remaining = html.slice(lastIndex);
+  parts.push(remaining.replace(URL_REGEX, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'));
+
+  return parts.join('');
+}
+
 interface BlockItemProps {
   block: Block;
   pageId: string;
@@ -42,6 +68,7 @@ interface BlockItemProps {
 export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock }: BlockItemProps) {
   const { updateBlock, deleteBlock, addBlock, changeBlockType, undoDeleteBlock } = useAppStore();
   const ref = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
@@ -57,10 +84,10 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     });
   }, [deleteBlock, undoDeleteBlock, pageId, block.id]);
 
-  // Set initial content only once on mount or when block type changes
+  // Set initial content only once on mount
   useEffect(() => {
     if (ref.current && !initializedRef.current) {
-      ref.current.innerText = block.content;
+      ref.current.innerHTML = block.content;
       initializedRef.current = true;
     }
   }, []);
@@ -68,7 +95,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   // Sync content when block type changes (slash command)
   useEffect(() => {
     if (ref.current) {
-      ref.current.innerText = block.content;
+      ref.current.innerHTML = block.content;
     }
   }, [block.type]);
 
@@ -85,6 +112,11 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       onFocusHandled();
     }
   }, [focusBlockId, block.id, onFocusHandled]);
+
+  const getContentForStore = (): string => {
+    if (!ref.current) return '';
+    return ref.current.innerHTML;
+  };
 
   const handleInput = () => {
     if (!ref.current) return;
@@ -104,10 +136,39 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       setShowSlashMenu(false);
     }
 
-    updateBlock(pageId, block.id, { content: text });
+    updateBlock(pageId, block.id, { content: getContentForStore() });
+  };
+
+  const handleToolbarChange = () => {
+    updateBlock(pageId, block.id, { content: getContentForStore() });
+  };
+
+  // Auto-linkify on blur
+  const handleBlur = () => {
+    if (!ref.current || block.type === 'code') return;
+    const html = ref.current.innerHTML;
+    const linkified = autoLinkify(html);
+    if (linkified !== html) {
+      ref.current.innerHTML = linkified;
+      updateBlock(pageId, block.id, { content: linkified });
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    // Bold/Italic shortcuts
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault();
+      document.execCommand('bold');
+      updateBlock(pageId, block.id, { content: getContentForStore() });
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+      e.preventDefault();
+      document.execCommand('italic');
+      updateBlock(pageId, block.id, { content: getContentForStore() });
+      return;
+    }
+
     if (showSlashMenu) {
       if (e.key === 'Escape') {
         setShowSlashMenu(false);
@@ -146,9 +207,19 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     }
   };
 
+  // Intercept link clicks to open in new tab instead of navigating inside editor
+  const handleClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'A') {
+      e.preventDefault();
+      const href = (target as HTMLAnchorElement).href;
+      if (href) window.open(href, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const selectSlashOption = (type: BlockType) => {
     setShowSlashMenu(false);
-    if (ref.current) ref.current.innerText = '';
+    if (ref.current) ref.current.innerHTML = '';
     changeBlockType(pageId, block.id, type);
     updateBlock(pageId, block.id, { content: '', listStart: type === 'numbered_list' ? true : undefined });
     setTimeout(() => ref.current?.focus(), 0);
@@ -180,8 +251,10 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     code: 'text-sm font-mono bg-muted px-3 py-2 rounded-md text-foreground',
   };
 
+  const showToolbar = block.type !== 'code';
+
   return (
-    <div className="group flex items-start gap-1 relative">
+    <div ref={wrapperRef} className="group flex items-start gap-1 relative">
       {/* Block handle */}
       <div className="flex items-center gap-0.5 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
         <button className="p-0.5 text-muted-foreground hover:text-foreground cursor-grab">
@@ -221,11 +294,18 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
         suppressContentEditableWarning
         onInput={handleInput}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        onClick={handleClick}
         data-placeholder={block.type === 'heading1' ? 'Heading 1' : block.type === 'heading2' ? 'Heading 2' : block.type === 'heading3' ? 'Heading 3' : "Type '/' for commands..."}
-      className={`flex-1 outline-none min-h-[1.5em] empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50 ${
+        className={`flex-1 outline-none min-h-[1.5em] empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50 ${
           blockStyles[block.type] || blockStyles.text
         } ${block.checked ? 'line-through text-muted-foreground' : ''}`}
       />
+
+      {/* Floating toolbar */}
+      {showToolbar && wrapperRef.current && (
+        <FloatingToolbar containerRef={wrapperRef} onContentChange={handleToolbarChange} />
+      )}
 
       {/* Delete */}
       <button

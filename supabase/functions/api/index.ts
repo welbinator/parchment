@@ -184,10 +184,32 @@ Deno.serve(async (req) => {
         return json({ success: true }, corsHeaders)
       }
 
+      case 'rename_page': {
+        if (!permissions.can_create_pages) return deny(corsHeaders)
+        const { page_id, title } = body
+        if (!page_id || !title) return json({ error: 'page_id and title are required' }, corsHeaders, 400)
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+        const { error } = await supabase.from('pages').update({ title }).eq('id', page_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
+      }
+
+      case 'rename_collection': {
+        if (!permissions.can_create_collections) return deny(corsHeaders)
+        const { collection_id, name } = body
+        if (!collection_id || !name) return json({ error: 'collection_id and name are required' }, corsHeaders, 400)
+        const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
+        if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
+        const { error } = await supabase.from('collections').update({ name }).eq('id', collection_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
+      }
+
       default:
         return json({ error: `Unknown action: ${action}`, available_actions: [
-          'list_collections', 'create_collection', 'delete_collection',
-          'list_pages', 'create_page', 'delete_page', 'get_page', 'update_blocks', 'delete_block',
+          'list_collections', 'create_collection', 'delete_collection', 'rename_collection',
+          'list_pages', 'create_page', 'delete_page', 'rename_page', 'get_page', 'update_blocks', 'delete_block',
         ]}, corsHeaders, 400)
     }
   } catch (err) {

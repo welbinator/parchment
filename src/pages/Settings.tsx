@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ApiKey {
@@ -38,6 +38,10 @@ export default function Settings() {
   const [creating, setCreating] = useState(false);
   const [newKeyRevealed, setNewKeyRevealed] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const ADMIN_EMAIL = 'james.welbes@gmail.com';
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   // New key form
   const [newName, setNewName] = useState('');
@@ -117,6 +121,43 @@ export default function Settings() {
       navigator.clipboard.writeText(newKeyRevealed);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const exportDatabase = async () => {
+    setExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('You must be logged in');
+        return;
+      }
+      const res = await fetch(
+        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-database`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Export failed');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `parchment-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Database exported successfully');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -268,6 +309,27 @@ export default function Settings() {
             </div>
           )}
         </section>
+
+        {/* Admin: Export Database */}
+        {isAdmin && (
+          <section className="mt-12 pt-8 border-t border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <Download size={18} className="text-primary" />
+              <h2 className="text-lg font-semibold font-display text-foreground">Export Database</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Download a full JSON export of all users, collections, pages, blocks, and API keys for migration.
+            </p>
+            <button
+              onClick={exportDatabase}
+              disabled={exporting}
+              className="flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              {exporting ? 'Exporting...' : 'Export All Data'}
+            </button>
+          </section>
+        )}
       </div>
     </div>
   );

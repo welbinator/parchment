@@ -69,7 +69,7 @@ interface AppState {
   // Blocks
   addBlock: (pageId: string, afterBlockId: string | null, type?: BlockType) => string;
   updateBlock: (pageId: string, blockId: string, updates: Partial<Block>) => void;
-  deleteBlock: (pageId: string, blockId: string) => void;
+  deleteBlock: (pageId: string, blockId: string) => Promise<void>;
   undoDeleteBlock: () => void;
   changeBlockType: (pageId: string, blockId: string, type: BlockType) => void;
 
@@ -123,8 +123,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   collections: [],
   pages: [],
   blocks: [],
-  activePageId: null,
-  activeCollectionId: null,
+  activePageId: localStorage.getItem('activePageId') || null,
+  activeCollectionId: localStorage.getItem('activeCollectionId') || null,
   sidebarOpen: true,
   loading: true,
   userId: null,
@@ -164,6 +164,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       await supabase.from('blocks').insert(welcomeBlocks);
 
+      localStorage.setItem('activePageId', pageId);
+      localStorage.setItem('activeCollectionId', colId);
       set({
         collections: col ? [col] : [],
         pages: page ? [page] : [],
@@ -176,12 +178,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const currentState = get();
+    const newActivePageId = currentState.activePageId && pages.some((p) => p.id === currentState.activePageId && !p.deleted_at) ? currentState.activePageId : (pages.filter(p => !p.deleted_at)[0]?.id ?? null);
+    const newActiveCollectionId = currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at) ? currentState.activeCollectionId : (collections.filter(c => !c.deleted_at)[0]?.id ?? null);
+    if (newActivePageId) localStorage.setItem('activePageId', newActivePageId);
+    if (newActiveCollectionId) localStorage.setItem('activeCollectionId', newActiveCollectionId);
     set({
       collections,
       pages,
       blocks,
-      activePageId: currentState.activePageId && pages.some((p) => p.id === currentState.activePageId && !p.deleted_at) ? currentState.activePageId : (pages.filter(p => !p.deleted_at)[0]?.id ?? null),
-      activeCollectionId: currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at) ? currentState.activeCollectionId : (collections.filter(c => !c.deleted_at)[0]?.id ?? null),
+      activePageId: newActivePageId,
+      activeCollectionId: newActiveCollectionId,
       loading: false,
     });
   },
@@ -246,8 +252,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   }),
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
-  setActivePage: (id) => set({ activePageId: id }),
-  setActiveCollection: (id) => set({ activeCollectionId: id }),
+  setActivePage: (id) => {
+    if (id) localStorage.setItem('activePageId', id);
+    else localStorage.removeItem('activePageId');
+    set({ activePageId: id });
+  },
+  setActiveCollection: (id) => {
+    if (id) localStorage.setItem('activeCollectionId', id);
+    else localStorage.removeItem('activeCollectionId');
+    set({ activeCollectionId: id });
+  },
 
   addCollection: async (name) => {
     const { userId, collections } = get();
@@ -382,10 +396,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  deleteBlock: (pageId, blockId) => {
+  deleteBlock: async (pageId, blockId) => {
     const deletedBlock = get().blocks.find((b) => b.id === blockId);
     markLocalMutation();
-    supabase.from('blocks').delete().eq('id', blockId);
+    await supabase.from('blocks').delete().eq('id', blockId);
     set((s) => {
       const remaining = s.blocks.filter((b) => b.id !== blockId);
       const pageBlocks = remaining.filter((b) => b.page_id === pageId);

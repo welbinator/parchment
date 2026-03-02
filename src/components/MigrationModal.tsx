@@ -9,6 +9,7 @@ interface MigrationModalProps {
 export default function MigrationModal({ onComplete }: MigrationModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   const handleMigrate = async () => {
     setLoading(true);
@@ -25,14 +26,16 @@ export default function MigrationModal({ onComplete }: MigrationModalProps) {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ dry_run: false }),
         }
       );
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Migration failed');
+      if (!response.ok || result.error) throw new Error(result.error || 'Migration failed');
       onComplete();
     } catch (err: any) {
       setError(err.message);
+      setFailed(true);
       setLoading(false);
     }
   };
@@ -51,22 +54,49 @@ export default function MigrationModal({ onComplete }: MigrationModalProps) {
               click below to migrate it to your account.
             </p>
           </div>
+
           {error && (
-            <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-2 w-full">
-              {error}
-            </p>
+            <div className="w-full rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-left">
+              <p className="text-sm text-destructive font-medium mb-1">Migration failed</p>
+              <p className="text-xs text-muted-foreground mb-2">{error}</p>
+              <p className="text-xs text-muted-foreground">
+                Please reach out to James on Twitter:{' '}
+                <a
+                  href="https://twitter.com/jameswelbes"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline hover:opacity-80"
+                >
+                  @jameswelbes
+                </a>
+                {' '}and he'll get your data sorted out manually.
+              </p>
+            </div>
           )}
-          <button
-            onClick={handleMigrate}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? (
-              <><Loader2 size={16} className="animate-spin" /> Migrating your data...</>
-            ) : (
-              'Migrate My Data →'
-            )}
-          </button>
+
+          {!failed ? (
+            <button
+              onClick={handleMigrate}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
+            >
+              {loading ? (
+                <><Loader2 size={16} className="animate-spin" /> Migrating your data...</>
+              ) : (
+                'Migrate My Data →'
+              )}
+            </button>
+          ) : (
+            <a
+              href="https://twitter.com/jameswelbes"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
+            >
+              Contact @jameswelbes on Twitter →
+            </a>
+          )}
+
           <button
             onClick={onComplete}
             disabled={loading}

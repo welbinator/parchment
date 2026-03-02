@@ -170,7 +170,7 @@ echo "$collections" > export_collections.json
         <section className="mb-8">
           <h2 className="text-2xl font-semibold font-display mb-3">Block Types</h2>
           <ul className="grid sm:grid-cols-2 gap-2 text-sm">
-            {['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo', 'quote', 'divider', 'code'].map((t) => (
+            {['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo (checkbox)', 'quote', 'divider', 'code'].map((t) => (
               <li key={t} className="border border-border rounded px-3 py-2 font-mono bg-card">{t}</li>
             ))}
           </ul>

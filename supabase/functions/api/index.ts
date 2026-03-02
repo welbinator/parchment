@@ -6,6 +6,7 @@ const corsHeaders = {
 }
 
 const MAX_BLOCK_CONTENT_BYTES = 10 * 1024 // 10KB per block
+const VALID_BLOCK_TYPES = new Set(['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo', 'quote', 'divider', 'code'])
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -148,8 +149,14 @@ Deno.serve(async (req) => {
         const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
         if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
 
-        // Validate block content size
+        // Validate blocks
         for (const block of blocks) {
+          if (block.type && !VALID_BLOCK_TYPES.has(block.type)) {
+            return json({
+              error: `Invalid block type: "${block.type}". Valid types: ${[...VALID_BLOCK_TYPES].join(', ')}`,
+              block_id: block.id || 'new',
+            }, corsHeaders, 400)
+          }
           if (block.content && new TextEncoder().encode(block.content).length > MAX_BLOCK_CONTENT_BYTES) {
             return json({
               error: `Block content exceeds maximum size of ${MAX_BLOCK_CONTENT_BYTES / 1024}KB`,

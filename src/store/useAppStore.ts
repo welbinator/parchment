@@ -175,12 +175,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
+    const currentState = get();
     set({
       collections,
       pages,
       blocks,
-      activePageId: pages[0]?.id ?? null,
-      activeCollectionId: collections[0]?.id ?? null,
+      activePageId: currentState.activePageId && pages.some((p) => p.id === currentState.activePageId && !p.deleted_at) ? currentState.activePageId : (pages.filter(p => !p.deleted_at)[0]?.id ?? null),
+      activeCollectionId: currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at) ? currentState.activeCollectionId : (collections.filter(c => !c.deleted_at)[0]?.id ?? null),
       loading: false,
     });
   },

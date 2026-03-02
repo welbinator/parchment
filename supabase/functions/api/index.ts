@@ -8,6 +8,31 @@ const corsHeaders = {
 const MAX_BLOCK_CONTENT_BYTES = 10 * 1024 // 10KB per block
 const VALID_BLOCK_TYPES = new Set(['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo', 'quote', 'divider', 'code'])
 
+// Convert styled text JSON arrays to HTML
+// Bots sometimes send [{"text":"hello","bold":true}] instead of "<b>hello</b>"
+function convertStyledJsonToHtml(content: string): string {
+  if (!content || !content.trim().startsWith('[')) return content
+  try {
+    const parsed = JSON.parse(content)
+    if (!Array.isArray(parsed)) return content
+    return parsed.map((item: any) => {
+      if (typeof item === 'string') return item
+      if (typeof item !== 'object' || !item.text) return ''
+      let html = item.text as string
+      if (item.bold) html = `<b>${html}</b>`
+      if (item.italic) html = `<i>${html}</i>`
+      if (item.underline) html = `<u>${html}</u>`
+      if (item.strikethrough) html = `<s>${html}</s>`
+      if (item.code) html = `<code>${html}</code>`
+      if (item.color) html = `<span style="color:${item.color}">${html}</span>`
+      if (item.link || item.href) html = `<a href="${item.link || item.href}" target="_blank" rel="noopener noreferrer">${html}</a>`
+      return html
+    }).join('')
+  } catch {
+    return content
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -166,11 +191,12 @@ Deno.serve(async (req) => {
         }
 
         for (const block of blocks) {
+          const content = convertStyledJsonToHtml(block.content || '')
           await supabase.from('blocks').upsert({
             id: block.id || undefined,
             page_id,
             type: block.type || 'text',
-            content: block.content || '',
+            content,
             checked: block.checked ?? null,
             position: block.position ?? 0,
           })

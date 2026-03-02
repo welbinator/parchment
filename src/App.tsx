@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,20 +16,48 @@ import Reports from "./pages/Reports";
 import Trash from "./pages/Trash";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from 'lucide-react';
+import MigrationModal from '@/components/MigrationModal';
+import { supabase } from '@/integrations/supabase/client';
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
+  const [showMigration, setShowMigration] = useState(false);
 
   useEffect(() => {
     if (user) {
       init(user.id);
+      checkMigration();
     } else if (!authLoading) {
       reset();
     }
   }, [user, authLoading]);
+
+  const checkMigration = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/migrate-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ dry_run: true }),
+        }
+      );
+      const result = await response.json();
+      if (result.needs_migration) {
+        setShowMigration(true);
+      }
+    } catch (e) {
+      // Silent fail — don't block the app
+    }
+  }, [refetch]);
 
   // Refetch on tab focus / visibility change
   useEffect(() => {
@@ -66,7 +94,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
-  return <>{children}</>;
+  return (
+    <>
+      {showMigration && (
+        <MigrationModal onComplete={() => { setShowMigration(false); refetch(); }} />
+      )}
+      {children}
+    </>
+  );
 }
 
 function AuthRoute() {

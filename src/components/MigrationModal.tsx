@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, PackageOpen } from 'lucide-react';
+import { Loader2, PackageOpen, Key, Copy, Check } from 'lucide-react';
 
 interface MigrationModalProps {
   onComplete: () => void;
@@ -10,6 +10,8 @@ export default function MigrationModal({ onComplete }: MigrationModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [newApiKeys, setNewApiKeys] = useState<string[]>([]);
+  const [copied, setCopied] = useState<string | null>(null);
 
   const handleMigrate = async () => {
     setLoading(true);
@@ -32,13 +34,67 @@ export default function MigrationModal({ onComplete }: MigrationModalProps) {
 
       const result = await response.json();
       if (!response.ok || result.error) throw new Error(result.error || 'Migration failed');
-      onComplete();
+
+      if (result.new_api_keys?.length > 0) {
+        setNewApiKeys(result.new_api_keys);
+      } else {
+        onComplete();
+      }
     } catch (err: any) {
       setError(err.message);
       setFailed(true);
       setLoading(false);
     }
   };
+
+  const copyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  // Show new API keys screen after successful migration
+  if (newApiKeys.length > 0) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="w-full max-w-md mx-4 rounded-xl border border-border bg-card p-8 shadow-2xl">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 shrink-0">
+                <Key className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Your API keys are back!</h2>
+                <p className="text-xs text-muted-foreground">Save these — they won't be shown again.</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {newApiKeys.map((key, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
+                  <code className="flex-1 text-xs font-mono text-foreground truncate">{key}</code>
+                  <button
+                    onClick={() => copyKey(key)}
+                    className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {copied === key ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              These are new keys with the same permissions as your originals. Your old keys no longer work.
+            </p>
+            <button
+              onClick={onComplete}
+              className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90"
+            >
+              Done, take me to my data →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">

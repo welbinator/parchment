@@ -5,6 +5,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function generateKey(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let key = 'pmt_'
+  for (let i = 0; i < 40; i++) key += chars.charAt(Math.floor(Math.random() * chars.length))
+  return key
+}
+
+async function hashKey(key: string): Promise<string> {
+  const encoded = new TextEncoder().encode(key)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoded)
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -56,7 +69,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // If dry run, just report that migration is needed
     if (dryRun) {
       return new Response(JSON.stringify({ migrated: false, needs_migration: true }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -65,28 +77,58 @@ Deno.serve(async (req) => {
 
     const oldUuid = orphanedProfile.user_id
 
-    // Reassign all data from old UUID to new UUID
+    // Reassign collections and pages
     const { error: collectionsError } = await supabaseAdmin
       .from('collections')
       .update({ user_id: newUuid })
       .eq('user_id', oldUuid)
-
     if (collectionsError) throw collectionsError
 
     const { error: pagesError } = await supabaseAdmin
       .from('pages')
       .update({ user_id: newUuid })
       .eq('user_id', oldUuid)
-
     if (pagesError) throw pagesError
 
-    // Delete the orphaned profile
-    await supabaseAdmin
-      .from('profiles')
-      .delete()
+    // Restore API keys — generate new key values since hashes can't be reversed
+    const { data: oldKeys } = await supabaseAdmin
+      .from('api_keys')
+      .select('*')
       .eq('user_id', oldUuid)
+      .eq('revoked', false)
 
-    return new Response(JSON.stringify({ migrated: true }), {
+    const newKeys: string[] = []
+    if (oldKeys && oldKeys.length > 0) {
+      for (const oldKey of oldKeys) {
+        const rawKey = generateKey()
+        const keyHash = await hashKey(rawKey)
+        const keyPrefix = rawKey.slice(0, 8)
+        await supabaseAdmin.from('api_keys').insert({
+          user_id: newUuid,
+          name: oldKey.name,
+          key_hash: keyHash,
+          key_prefix: keyPrefix,
+          can_read_pages: oldKey.can_read_pages,
+          can_write_blocks: oldKey.can_write_blocks,
+          can_create_pages: oldKey.can_create_pages,
+          can_delete_pages: oldKey.can_delete_pages,
+          can_create_collections: oldKey.can_create_collections,
+          can_delete_collections: oldKey.can_delete_collections,
+          expires_at: oldKey.expires_at,
+        })
+        newKeys.push(rawKey)
+      }
+      // Delete old orphaned keys
+      await supabaseAdmin.from('api_keys').delete().eq('user_id', oldUuid)
+    }
+
+    // Delete the orphaned profile
+    await supabaseAdmin.from('profiles').delete().eq('user_id', oldUuid)
+
+    return new Response(JSON.stringify({
+      migrated: true,
+      new_api_keys: newKeys, // Return new key values so we can show them to user
+    }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 

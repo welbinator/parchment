@@ -31,6 +31,30 @@ const blockTypeOptions: { type: BlockType; label: string; icon: React.ReactNode 
   { type: 'code', label: 'Code', icon: <Code size={14} /> },
 ];
 
+// Convert styled JSON arrays to HTML (for content saved before server-side conversion)
+function convertStyledJsonToHtml(content: string): string {
+  if (!content || !content.trim().startsWith('[')) return content;
+  try {
+    const parsed = JSON.parse(content);
+    if (!Array.isArray(parsed)) return content;
+    return parsed.map((item: any) => {
+      if (typeof item === 'string') return item;
+      if (typeof item !== 'object' || !item.text) return '';
+      let html: string = item.text;
+      if (item.bold) html = `<b>${html}</b>`;
+      if (item.italic) html = `<i>${html}</i>`;
+      if (item.underline) html = `<u>${html}</u>`;
+      if (item.strikethrough) html = `<s>${html}</s>`;
+      if (item.code) html = `<code>${html}</code>`;
+      if (item.color) html = `<span style="color:${item.color}">${html}</span>`;
+      if (item.link || item.href) html = `<a href="${item.link || item.href}" target="_blank" rel="noopener noreferrer">${html}</a>`;
+      return html;
+    }).join('');
+  } catch {
+    return content;
+  }
+}
+
 // URL regex for auto-linkify
 const URL_REGEX = /(?<!\S)(https?:\/\/[^\s<]+[^\s<.,;:!?)"'\]])/g;
 
@@ -87,7 +111,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   // Set initial content only once on mount
   useEffect(() => {
     if (ref.current && !initializedRef.current) {
-      ref.current.innerHTML = block.content;
+      ref.current.innerHTML = convertStyledJsonToHtml(block.content);
       initializedRef.current = true;
     }
   }, []);
@@ -95,7 +119,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   // Sync content when block type changes (slash command)
   useEffect(() => {
     if (ref.current) {
-      ref.current.innerHTML = block.content;
+      ref.current.innerHTML = convertStyledJsonToHtml(block.content);
     }
   }, [block.type]);
 

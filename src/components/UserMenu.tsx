@@ -43,11 +43,11 @@ export default function UserMenu() {
             Settings
           </button>
           <button
-            onClick={() => { setOpen(false); navigate('/docs/api'); }}
+            onClick={() => { setOpen(false); navigate('/docs'); }}
             className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
           >
             <BookOpen size={14} />
-            API Docs
+            Docs
           </button>
           {user.email === 'james.welbes@gmail.com' && (
             <button

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import UserMenu from '@/components/UserMenu';
 
-const API_BASE = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/api`;
+const API_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
 
 function CodeBlock({ children }: { children: string }) {
   return (

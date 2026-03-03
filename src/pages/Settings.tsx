@@ -133,7 +133,7 @@ export default function Settings() {
         return;
       }
       const res = await fetch(
-        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/export-database`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-database`,
         {
           method: 'POST',
           headers: {

@@ -13,6 +13,25 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.2.1',
+    date: '2026-03-02',
+    title: 'Bug Fixes',
+    changes: [
+      {
+        type: 'fix',
+        description: 'Fixed Admin Reports page failing to load with Access denied error.',
+      },
+      {
+        type: 'fix',
+        description: 'Fixed Settings → Export Data button pointing to the wrong server.',
+      },
+      {
+        type: 'fix',
+        description: 'Fixed API Docs page showing an incorrect base URL.',
+      },
+    ],
+  },
+  {
     version: '1.2.0',
     date: '2026-02-27',
     title: 'Inline Rename',

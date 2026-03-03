@@ -12,6 +12,7 @@ import AuthPage from "./pages/Auth";
 import Settings from "./pages/Settings";
 import ApiDocs from "./pages/ApiDocs";
 import Changelog from "./pages/Changelog";
+import Docs from "./pages/Docs";
 import Reports from "./pages/Reports";
 import Trash from "./pages/Trash";
 import NotFound from "./pages/NotFound";
@@ -28,17 +29,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      init(user.id);
-      checkMigration();
+      checkMigrationThenInit();
     } else if (!authLoading) {
       reset();
     }
   }, [user, authLoading]);
 
-  const checkMigration = useCallback(async () => {
+  // Check for migration BEFORE calling init — prevents welcome data being seeded
+  // for existing users whose data lives under a different UUID (pre-migration).
+  const checkMigrationThenInit = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        init(user!.id);
+        return;
+      }
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/migrate-user`,
         {
@@ -52,12 +57,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       );
       const result = await response.json();
       if (result.needs_migration) {
+        // Don't call init yet — user has no data under new UUID.
+        // Show migration modal; init will be called after migration completes.
         setShowMigration(true);
+      } else {
+        init(user!.id);
       }
     } catch (e) {
-      // Silent fail — don't block the app
+      // On error, proceed normally
+      init(user!.id);
     }
-  }, [refetch]);
+  }, [user, init]);
 
   // Refetch on tab focus / visibility change
   useEffect(() => {
@@ -97,7 +107,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return (
     <>
       {showMigration && (
-        <MigrationModal onComplete={() => { setShowMigration(false); refetch(); }} />
+        <MigrationModal onComplete={() => { setShowMigration(false); init(user.id); }} />
       )}
       {children}
     </>
@@ -145,6 +155,7 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/docs/api" element={<ApiDocs />} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/docs" element={<Docs />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

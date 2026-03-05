@@ -90,6 +90,7 @@ export default function ApiDocs() {
           <ul className="list-disc pl-6 text-muted-foreground space-y-1 mb-4">
             <li><code className="bg-muted px-1 py-0.5 rounded">&lt;b&gt;bold&lt;/b&gt;</code> or <code className="bg-muted px-1 py-0.5 rounded">&lt;strong&gt;bold&lt;/strong&gt;</code></li>
             <li><code className="bg-muted px-1 py-0.5 rounded">&lt;i&gt;italic&lt;/i&gt;</code> or <code className="bg-muted px-1 py-0.5 rounded">&lt;em&gt;italic&lt;/em&gt;</code></li>
+            <li><code className="bg-muted px-1 py-0.5 rounded">&lt;s&gt;strikethrough&lt;/s&gt;</code> or <code className="bg-muted px-1 py-0.5 rounded">&lt;del&gt;strikethrough&lt;/del&gt;</code></li>
             <li><code className="bg-muted px-1 py-0.5 rounded">&lt;a href="url"&gt;link text&lt;/a&gt;</code></li>
             <li><code className="bg-muted px-1 py-0.5 rounded">&lt;span style="color: red"&gt;colored text&lt;/span&gt;</code></li>
           </ul>

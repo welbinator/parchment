@@ -227,10 +227,12 @@ export default function Changelog() {
                     const config = typeConfig[change.type];
                     return (
                       <li key={i} className="flex gap-3 items-start">
-                        <span className={`mt-0.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium shrink-0 min-w-[5.5rem] ${config.className}`}>
-                          <config.icon size={10} />
-                          {config.label}
-                        </span>
+                        <div className="shrink-0 min-w-[5.5rem]">
+                          <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium mt-0.5 ${config.className}`}>
+                            <config.icon size={10} />
+                            {config.label}
+                          </span>
+                        </div>
                         <span className="text-sm text-foreground/85 leading-relaxed">{change.description}</span>
                       </li>
                     );

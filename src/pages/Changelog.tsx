@@ -13,6 +13,37 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.0',
+    date: '2026-03-05',
+    title: 'Trash Auto-Delete, API Improvements & Security',
+    changes: [
+      {
+        type: 'feature',
+        description: 'Trash items are now automatically and permanently deleted 30 days after being moved to trash.',
+      },
+      {
+        type: 'feature',
+        description: 'Trash page now shows a warning banner and a "X days left" countdown on each item instead of the raw deletion date.',
+      },
+      {
+        type: 'feature',
+        description: 'New favicon — the Parchment logo is now shown in browser tabs.',
+      },
+      {
+        type: 'improvement',
+        description: 'API docs now fully document all block types, HTML content format, inline formatting (bold, italic, strikethrough, color, links), and data export.',
+      },
+      {
+        type: 'improvement',
+        description: 'API docs crawler-friendly noscript block updated to match the full public docs — AI bots can now read complete API documentation.',
+      },
+      {
+        type: 'fix',
+        description: 'Security: block HTML content is now sanitized with DOMPurify before rendering, preventing potential XSS injection via the API.',
+      },
+    ],
+  },
+  {
     version: '1.2.1',
     date: '2026-03-02',
     title: 'Bug Fixes',

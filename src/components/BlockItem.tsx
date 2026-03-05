@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
 import FloatingToolbar from './FloatingToolbar';
+import DOMPurify from 'dompurify';
 import {
   GripVertical,
   Trash2,
@@ -111,7 +112,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   // Set initial content only once on mount
   useEffect(() => {
     if (ref.current && !initializedRef.current) {
-      ref.current.innerHTML = convertStyledJsonToHtml(block.content);
+      ref.current.innerHTML = DOMPurify.sanitize(convertStyledJsonToHtml(block.content));
       initializedRef.current = true;
     }
   }, []);
@@ -119,7 +120,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   // Sync content when block type changes (slash command)
   useEffect(() => {
     if (ref.current) {
-      ref.current.innerHTML = convertStyledJsonToHtml(block.content);
+      ref.current.innerHTML = DOMPurify.sanitize(convertStyledJsonToHtml(block.content));
     }
   }, [block.type]);
 
@@ -173,8 +174,8 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     const html = ref.current.innerHTML;
     const linkified = autoLinkify(html);
     if (linkified !== html) {
-      ref.current.innerHTML = linkified;
-      updateBlock(pageId, block.id, { content: linkified });
+      ref.current.innerHTML = DOMPurify.sanitize(linkified);
+      updateBlock(pageId, block.id, { content: DOMPurify.sanitize(linkified) });
     }
   };
 

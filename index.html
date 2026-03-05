@@ -32,32 +32,97 @@
 Programmatically manage your collections, pages, and blocks.
 
 ## Base URL
-https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api
+https://theparchment.app/functions/v1/api
 
 ## Authentication
 All requests require header: x-api-key
 
-## Rate limits
+curl -X POST https://theparchment.app/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"list_collections"}'
+
+## Rate Limits
 - 60 requests/minute per API key
 - 1000 requests/day per API key
-- 10KB max block content
+- 10KB max content per block
 
 ## Actions
 - list_collections
 - create_collection
 - delete_collection
+- rename_collection
 - list_pages
 - create_page
 - delete_page
+- rename_page
 - get_page
 - update_blocks
 - delete_block
 
-## delete_block example
-curl -X POST https://ouhjptbfjanipaljcadf.supabase.co/functions/v1/api \
+## Block Types
+- text
+- heading1
+- heading2
+- heading3
+- bullet_list
+- numbered_list
+- todo (checkbox)
+- quote
+- divider
+- code
+
+## Block Content Format
+Block content is stored as HTML strings. Use standard HTML tags for formatting:
+- Bold: &lt;b&gt;bold&lt;/b&gt; or &lt;strong&gt;bold&lt;/strong&gt;
+- Italic: &lt;i&gt;italic&lt;/i&gt; or &lt;em&gt;italic&lt;/em&gt;
+- Link: &lt;a href="url"&gt;link text&lt;/a&gt;
+- Color: &lt;span style="color: red"&gt;colored text&lt;/span&gt;
+
+## update_blocks example (with rich text)
+curl -X POST https://theparchment.app/functions/v1/api \
   -H "Content-Type: application/json" \
   -H "x-api-key: pmt_your_key" \
-  -d '{"action":"delete_block","page_id":"<page_id>","block_id":"<block_id>"}'
+  -d '{
+    "action": "update_blocks",
+    "page_id": "&lt;page_id&gt;",
+    "blocks": [
+      {
+        "type": "heading1",
+        "content": "&lt;span style=\"color: red\"&gt;My Red Heading&lt;/span&gt;"
+      },
+      {
+        "type": "numbered_list",
+        "content": "First item"
+      },
+      {
+        "type": "numbered_list",
+        "content": "Second item"
+      }
+    ]
+  }'
+
+## rename_page
+curl -X POST https://theparchment.app/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"rename_page","page_id":"&lt;page_id&gt;","title":"My New Title"}'
+
+## rename_collection
+curl -X POST https://theparchment.app/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"rename_collection","collection_id":"&lt;collection_id&gt;","name":"My Collection"}'
+
+## delete_block
+curl -X POST https://theparchment.app/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"delete_block","page_id":"&lt;page_id&gt;","block_id":"&lt;block_id&gt;"}'
+
+## Data Export
+Use list_collections to get all collections, list_pages for each collection,
+and get_page for each page (which includes all blocks with id, type, content, position).
       </article>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

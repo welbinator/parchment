@@ -1,7 +1,7 @@
 import { useAppStore } from '@/store/useAppStore';
 import AppSidebar from '@/components/AppSidebar';
 import UserMenu from '@/components/UserMenu';
-import { RotateCcw, Trash2, Archive, PanelLeftOpen } from 'lucide-react';
+import { RotateCcw, Trash2, Archive, PanelLeftOpen, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Trash() {
@@ -21,6 +21,11 @@ export default function Trash() {
   const deletedPages = trashedPages();
   const deletedCollections = trashedCollections();
   const isEmpty = deletedPages.length === 0 && deletedCollections.length === 0;
+
+  const getDaysRemaining = (deletedAt: string) => {
+    const daysElapsed = Math.floor((Date.now() - new Date(deletedAt).getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, 30 - daysElapsed);
+  };
 
   const handleRestore = async (type: 'page' | 'collection', id: string, name: string) => {
     if (type === 'page') await restorePage(id);
@@ -71,6 +76,12 @@ export default function Trash() {
           <UserMenu />
         </div>
 
+        {/* Warning banner */}
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
+          <AlertTriangle size={13} className="shrink-0" />
+          <span>Items in trash are permanently deleted 30 days after being moved here.</span>
+        </div>
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-2xl mx-auto px-8 py-12">
@@ -92,8 +103,14 @@ export default function Trash() {
                           className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors"
                         >
                           <span className="text-sm flex-1 truncate">{col.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {col.deleted_at && new Date(col.deleted_at).toLocaleDateString()}
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {col.deleted_at && (
+                              <span title={new Date(col.deleted_at).toLocaleDateString()}>
+                                {getDaysRemaining(col.deleted_at) === 0
+                                  ? 'Deletes today'
+                                  : `${getDaysRemaining(col.deleted_at)}d left`}
+                              </span>
+                            )}
                           </span>
                           <button
                             onClick={() => handleRestore('collection', col.id, col.name)}
@@ -131,7 +148,13 @@ export default function Trash() {
                             </span>
                           </div>
                           <span className="text-xs text-muted-foreground shrink-0">
-                            {page.deleted_at && new Date(page.deleted_at).toLocaleDateString()}
+                            {page.deleted_at && (
+                              <span title={new Date(page.deleted_at).toLocaleDateString()}>
+                                {getDaysRemaining(page.deleted_at) === 0
+                                  ? 'Deletes today'
+                                  : `${getDaysRemaining(page.deleted_at)}d left`}
+                              </span>
+                            )}
                           </span>
                           <button
                             onClick={() => handleRestore('page', page.id, page.title)}

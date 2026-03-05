@@ -220,8 +220,6 @@ export default function Changelog() {
                   <time className="text-sm text-muted-foreground font-mono">{entry.date}</time>
                 </div>
 
-                <h2 className="text-xl font-semibold font-display text-foreground mb-4">{entry.title}</h2>
-
                 <ul className="space-y-3">
                   {entry.changes.map((change, i) => {
                     const config = typeConfig[change.type];

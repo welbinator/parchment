@@ -219,6 +219,7 @@ export default function Changelog() {
                   </span>
                   <time className="text-sm text-muted-foreground font-mono">{entry.date}</time>
                 </div>
+                <hr className="border-border/50 mb-4" />
 
                 <ul className="space-y-3">
                   {entry.changes.map((change, i) => {

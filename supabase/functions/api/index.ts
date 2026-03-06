@@ -168,6 +168,9 @@ Deno.serve(async (req) => {
         return json({ page, blocks: pageBlocks }, corsHeaders)
       }
 
+      // append_blocks: adds new blocks to the END of the page (does not remove existing blocks)
+      // update_blocks: alias for append_blocks (kept for backwards compatibility)
+      case 'append_blocks':
       case 'update_blocks': {
         if (!permissions.can_write_blocks) return deny(corsHeaders)
         const { page_id, blocks } = body
@@ -190,18 +193,75 @@ Deno.serve(async (req) => {
           }
         }
 
-        for (const block of blocks) {
+        // Get current max position so appended blocks follow existing ones
+        const { data: existingBlocks } = await supabase
+          .from('blocks')
+          .select('position')
+          .eq('page_id', page_id)
+          .order('position', { ascending: false })
+          .limit(1)
+        const startPosition = (existingBlocks?.[0]?.position ?? -1) + 1
+
+        const insertedBlocks: any[] = []
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i]
           const content = convertStyledJsonToHtml(block.content || '')
-          await supabase.from('blocks').upsert({
+          const position = startPosition + i
+          const { data: inserted } = await supabase.from('blocks').upsert({
             id: block.id || undefined,
             page_id,
             type: block.type || 'text',
             content,
             checked: block.checked ?? null,
-            position: block.position ?? 0,
-          })
+            position,
+          }).select().single()
+          if (inserted) insertedBlocks.push(inserted)
         }
-        return json({ success: true }, corsHeaders)
+        return json({ success: true, mode: 'append', blocks_added: insertedBlocks.length, blocks: insertedBlocks }, corsHeaders)
+      }
+
+      // replace_blocks: deletes ALL existing blocks on the page, then inserts the new blocks in order.
+      // Use this when you want to fully rewrite a page's content.
+      case 'replace_blocks': {
+        if (!permissions.can_write_blocks) return deny(corsHeaders)
+        const { page_id, blocks } = body
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+
+        // Validate blocks first before making any changes
+        for (const block of blocks) {
+          if (block.type && !VALID_BLOCK_TYPES.has(block.type)) {
+            return json({
+              error: `Invalid block type: "${block.type}". Valid types: ${[...VALID_BLOCK_TYPES].join(', ')}`,
+              block_id: block.id || 'new',
+            }, corsHeaders, 400)
+          }
+          if (block.content && new TextEncoder().encode(block.content).length > MAX_BLOCK_CONTENT_BYTES) {
+            return json({
+              error: `Block content exceeds maximum size of ${MAX_BLOCK_CONTENT_BYTES / 1024}KB`,
+              block_id: block.id || 'new',
+            }, corsHeaders, 413)
+          }
+        }
+
+        // Delete all existing blocks on the page
+        await supabase.from('blocks').delete().eq('page_id', page_id)
+
+        // Insert new blocks with sequential positions based on array order
+        const insertedBlocks: any[] = []
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i]
+          const content = convertStyledJsonToHtml(block.content || '')
+          const { data: inserted } = await supabase.from('blocks').insert({
+            page_id,
+            type: block.type || 'text',
+            content,
+            checked: block.checked ?? null,
+            position: i,
+          }).select().single()
+          if (inserted) insertedBlocks.push(inserted)
+        }
+        return json({ success: true, mode: 'replace', blocks_written: insertedBlocks.length, blocks: insertedBlocks }, corsHeaders)
       }
 
       case 'delete_block': {
@@ -242,7 +302,8 @@ Deno.serve(async (req) => {
       default:
         return json({ error: `Unknown action: ${action}`, available_actions: [
           'list_collections', 'create_collection', 'delete_collection', 'rename_collection',
-          'list_pages', 'create_page', 'delete_page', 'rename_page', 'get_page', 'update_blocks', 'delete_block',
+          'list_pages', 'create_page', 'delete_page', 'rename_page', 'get_page',
+          'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block',
         ]}, corsHeaders, 400)
     }
   } catch (err) {

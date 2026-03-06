@@ -57,7 +57,9 @@ curl -X POST https://theparchment.app/functions/v1/api \
 - delete_page
 - rename_page
 - get_page
-- update_blocks
+- append_blocks (adds blocks to END of page — does NOT replace existing)
+- replace_blocks (deletes all existing blocks, writes new ones in array order — use for full rewrites)
+- update_blocks (alias for append_blocks — kept for backwards compatibility)
 - delete_block
 
 ## Block Types
@@ -80,12 +82,12 @@ Block content is stored as HTML strings. Use standard HTML tags for formatting:
 - Link: &lt;a href="url"&gt;link text&lt;/a&gt;
 - Color: &lt;span style="color: red"&gt;colored text&lt;/span&gt;
 
-## update_blocks example (with rich text)
+## append_blocks example (adds to end of page)
 curl -X POST https://theparchment.app/functions/v1/api \
   -H "Content-Type: application/json" \
   -H "x-api-key: pmt_your_key" \
   -d '{
-    "action": "update_blocks",
+    "action": "append_blocks",
     "page_id": "&lt;page_id&gt;",
     "blocks": [
       {
@@ -93,15 +95,27 @@ curl -X POST https://theparchment.app/functions/v1/api \
         "content": "&lt;span style=\"color: red\"&gt;My Red Heading&lt;/span&gt;"
       },
       {
-        "type": "numbered_list",
+        "type": "text",
         "content": "First item"
-      },
-      {
-        "type": "numbered_list",
-        "content": "Second item"
       }
     ]
   }'
+
+## replace_blocks example (rewrites entire page — RECOMMENDED for full page writes)
+curl -X POST https://theparchment.app/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{
+    "action": "replace_blocks",
+    "page_id": "&lt;page_id&gt;",
+    "blocks": [
+      { "type": "heading1", "content": "My Page Title" },
+      { "type": "text", "content": "First paragraph." },
+      { "type": "divider" },
+      { "type": "text", "content": "Second paragraph." }
+    ]
+  }'
+NOTE: update_blocks is kept as an alias for append_blocks for backwards compatibility.
 
 ## rename_page
 curl -X POST https://theparchment.app/functions/v1/api \

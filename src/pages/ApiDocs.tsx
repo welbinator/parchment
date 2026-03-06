@@ -73,7 +73,9 @@ export default function ApiDocs() {
               'delete_page',
               'rename_page',
               'get_page',
-              'update_blocks',
+              'append_blocks',
+              'replace_blocks',
+              'update_blocks (alias for append_blocks)',
               'delete_block',
             ].map((action) => (
               <li key={action} className="border border-border rounded px-3 py-2 font-mono bg-card">{action}</li>
@@ -94,22 +96,41 @@ export default function ApiDocs() {
             <li><code className="bg-muted px-1 py-0.5 rounded">&lt;a href="url"&gt;link text&lt;/a&gt;</code></li>
             <li><code className="bg-muted px-1 py-0.5 rounded">&lt;span style="color: red"&gt;colored text&lt;/span&gt;</code></li>
           </ul>
-          <h3 className="text-lg font-medium mb-2">Example: update_blocks with rich text</h3>
+          <h3 className="text-lg font-medium mb-2">Example: append_blocks (adds to end of page)</h3>
           <CodeBlock>{`curl -X POST ${API_BASE} \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: pmt_your_key" \\
   -d '{
-    "action": "update_blocks",
+    "action": "append_blocks",
     "page_id": "<page_id>",
     "blocks": [
       {
-        "id": "<block_id>",
         "type": "text",
-        "content": "Here is some <b>bold</b> text, some <i>italic</i> text, and a <a href=\\"https://example.com\\">link</a>.",
-        "position": 0
+        "content": "Here is some <b>bold</b> text, some <i>italic</i> text, and a <a href=\\"https://example.com\\">link</a>."
       }
     ]
   }'`}</CodeBlock>
+
+          <h3 className="text-lg font-medium mt-4 mb-2">Example: replace_blocks (rewrites entire page)</h3>
+          <p className="text-muted-foreground mb-3 text-sm">
+            Use <code className="bg-muted px-1 py-0.5 rounded">replace_blocks</code> when you want to fully rewrite a page's content. It deletes all existing blocks first, then writes the new ones in array order. This is the safest way to avoid ordering issues.
+          </p>
+          <CodeBlock>{`curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{
+    "action": "replace_blocks",
+    "page_id": "<page_id>",
+    "blocks": [
+      { "type": "heading1", "content": "My Page Title" },
+      { "type": "text", "content": "First paragraph." },
+      { "type": "divider" },
+      { "type": "text", "content": "Second paragraph." }
+    ]
+  }'`}</CodeBlock>
+          <p className="text-muted-foreground mt-2 text-sm">
+            <strong>Note:</strong> <code className="bg-muted px-1 py-0.5 rounded">update_blocks</code> is kept as an alias for <code className="bg-muted px-1 py-0.5 rounded">append_blocks</code> for backwards compatibility.
+          </p>
         </section>
 
         {/* Rename examples */}

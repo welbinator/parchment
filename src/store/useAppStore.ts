@@ -175,6 +175,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       localStorage.setItem('activePageId', pageId);
       localStorage.setItem('activeCollectionId', colId);
+      // Flag for new-user onboarding redirect (settings page with API key modal)
+      localStorage.setItem('parchment_new_user', 'true');
       set({
         collections: col ? [col] : [],
         pages: page ? [page] : [],

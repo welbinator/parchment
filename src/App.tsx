@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { useAppStore } from '@/store/useAppStore';
 import Index from "./pages/Index";
@@ -26,6 +26,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
   const [showMigration, setShowMigration] = useState(false);
+  const navigate = useNavigate();
+
+  // After store finishes loading, check if this is a new user and redirect to settings
+  useEffect(() => {
+    if (!storeLoading && user) {
+      const isNewUser = localStorage.getItem('parchment_new_user');
+      if (isNewUser) {
+        localStorage.removeItem('parchment_new_user');
+        setTimeout(() => navigate('/settings?new=true'), 100);
+      }
+    }
+  }, [storeLoading, user]);
 
   useEffect(() => {
     if (user) {

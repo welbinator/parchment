@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -30,9 +30,147 @@ const PERMISSIONS = [
   { key: 'can_write_blocks', label: 'Write blocks' },
 ] as const;
 
+function generateSkillMd(keyName: string): string {
+  return `---
+name: parchment
+description: Read, write, and organize notes in Parchment (theparchment.app). Use when creating collections, adding pages, writing blocks, or reading existing notes via the Parchment API.
+---
+
+# Parchment Skill
+
+Parchment is a simple notes app with a REST-like API. Your API key is stored securely — never log or expose it.
+
+## Base URL
+
+\`\`\`
+https://theparchment.app/functions/v1/api
+\`\`\`
+
+## Authentication
+
+All requests require:
+\`\`\`
+Authorization: Bearer YOUR_API_KEY
+Content-Type: application/json
+\`\`\`
+
+## API Key
+
+This skill was generated for key: **${keyName}**
+
+Store your API key as an environment variable or in your agent's secure config. Never hardcode it.
+
+## Core Operations
+
+### List all collections
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "list_collections"}'
+\`\`\`
+
+### Create a collection
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "create_collection", "name": "My Collection"}'
+\`\`\`
+
+### List pages in a collection
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "list_pages", "collection_id": "COLLECTION_ID"}'
+\`\`\`
+
+### Create a page
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "create_page",
+    "collection_id": "COLLECTION_ID",
+    "title": "My Page",
+    "type": "blank"
+  }'
+\`\`\`
+
+Page types: \`blank\`, \`notes\`, \`checklist\`, \`roadmap\`
+
+### Read a page (with blocks)
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "get_page", "page_id": "PAGE_ID"}'
+\`\`\`
+
+### Write blocks to a page (replaces all blocks)
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "replace_blocks",
+    "page_id": "PAGE_ID",
+    "blocks": [
+      {"type": "heading1", "content": "My Heading"},
+      {"type": "text", "content": "Some text here."},
+      {"type": "todo", "content": "A task", "checked": false}
+    ]
+  }'
+\`\`\`
+
+### Append blocks to a page
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "append_blocks",
+    "page_id": "PAGE_ID",
+    "blocks": [
+      {"type": "text", "content": "Appended content"}
+    ]
+  }'
+\`\`\`
+
+## Block Types
+
+| Type | Description |
+|------|-------------|
+| \`heading1\` | Large heading |
+| \`heading2\` | Medium heading |
+| \`heading3\` | Small heading |
+| \`text\` | Body text |
+| \`todo\` | Checkbox item (add \`"checked": true/false\`) |
+| \`bullet\` | Bullet list item |
+| \`quote\` | Blockquote |
+| \`divider\` | Horizontal rule (content: "") |
+| \`code\` | Code block |
+
+## Full API Docs
+
+Visit **https://theparchment.app/docs/api** for the complete API reference with all actions, parameters, and response formats.
+
+## Tips for Agents
+
+- Always \`list_collections\` first to get IDs before creating pages
+- Use \`replace_blocks\` when you want to fully overwrite a page
+- Use \`append_blocks\` when you want to add to existing content
+- IDs are UUIDs — store them if you need to reference the same page later
+- The API is append-friendly: create a collection once, add pages over time
+`;
+}
+
 export default function Settings() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -43,7 +181,6 @@ export default function Settings() {
   const ADMIN_EMAIL = 'james.welbes@gmail.com';
   const isAdmin = user?.email === ADMIN_EMAIL;
 
-  // New key form
   const [newName, setNewName] = useState('');
   const [newPerms, setNewPerms] = useState<Record<string, boolean>>({
     can_read_pages: true,
@@ -57,6 +194,18 @@ export default function Settings() {
 
   useEffect(() => {
     loadKeys();
+    if (searchParams.get('new') === 'true') {
+      setCreating(true);
+      setNewName('My Agent');
+      setNewPerms({
+        can_read_pages: true,
+        can_create_collections: true,
+        can_delete_collections: false,
+        can_create_pages: true,
+        can_delete_pages: false,
+        can_write_blocks: true,
+      });
+    }
   }, []);
 
   const loadKeys = async () => {
@@ -124,28 +273,28 @@ export default function Settings() {
     }
   };
 
+  const downloadSkillMd = (keyName: string) => {
+    const content = generateSkillMd(keyName);
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'parchment-skill.md';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('SKILL.md downloaded');
+  };
+
   const exportDatabase = async () => {
     setExporting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('You must be logged in');
-        return;
-      }
+      if (!session) { toast.error('You must be logged in'); return; }
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-database`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
+        { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' } }
       );
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Export failed');
-      }
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Export failed'); }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -175,7 +324,6 @@ export default function Settings() {
         <h1 className="text-3xl font-bold font-display text-foreground mb-2">Settings</h1>
         <p className="text-muted-foreground mb-10">Manage your API keys and account.</p>
 
-        {/* API Keys Section */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -195,7 +343,6 @@ export default function Settings() {
             Use API keys to access your Parchment data programmatically. Keys are shown once — store them securely.
           </p>
 
-          {/* Revealed key banner */}
           {newKeyRevealed && (
             <div className="mb-6 p-4 rounded-lg bg-primary/10 border border-primary/20">
               <p className="text-sm font-medium text-foreground mb-2">
@@ -212,7 +359,6 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Create form */}
           {creating && (
             <div className="mb-6 p-4 rounded-lg border border-border bg-card">
               <h3 className="text-sm font-semibold text-foreground mb-3">Create API Key</h3>
@@ -222,7 +368,6 @@ export default function Settings() {
                 placeholder="Key name (e.g. 'My Bot')"
                 className="w-full px-3 py-2 text-sm rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground mb-3 outline-none focus:ring-1 focus:ring-ring"
               />
-
               <div className="mb-3">
                 <label className="text-xs font-medium text-muted-foreground mb-2 block">Permissions</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -239,7 +384,6 @@ export default function Settings() {
                   ))}
                 </div>
               </div>
-
               <div className="mb-4">
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Expiration (optional)</label>
                 <input
@@ -249,25 +393,17 @@ export default function Settings() {
                   className="px-3 py-2 text-sm rounded-md bg-background border border-border text-foreground outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
-
               <div className="flex gap-2">
-                <button
-                  onClick={createKey}
-                  className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
+                <button onClick={createKey} className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                   Generate Key
                 </button>
-                <button
-                  onClick={() => setCreating(false)}
-                  className="px-4 py-2 text-sm rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                >
+                <button onClick={() => setCreating(false)} className="px-4 py-2 text-sm rounded-md bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">
                   Cancel
                 </button>
               </div>
             </div>
           )}
 
-          {/* Existing keys */}
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading...</p>
           ) : keys.length === 0 ? (
@@ -297,20 +433,29 @@ export default function Settings() {
                       ))}
                     </div>
                   </div>
-                  <button
-                    onClick={() => revokeKey(k.id)}
-                    className="p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive transition-all"
-                    title="Revoke key"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-3">
+                    <button
+                      onClick={() => downloadSkillMd(k.name)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                      title="Download SKILL.md for this key"
+                    >
+                      <Download size={12} />
+                      SKILL.md
+                    </button>
+                    <button
+                      onClick={() => revokeKey(k.id)}
+                      className="p-1.5 rounded hover:bg-destructive/20 hover:text-destructive transition-all"
+                      title="Revoke key"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </section>
 
-        {/* Admin: Export Database */}
         {isAdmin && (
           <section className="mt-12 pt-8 border-t border-border">
             <div className="flex items-center gap-2 mb-2">

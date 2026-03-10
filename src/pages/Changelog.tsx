@@ -13,6 +13,25 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.3.1',
+    date: '2026-03-09',
+    title: 'Agent-First Onboarding & Bug Fixes',
+    changes: [
+      {
+        type: 'feature',
+        description: 'New users are now redirected to Settings after signup with the API key form pre-opened and agent-friendly permissions pre-selected — making it easy to connect an AI agent right away.',
+      },
+      {
+        type: 'feature',
+        description: 'Each API key card now shows a "Download SKILL.md" button — downloads a ready-to-use skill file for your AI agent with full API reference, curl examples, and block type docs.',
+      },
+      {
+        type: 'fix',
+        description: 'Fixed a bug where new accounts would sometimes get multiple duplicate "Getting Started" collections created on first login.',
+      },
+    ],
+  },
+  {
     version: '1.3.0',
     date: '2026-03-05',
     title: 'Trash Auto-Delete, API Improvements & Security',

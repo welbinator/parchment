@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +27,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
   const [showMigration, setShowMigration] = useState(false);
   const navigate = useNavigate();
+  const initCalledRef = useRef(false);
 
   // After store finishes loading, check if this is a new user and redirect to settings
   useEffect(() => {
@@ -41,8 +42,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      checkMigrationThenInit();
+      // Only call init once per login session — guards against double-fire from
+      // onAuthStateChange + getSession() both updating user state
+      if (!initCalledRef.current) {
+        initCalledRef.current = true;
+        checkMigrationThenInit();
+      }
     } else if (!authLoading) {
+      // User signed out — reset flag so next login works
+      initCalledRef.current = false;
       reset();
     }
   }, [user, authLoading]);

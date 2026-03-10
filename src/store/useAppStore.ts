@@ -96,8 +96,7 @@ function markLocalMutation() {
   localMutationCooldown = Date.now() + 2000; // suppress refetch for 2s after local mutation
 }
 
-// Prevent concurrent init calls (e.g. double-fire from onAuthStateChange + getSession)
-let initInProgress = false;
+// (no init guard needed — seeding is protected by re-check before insert)
 function isInLocalCooldown() {
   // Also consider pending if any block save timers are active
   return Date.now() < localMutationCooldown || blockSaveTimers.size > 0;
@@ -134,12 +133,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   lastDeletedBlock: null,
 
   init: async (userId: string) => {
-    // Guard against concurrent calls (e.g. double-fire from onAuthStateChange + getSession)
-    if (initInProgress) return;
-    initInProgress = true;
     set({ loading: true, userId });
 
-    try {
     const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
@@ -152,6 +147,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     // If new user, create a welcome collection + page
     if (collections.length === 0) {
+      // Re-check immediately before inserting to guard against concurrent init calls
+      const { data: recheck } = await supabase.from('collections').select('id').eq('user_id', userId).limit(1);
+      if (recheck && recheck.length > 0) {
+        // Another init already seeded — just refetch and continue
+        get().refetch();
+        return;
+      }
       const colId = uid();
       const pageId = uid();
       const { data: col } = await supabase.from('collections').insert({ id: colId, user_id: userId, name: 'Getting Started', position: 0 }).select().single();
@@ -181,7 +183,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeCollectionId: colId,
         loading: false,
       });
-      initInProgress = false;
       return;
     }
 
@@ -198,13 +199,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeCollectionId: newActiveCollectionId,
       loading: false,
     });
-    initInProgress = false;
-    } catch (e) {
-      // Always release the lock so a retry can proceed
-      initInProgress = false;
-      set({ loading: false });
-      throw e;
-    }
   },
 
   refetch: async () => {
@@ -256,7 +250,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   reset: () => {
-    initInProgress = false;
     set({
       collections: [],
       pages: [],

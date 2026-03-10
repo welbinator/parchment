@@ -139,6 +139,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     initInProgress = true;
     set({ loading: true, userId });
 
+    try {
     const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
@@ -198,6 +199,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       loading: false,
     });
     initInProgress = false;
+    } catch (e) {
+      // Always release the lock so a retry can proceed
+      initInProgress = false;
+      set({ loading: false });
+      throw e;
+    }
   },
 
   refetch: async () => {

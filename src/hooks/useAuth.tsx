@@ -31,7 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Then check for existing session
+    // getSession seeds the initial state; onAuthStateChange will also fire INITIAL_SESSION,
+    // but we still call getSession as a fallback for environments where the event may be missed.
+    // The store's initInProgress guard prevents double-seeding of welcome data.
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);

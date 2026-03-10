@@ -95,6 +95,9 @@ let localMutationCooldown = 0;
 function markLocalMutation() {
   localMutationCooldown = Date.now() + 2000; // suppress refetch for 2s after local mutation
 }
+
+// Prevent concurrent init calls (e.g. double-fire from onAuthStateChange + getSession)
+let initInProgress = false;
 function isInLocalCooldown() {
   // Also consider pending if any block save timers are active
   return Date.now() < localMutationCooldown || blockSaveTimers.size > 0;
@@ -131,6 +134,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   lastDeletedBlock: null,
 
   init: async (userId: string) => {
+    // Guard against concurrent calls (e.g. double-fire from onAuthStateChange + getSession)
+    if (initInProgress) return;
+    initInProgress = true;
     set({ loading: true, userId });
 
     const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
@@ -174,6 +180,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         activeCollectionId: colId,
         loading: false,
       });
+      initInProgress = false;
       return;
     }
 
@@ -190,6 +197,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeCollectionId: newActiveCollectionId,
       loading: false,
     });
+    initInProgress = false;
   },
 
   refetch: async () => {
@@ -240,16 +248,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
   },
 
-  reset: () => set({
-    collections: [],
-    pages: [],
-    blocks: [],
-    activePageId: null,
-    activeCollectionId: null,
-    loading: false,
-    userId: null,
-    lastDeletedBlock: null,
-  }),
+  reset: () => {
+    initInProgress = false;
+    set({
+      collections: [],
+      pages: [],
+      blocks: [],
+      activePageId: null,
+      activeCollectionId: null,
+      loading: false,
+      userId: null,
+      lastDeletedBlock: null,
+    });
+  },
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setActivePage: (id) => {

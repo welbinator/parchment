@@ -433,7 +433,7 @@ export default function Settings() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-3">
+                  <div className="flex items-center gap-1 shrink-0 ml-3">
                     <button
                       onClick={() => downloadSkillMd(k.name)}
                       className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"

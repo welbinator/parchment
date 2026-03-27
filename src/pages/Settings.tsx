@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, Flag, Globe, FlaskConical } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ApiKey {
@@ -191,8 +191,6 @@ export default function Settings() {
   }
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
   const [flagsLoading, setFlagsLoading] = useState(false);
-  const [newFlagName, setNewFlagName] = useState('');
-  const [newFlagDesc, setNewFlagDesc] = useState('');
 
   const fetchFlags = async () => {
     setFlagsLoading(true);
@@ -204,38 +202,6 @@ export default function Settings() {
   useEffect(() => {
     if (isAdmin) fetchFlags();
   }, [isAdmin]);
-
-  const createFlag = async () => {
-    if (!newFlagName.trim()) return;
-    const { error } = await supabase.from('feature_flags').insert({
-      flag: newFlagName.trim().toLowerCase().replace(/\s+/g, '-'),
-      description: newFlagDesc.trim() || null,
-      globally_enabled: false,
-      enabled_for: [],
-    });
-    if (error) { toast.error('Failed to create flag'); return; }
-    setNewFlagName('');
-    setNewFlagDesc('');
-    toast.success('Flag created');
-    fetchFlags();
-  };
-
-  const deleteFlag = async (id: string) => {
-    await supabase.from('feature_flags').delete().eq('id', id);
-    toast.success('Flag deleted');
-    fetchFlags();
-  };
-
-  const toggleGlobal = async (flag: FeatureFlag) => {
-    await supabase.from('feature_flags').update({ globally_enabled: !flag.globally_enabled }).eq('id', flag.id);
-    fetchFlags();
-  };
-
-  const removeUserFromFlag = async (flag: FeatureFlag, userId: string) => {
-    const updated = flag.enabled_for.filter(id => id !== userId);
-    await supabase.from('feature_flags').update({ enabled_for: updated }).eq('id', flag.id);
-    fetchFlags();
-  };
 
   // Beta tester
   const [isBetaTester, setIsBetaTester] = useState(false);
@@ -672,99 +638,6 @@ export default function Settings() {
             )
           )}
         </section>
-
-        {isAdmin && (
-          <section className="mt-12 pt-8 border-t border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <Flag size={18} className="text-primary" />
-              <h2 className="text-lg font-semibold font-display text-foreground">Feature Flags</h2>
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">
-              Control which features are visible to which users. Deploy code with a flag, test it yourself, then roll it out globally when ready.
-            </p>
-
-            {/* Create new flag */}
-            <div className="p-4 rounded-lg border border-border bg-card mb-6">
-              <p className="text-sm font-medium mb-3">New Flag</p>
-              <div className="flex flex-col gap-2">
-                <input
-                  type="text"
-                  placeholder="flag-name (e.g. new-editor)"
-                  value={newFlagName}
-                  onChange={e => setNewFlagName(e.target.value)}
-                  className="px-3 py-2 text-sm rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <input
-                  type="text"
-                  placeholder="Description (optional)"
-                  value={newFlagDesc}
-                  onChange={e => setNewFlagDesc(e.target.value)}
-                  className="px-3 py-2 text-sm rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <button
-                  onClick={createFlag}
-                  disabled={!newFlagName.trim()}
-                  className="flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 w-fit"
-                >
-                  <Plus size={14} />
-                  Create Flag
-                </button>
-              </div>
-            </div>
-
-            {/* Flag list */}
-            {flagsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-                <Loader2 size={14} className="animate-spin" /> Loading flags...
-              </div>
-            ) : flags.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">No flags yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {flags.map(flag => (
-                  <div key={flag.id} className="p-4 rounded-lg border border-border bg-card">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <code className="text-sm font-mono font-medium text-foreground">{flag.flag}</code>
-                          {flag.globally_enabled && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-green-500/15 text-green-600 font-medium">global</span>
-                          )}
-                        </div>
-                        {flag.description && <p className="text-xs text-muted-foreground mt-0.5">{flag.description}</p>}
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => toggleGlobal(flag)}
-                          title={flag.globally_enabled ? 'Disable for everyone' : 'Enable for everyone'}
-                          className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${flag.globally_enabled ? 'bg-green-500/20 text-green-600 hover:bg-green-500/30' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-                        >
-                          <Globe size={11} />
-                          {flag.globally_enabled ? 'On for all' : 'Off globally'}
-                        </button>
-                        <button
-                          onClick={() => deleteFlag(flag.id)}
-                          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Per-user count (managed via beta tester opt-in) */}
-                    <div className="mt-2">
-                      <p className="text-xs text-muted-foreground">
-                        {flag.enabled_for.length === 0
-                          ? 'No beta testers opted in yet'
-                          : `${flag.enabled_for.length} beta tester${flag.enabled_for.length === 1 ? '' : 's'} opted in`}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
 
         {isAdmin && (
           <section className="mt-12 pt-8 border-t border-border">

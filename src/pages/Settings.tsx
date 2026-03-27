@@ -306,9 +306,10 @@ export default function Settings() {
         await supabase.from('feature_flags').update({ enabled_for: flag.enabled_for.filter((id: string) => id !== user.id) }).eq('id', flag.id);
       }
     }
-    toast.success('Saved! Refresh the page to apply your beta features.');
+    toast.success('Saved! Reloading to apply your beta features...');
     setBetaSaving(false);
     await loadBetaFlags();
+    setTimeout(() => window.location.reload(), 1200);
   };
 
   const [newName, setNewName] = useState('');

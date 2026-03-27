@@ -279,13 +279,18 @@ export default function Settings() {
     if (newVal) {
       await loadBetaFlags();
     } else {
-      // Remove user from all flags when opting out
-      const { data: allFlags } = await supabase.from('feature_flags').select('*').eq('globally_enabled', false);
-      for (const flag of (allFlags ?? []) as FeatureFlag[]) {
-        if (Array.isArray(flag.enabled_for) && flag.enabled_for.includes(user.id)) {
-          await supabase.from('feature_flags').update({
-            enabled_for: flag.enabled_for.filter((id: string) => id !== user.id)
-          }).eq('id', flag.id);
+      // Remove user from all flags when opting out — use edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: allFlags } = await supabase.from('feature_flags').select('flag, enabled_for').eq('globally_enabled', false);
+        for (const flag of (allFlags ?? []) as FeatureFlag[]) {
+          if (Array.isArray(flag.enabled_for) && flag.enabled_for.includes(user.id)) {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/beta-flag`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ flag: flag.flag, enabled: false }),
+            });
+          }
         }
       }
       setBetaFlags([]);
@@ -297,15 +302,21 @@ export default function Settings() {
   const saveBetaFlagSelections = async () => {
     if (!user) return;
     setBetaSaving(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error('Not logged in'); setBetaSaving(false); return; }
+
     for (const flag of betaFlags) {
       const isEnabled = enabledBetaFlags.has(flag.id);
-      const alreadyIn = Array.isArray(flag.enabled_for) && flag.enabled_for.includes(user.id);
-      if (isEnabled && !alreadyIn) {
-        await supabase.from('feature_flags').update({ enabled_for: [...(flag.enabled_for ?? []), user.id] }).eq('id', flag.id);
-      } else if (!isEnabled && alreadyIn) {
-        await supabase.from('feature_flags').update({ enabled_for: flag.enabled_for.filter((id: string) => id !== user.id) }).eq('id', flag.id);
-      }
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/beta-flag`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ flag: flag.flag, enabled: isEnabled }),
+      });
     }
+
     toast.success('Saved! Reloading to apply your beta features...');
     setBetaSaving(false);
     await loadBetaFlags();

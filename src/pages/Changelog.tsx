@@ -13,6 +13,33 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.4.0',
+    date: '2026-03-27',
+    title: 'Page Sharing, Beta Tester Program & PWA',
+    changes: [
+      {
+        type: 'feature',
+        description: 'Page Sharing — share any page via a public link anyone can view, or restrict it to specific Parchment users by email. Shared pages are fully read-only for viewers.',
+      },
+      {
+        type: 'feature',
+        description: 'Shared with me — pages privately shared with your email address now appear in a dedicated sidebar section.',
+      },
+      {
+        type: 'feature',
+        description: 'Beta Tester program — opt in from Settings to get early access to features still being tested. Check the boxes for the features you want to try.',
+      },
+      {
+        type: 'feature',
+        description: 'Progressive Web App (PWA) — Parchment can now be installed to your home screen on mobile and desktop for a native app-like experience.',
+      },
+      {
+        type: 'improvement',
+        description: 'Collections are now collapsed by default when you open the app.',
+      },
+    ],
+  },
+  {
     version: '1.3.1',
     date: '2026-03-09',
     title: 'Agent-First Onboarding & Bug Fixes',

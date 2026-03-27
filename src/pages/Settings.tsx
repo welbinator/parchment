@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, Flag, Globe, User } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, Flag, Globe, FlaskConical } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ApiKey {
@@ -193,7 +193,6 @@ export default function Settings() {
   const [flagsLoading, setFlagsLoading] = useState(false);
   const [newFlagName, setNewFlagName] = useState('');
   const [newFlagDesc, setNewFlagDesc] = useState('');
-  const [newFlagUserId, setNewFlagUserId] = useState('');
 
   const fetchFlags = async () => {
     setFlagsLoading(true);
@@ -232,18 +231,80 @@ export default function Settings() {
     fetchFlags();
   };
 
-  const addUserToFlag = async (flag: FeatureFlag) => {
-    if (!newFlagUserId.trim()) return;
-    const updated = [...flag.enabled_for, newFlagUserId.trim()];
-    await supabase.from('feature_flags').update({ enabled_for: updated }).eq('id', flag.id);
-    setNewFlagUserId('');
-    fetchFlags();
-  };
-
   const removeUserFromFlag = async (flag: FeatureFlag, userId: string) => {
     const updated = flag.enabled_for.filter(id => id !== userId);
     await supabase.from('feature_flags').update({ enabled_for: updated }).eq('id', flag.id);
     fetchFlags();
+  };
+
+  // Beta tester
+  const [isBetaTester, setIsBetaTester] = useState(false);
+  const [betaFlags, setBetaFlags] = useState<FeatureFlag[]>([]);
+  const [betaSaving, setBetaSaving] = useState(false);
+  const [enabledBetaFlags, setEnabledBetaFlags] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user) return;
+    // Load beta tester status and available flags
+    supabase.from('profiles').select('beta_tester').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => {
+        const isBeta = data?.beta_tester ?? false;
+        setIsBetaTester(isBeta);
+        if (isBeta) loadBetaFlags();
+      });
+  }, [user]);
+
+  const loadBetaFlags = async () => {
+    const { data } = await supabase
+      .from('feature_flags')
+      .select('*')
+      .eq('globally_enabled', false)
+      .order('created_at', { ascending: true });
+    const available = (data ?? []) as FeatureFlag[];
+    setBetaFlags(available);
+    // Which ones is this user already in?
+    setEnabledBetaFlags(new Set(
+      available.filter(f => f.enabled_for.includes(user!.id)).map(f => f.id)
+    ));
+  };
+
+  const toggleBetaTester = async () => {
+    if (!user) return;
+    setBetaSaving(true);
+    const newVal = !isBetaTester;
+    await supabase.from('profiles').update({ beta_tester: newVal }).eq('user_id', user.id);
+    setIsBetaTester(newVal);
+    if (newVal) {
+      loadBetaFlags();
+    } else {
+      // Remove user from all flags when opting out
+      for (const flag of betaFlags) {
+        if (flag.enabled_for.includes(user.id)) {
+          const updated = flag.enabled_for.filter(id => id !== user.id);
+          await supabase.from('feature_flags').update({ enabled_for: updated }).eq('id', flag.id);
+        }
+      }
+      setBetaFlags([]);
+      setEnabledBetaFlags(new Set());
+    }
+    setBetaSaving(false);
+  };
+
+  const saveBetaFlagSelections = async () => {
+    if (!user) return;
+    setBetaSaving(true);
+    for (const flag of betaFlags) {
+      const isEnabled = enabledBetaFlags.has(flag.id);
+      const alreadyIn = flag.enabled_for.includes(user.id);
+      if (isEnabled && !alreadyIn) {
+        await supabase.from('feature_flags').update({ enabled_for: [...flag.enabled_for, user.id] }).eq('id', flag.id);
+      } else if (!isEnabled && alreadyIn) {
+        await supabase.from('feature_flags').update({ enabled_for: flag.enabled_for.filter(id => id !== user.id) }).eq('id', flag.id);
+      }
+    }
+    toast.success('Beta preferences saved — refresh to apply changes');
+    setBetaSaving(false);
+    loadBetaFlags();
   };
 
   const [newName, setNewName] = useState('');
@@ -521,6 +582,81 @@ export default function Settings() {
           )}
         </section>
 
+        {/* Beta Tester — visible to all users */}
+        <section className="mt-12 pt-8 border-t border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <FlaskConical size={18} className="text-primary" />
+            <h2 className="text-lg font-semibold font-display text-foreground">Beta Tester</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Get early access to features that are still being tested.
+          </p>
+
+          {/* Warning */}
+          <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 mb-5">
+            <p className="text-xs text-yellow-700 dark:text-yellow-400 font-medium mb-0.5">⚠️ Beta features may be unstable</p>
+            <p className="text-xs text-yellow-600 dark:text-yellow-500">Beta features are works in progress. They might have bugs, change significantly, or be removed entirely. Use them at your own risk.</p>
+          </div>
+
+          {/* Toggle */}
+          <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card mb-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">{isBetaTester ? 'You are a beta tester' : 'Become a beta tester'}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{isBetaTester ? 'You can try upcoming features below' : 'Opt in to try features before they launch'}</p>
+            </div>
+            <button
+              onClick={toggleBetaTester}
+              disabled={betaSaving}
+              className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${isBetaTester ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+            >
+              {betaSaving ? (
+                <Loader2 size={10} className="absolute inset-0 m-auto animate-spin text-white" />
+              ) : (
+                <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${isBetaTester ? 'left-[18px]' : 'left-0.5'}`} />
+              )}
+            </button>
+          </div>
+
+          {/* Flag checklist */}
+          {isBetaTester && (
+            betaFlags.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No beta features available right now. Check back soon!</p>
+            ) : (
+              <div>
+                <p className="text-xs text-muted-foreground mb-3">Select the features you'd like to try:</p>
+                <div className="space-y-2 mb-4">
+                  {betaFlags.map(flag => (
+                    <label key={flag.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card cursor-pointer hover:bg-accent/30 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={enabledBetaFlags.has(flag.id)}
+                        onChange={e => {
+                          const next = new Set(enabledBetaFlags);
+                          e.target.checked ? next.add(flag.id) : next.delete(flag.id);
+                          setEnabledBetaFlags(next);
+                        }}
+                        className="mt-0.5 accent-primary"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{flag.flag.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</p>
+                        {flag.description && <p className="text-xs text-muted-foreground mt-0.5">{flag.description}</p>}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  onClick={saveBetaFlagSelections}
+                  disabled={betaSaving}
+                  className="flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {betaSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                  Save preferences
+                </button>
+              </div>
+            )
+          )}
+        </section>
+
         {isAdmin && (
           <section className="mt-12 pt-8 border-t border-border">
             <div className="flex items-center gap-2 mb-2">
@@ -599,37 +735,13 @@ export default function Settings() {
                       </div>
                     </div>
 
-                    {/* Per-user list */}
-                    <div className="mt-3">
-                      <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1"><User size={11} /> Enabled for specific users:</p>
-                      {flag.enabled_for.length === 0 ? (
-                        <p className="text-xs text-muted-foreground italic">None</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {flag.enabled_for.map(uid => (
-                            <span key={uid} className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-mono">
-                              {uid.slice(0, 8)}…
-                              <button onClick={() => removeUserFromFlag(flag, uid)} className="hover:text-destructive transition-colors">×</button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex gap-2 mt-2">
-                        <input
-                          type="text"
-                          placeholder="Paste user UUID"
-                          value={newFlagUserId}
-                          onChange={e => setNewFlagUserId(e.target.value)}
-                          className="flex-1 px-2 py-1 text-xs rounded border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary font-mono"
-                        />
-                        <button
-                          onClick={() => addUserToFlag(flag)}
-                          disabled={!newFlagUserId.trim()}
-                          className="px-3 py-1 text-xs rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                        >
-                          Add
-                        </button>
-                      </div>
+                    {/* Per-user count (managed via beta tester opt-in) */}
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        {flag.enabled_for.length === 0
+                          ? 'No beta testers opted in yet'
+                          : `${flag.enabled_for.length} beta tester${flag.enabled_for.length === 1 ? '' : 's'} opted in`}
+                      </p>
                     </div>
                   </div>
                 ))}

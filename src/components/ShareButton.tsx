@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Share2, Globe, Lock, Copy, Check, X, Plus, Trash2, Loader2 } from 'lucide-react';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -18,13 +17,12 @@ interface ShareButtonProps {
 }
 
 export default function ShareButton({ pageId, shareSettings, onUpdate }: ShareButtonProps) {
-  const sharingEnabled = useFeatureFlag('page-sharing');
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newEmail, setNewEmail] = useState('');
 
-  if (!sharingEnabled) return null;
+  if (!shareSettings) return null;
 
   const shareUrl = shareSettings.share_token
     ? `${window.location.origin}/share/${shareSettings.share_token}`

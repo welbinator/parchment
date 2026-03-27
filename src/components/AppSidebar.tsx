@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
 import EditableName from './EditableName';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -49,7 +48,6 @@ export default function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const sharingEnabled = useFeatureFlag('page-sharing');
 
   // Shared with me
   interface SharedWithMePage { id: string; title: string; share_token: string; }
@@ -57,7 +55,7 @@ export default function AppSidebar() {
   const [sharedExpanded, setSharedExpanded] = useState(false);
 
   useEffect(() => {
-    if (!sharingEnabled || !user?.email) return;
+    if (!user?.email) return;
     supabase
       .from('pages')
       .select('id, title, share_token')
@@ -65,7 +63,7 @@ export default function AppSidebar() {
       .eq('share_mode', 'private')
       .contains('shared_with_emails', [user.email])
       .then(({ data }) => setSharedWithMe((data ?? []) as SharedWithMePage[]));
-  }, [sharingEnabled, user?.email]);
+  }, [user?.email]);
 
   const activeCollections = collections.filter((c) => !c.deleted_at);
   const activePages = pages.filter((p) => !p.deleted_at);
@@ -220,7 +218,7 @@ export default function AppSidebar() {
       </div>
 
       {/* Shared with me */}
-      {sharingEnabled && sharedWithMe.length > 0 && (
+      {sharedWithMe.length > 0 && (
         <div className="border-t border-sidebar-border pt-2 pb-1">
           <button
             onClick={() => setSharedExpanded(!sharedExpanded)}

@@ -50,7 +50,7 @@ export default function AppSidebar() {
   const trashCount = trashedPages().length + trashedCollections().length;
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
-    new Set(collections.map((c) => c.id))
+    new Set()
   );
   const [showNewPageMenu, setShowNewPageMenu] = useState<string | null>(null);
 

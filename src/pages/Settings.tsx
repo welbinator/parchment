@@ -178,6 +178,9 @@ export default function Settings() {
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  const ADMIN_EMAIL = 'james.welbes@gmail.com';
+  const isAdmin = user?.email === ADMIN_EMAIL;
+
   // Feature flags (admin only)
   interface FeatureFlag {
     id: string;
@@ -242,9 +245,6 @@ export default function Settings() {
     await supabase.from('feature_flags').update({ enabled_for: updated }).eq('id', flag.id);
     fetchFlags();
   };
-
-  const ADMIN_EMAIL = 'james.welbes@gmail.com';
-  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const [newName, setNewName] = useState('');
   const [newPerms, setNewPerms] = useState<Record<string, boolean>>({

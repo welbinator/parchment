@@ -57,7 +57,7 @@ export default function AppSidebar() {
   const [sharedExpanded, setSharedExpanded] = useState(false);
 
   useEffect(() => {
-    if (!user?.email) return;
+    if (!sharingEnabled || !user?.email) return;
     supabase
       .from('pages')
       .select('id, title, share_token')
@@ -65,7 +65,7 @@ export default function AppSidebar() {
       .eq('share_mode', 'private')
       .contains('shared_with_emails', [user.email])
       .then(({ data }) => setSharedWithMe((data ?? []) as SharedWithMePage[]));
-  }, [user?.email]);
+  }, [sharingEnabled, user?.email]);
 
   const activeCollections = collections.filter((c) => !c.deleted_at);
   const activePages = pages.filter((p) => !p.deleted_at);
@@ -219,8 +219,8 @@ export default function AppSidebar() {
         })}
       </div>
 
-      {/* Shared with me — always visible if any pages are shared with this user */}
-      {sharedWithMe.length > 0 && (
+      {/* Shared with me */}
+      {sharingEnabled && sharedWithMe.length > 0 && (
         <div className="border-t border-sidebar-border pt-2 pb-1">
           <button
             onClick={() => setSharedExpanded(!sharedExpanded)}

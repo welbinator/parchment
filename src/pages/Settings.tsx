@@ -245,7 +245,6 @@ export default function Settings() {
 
   useEffect(() => {
     if (!user) return;
-    // Load beta tester status and available flags
     supabase.from('profiles').select('beta_tester').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => {
         const isBeta = data?.beta_tester ?? false;
@@ -255,16 +254,19 @@ export default function Settings() {
   }, [user]);
 
   const loadBetaFlags = async () => {
-    const { data } = await supabase
+    if (!user) return;
+    // Fetch ALL non-globally-enabled flags — any logged-in user can read these now
+    const { data, error } = await supabase
       .from('feature_flags')
       .select('*')
       .eq('globally_enabled', false)
       .order('created_at', { ascending: true });
+    if (error) { toast.error('Failed to load beta features'); return; }
     const available = (data ?? []) as FeatureFlag[];
     setBetaFlags(available);
-    // Which ones is this user already in?
+    // Pre-check whichever flags this user is already opted into
     setEnabledBetaFlags(new Set(
-      available.filter(f => f.enabled_for.includes(user!.id)).map(f => f.id)
+      available.filter(f => Array.isArray(f.enabled_for) && f.enabled_for.includes(user.id)).map(f => f.id)
     ));
   };
 
@@ -275,13 +277,15 @@ export default function Settings() {
     await supabase.from('profiles').update({ beta_tester: newVal }).eq('user_id', user.id);
     setIsBetaTester(newVal);
     if (newVal) {
-      loadBetaFlags();
+      await loadBetaFlags();
     } else {
       // Remove user from all flags when opting out
-      for (const flag of betaFlags) {
-        if (flag.enabled_for.includes(user.id)) {
-          const updated = flag.enabled_for.filter(id => id !== user.id);
-          await supabase.from('feature_flags').update({ enabled_for: updated }).eq('id', flag.id);
+      const { data: allFlags } = await supabase.from('feature_flags').select('*').eq('globally_enabled', false);
+      for (const flag of (allFlags ?? []) as FeatureFlag[]) {
+        if (Array.isArray(flag.enabled_for) && flag.enabled_for.includes(user.id)) {
+          await supabase.from('feature_flags').update({
+            enabled_for: flag.enabled_for.filter((id: string) => id !== user.id)
+          }).eq('id', flag.id);
         }
       }
       setBetaFlags([]);
@@ -295,16 +299,16 @@ export default function Settings() {
     setBetaSaving(true);
     for (const flag of betaFlags) {
       const isEnabled = enabledBetaFlags.has(flag.id);
-      const alreadyIn = flag.enabled_for.includes(user.id);
+      const alreadyIn = Array.isArray(flag.enabled_for) && flag.enabled_for.includes(user.id);
       if (isEnabled && !alreadyIn) {
-        await supabase.from('feature_flags').update({ enabled_for: [...flag.enabled_for, user.id] }).eq('id', flag.id);
+        await supabase.from('feature_flags').update({ enabled_for: [...(flag.enabled_for ?? []), user.id] }).eq('id', flag.id);
       } else if (!isEnabled && alreadyIn) {
-        await supabase.from('feature_flags').update({ enabled_for: flag.enabled_for.filter(id => id !== user.id) }).eq('id', flag.id);
+        await supabase.from('feature_flags').update({ enabled_for: flag.enabled_for.filter((id: string) => id !== user.id) }).eq('id', flag.id);
       }
     }
-    toast.success('Beta preferences saved — refresh to apply changes');
+    toast.success('Saved! Refresh the page to apply your beta features.');
     setBetaSaving(false);
-    loadBetaFlags();
+    await loadBetaFlags();
   };
 
   const [newName, setNewName] = useState('');

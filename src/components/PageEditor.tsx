@@ -2,10 +2,11 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import BlockItem from './BlockItem';
 import UserMenu from './UserMenu';
+import ShareButton from './ShareButton';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 export default function PageEditor() {
-  const { pages, blocks, activePageId, updatePageTitle, addBlock, sidebarOpen, setSidebarOpen, undoDeleteBlock, lastDeletedBlock } = useAppStore();
+  const { pages, blocks, activePageId, updatePageTitle, updatePageSharing, addBlock, sidebarOpen, setSidebarOpen, undoDeleteBlock, lastDeletedBlock } = useAppStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
 
@@ -68,6 +69,16 @@ export default function PageEditor() {
         </div>
         <div className="flex-1" />
         <span className="text-xs text-muted-foreground font-mono capitalize">{page.type}</span>
+        <ShareButton
+          pageId={page.id}
+          shareSettings={{
+            share_enabled: page.share_enabled ?? false,
+            share_mode: page.share_mode ?? 'public',
+            share_token: page.share_token ?? null,
+            shared_with_emails: page.shared_with_emails ?? [],
+          }}
+          onUpdate={(updates) => updatePageSharing(page.id, updates)}
+        />
         <UserMenu />
       </div>
 

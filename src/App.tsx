@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { useAppStore } from '@/store/useAppStore';
 import Index from "./pages/Index";
@@ -16,6 +16,7 @@ import Docs from "./pages/Docs";
 import Reports from "./pages/Reports";
 import Trash from "./pages/Trash";
 import NotFound from "./pages/NotFound";
+import SharedPageView from "./pages/SharedPageView";
 import { Loader2 } from 'lucide-react';
 import MigrationModal from '@/components/MigrationModal';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,6 +137,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AuthRoute() {
   const { user, loading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/app';
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -143,7 +146,7 @@ function AuthRoute() {
       </div>
     );
   }
-  if (user) return <Navigate to="/app" replace />;
+  if (user) return <Navigate to={redirect} replace />;
   return <AuthPage />;
 }
 
@@ -177,6 +180,7 @@ const App = () => (
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/docs" element={<Docs />} />
             <Route path="/changelog" element={<Changelog />} />
+            <Route path="/share/:token" element={<SharedPageView />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

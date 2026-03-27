@@ -21,6 +21,10 @@ interface DbPage {
   updated_at: string;
   user_id: string;
   deleted_at: string | null;
+  share_enabled: boolean;
+  share_mode: 'public' | 'private';
+  share_token: string | null;
+  shared_with_emails: string[];
 }
 
 interface DbBlock {
@@ -64,6 +68,7 @@ interface AppState {
   // Pages
   addPage: (collectionId: string, type?: PageType) => Promise<string>;
   updatePageTitle: (id: string, title: string) => Promise<void>;
+  updatePageSharing: (id: string, updates: Partial<Pick<DbPage, 'share_enabled' | 'share_mode' | 'share_token' | 'shared_with_emails'>>) => void;
   deletePage: (id: string) => Promise<void>;
 
   // Blocks
@@ -333,6 +338,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     titleTimer = setTimeout(async () => {
       await supabase.from('pages').update({ title }).eq('id', id);
     }, 500);
+  },
+
+  updatePageSharing: (id, updates) => {
+    set((s) => ({ pages: s.pages.map((p) => p.id === id ? { ...p, ...updates } : p) }));
   },
 
   deletePage: async (id) => {

@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
 import EditableName from './EditableName';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Plus,
   ChevronRight,
@@ -13,6 +16,7 @@ import {
   File,
   FileText,
   Archive,
+  Users,
 } from 'lucide-react';
 import type { PageType } from '@/types';
 
@@ -44,6 +48,24 @@ export default function AppSidebar() {
   } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const sharingEnabled = useFeatureFlag('page-sharing');
+
+  // Shared with me
+  interface SharedWithMePage { id: string; title: string; share_token: string; }
+  const [sharedWithMe, setSharedWithMe] = useState<SharedWithMePage[]>([]);
+  const [sharedExpanded, setSharedExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!sharingEnabled || !user?.email) return;
+    supabase
+      .from('pages')
+      .select('id, title, share_token')
+      .eq('share_enabled', true)
+      .eq('share_mode', 'private')
+      .contains('shared_with_emails', [user.email])
+      .then(({ data }) => setSharedWithMe((data ?? []) as SharedWithMePage[]));
+  }, [sharingEnabled, user?.email]);
 
   const activeCollections = collections.filter((c) => !c.deleted_at);
   const activePages = pages.filter((p) => !p.deleted_at);
@@ -196,6 +218,35 @@ export default function AppSidebar() {
           );
         })}
       </div>
+
+      {/* Shared with me */}
+      {sharingEnabled && sharedWithMe.length > 0 && (
+        <div className="border-t border-sidebar-border pt-2 pb-1">
+          <button
+            onClick={() => setSharedExpanded(!sharedExpanded)}
+            className="flex items-center gap-1.5 w-full px-3 py-1.5 text-xs text-sidebar-foreground hover:bg-sidebar-accent/50 rounded-md mx-1 transition-colors"
+          >
+            <ChevronRight size={13} className={`transition-transform ${sharedExpanded ? 'rotate-90' : ''}`} />
+            <Users size={13} className="text-primary/70" />
+            <span className="font-medium">Shared with me</span>
+            <span className="ml-auto text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">{sharedWithMe.length}</span>
+          </button>
+          {sharedExpanded && (
+            <div className="ml-4 mt-1">
+              {sharedWithMe.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => navigate(`/share/${p.share_token}`)}
+                  className="flex items-center gap-2 w-full px-3 py-1.5 mx-1 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+                >
+                  <File size={13} />
+                  <span className="truncate">{p.title || 'Untitled'}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Footer */}
       <div className="p-2 border-t border-sidebar-border space-y-1">

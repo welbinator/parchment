@@ -183,7 +183,7 @@ export default function AppSidebar({ resizableSidebar: resizableProp = false }: 
               )}
 
               {isExpanded && (
-                <div className={resizableSidebar ? 'ml-6' : 'ml-4'}>
+                <div className={resizableSidebar ? 'ml-8 border-l border-sidebar-border/50 pl-1' : 'ml-4'}>
                   {collectionPages.map((page) => (
                     <button
                       key={page.id}

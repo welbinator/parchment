@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { useAppStore } from '@/store/useAppStore';
 
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 480;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function ResizableSidebarWrapper({ children }: Props) {
+  const { sidebarOpen } = useAppStore();
   const [width, setWidth] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
@@ -53,6 +55,8 @@ export default function ResizableSidebarWrapper({ children }: Props) {
       localStorage.setItem(STORAGE_KEY, String(width));
     }
   }, [dragging, width]);
+
+  if (!sidebarOpen) return null;
 
   return (
     <div className="relative flex-shrink-0 h-screen flex" style={{ width }}>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -8,7 +7,6 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function PWAInstallPrompt() {
-  const pwaEnabled = useFeatureFlag('pwa-install');
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [installed, setInstalled] = useState(false);
@@ -41,7 +39,7 @@ export default function PWAInstallPrompt() {
     setDeferredPrompt(null);
   };
 
-  if (!pwaEnabled || !showBanner || installed) return null;
+  if (!showBanner || installed) return null;
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm bg-card border border-border rounded-xl shadow-lg p-4 animate-fade-in">

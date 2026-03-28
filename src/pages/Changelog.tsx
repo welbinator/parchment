@@ -15,8 +15,16 @@ const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.4.1',
     date: '2026-03-28',
-    title: 'Resizable Sidebar & Bug Fixes',
+    title: 'Resizable Sidebar, Group Blocks & Bug Fixes',
     changes: [
+      {
+        type: 'feature',
+        description: 'Group blocks — use /group to create a container block that groups related content together. Delete the whole group at once, or style it with a custom background and border color.',
+      },
+      {
+        type: 'feature',
+        description: 'Group block styling — click the pencil icon on any group to pick a background and border color from a curated palette.',
+      },
       {
         type: 'feature',
         description: 'Resizable sidebar — drag the border between the sidebar and main content to make the sidebar wider or narrower. Your preferred width is saved automatically.',

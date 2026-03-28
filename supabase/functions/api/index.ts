@@ -299,11 +299,92 @@ Deno.serve(async (req) => {
         return json({ success: true }, corsHeaders)
       }
 
+      // share_page: control sharing for a page on behalf of the user.
+      // Can enable/disable sharing, set mode (public/private), and manage the email invite list.
+      // All fields are optional — only the ones you pass are changed.
+      case 'share_page': {
+        if (!permissions.can_create_pages) return deny(corsHeaders)
+        const { page_id, enabled, mode, add_emails, remove_emails } = body
+        if (!page_id) return json({ error: 'page_id is required' }, corsHeaders, 400)
+
+        // Verify ownership
+        const { data: pg } = await supabase
+          .from('pages')
+          .select('id, share_enabled, share_mode, share_token, shared_with_emails')
+          .eq('id', page_id)
+          .eq('user_id', userId)
+          .single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+
+        // Validate mode if provided
+        if (mode !== undefined && mode !== 'public' && mode !== 'private') {
+          return json({ error: 'mode must be "public" or "private"' }, corsHeaders, 400)
+        }
+
+        // Build update payload
+        const updates: Record<string, any> = {}
+
+        // Generate a share token if enabling and one doesn't exist yet
+        let shareToken = pg.share_token
+        if (enabled === true && !shareToken) {
+          shareToken = crypto.randomUUID()
+          updates.share_token = shareToken
+        }
+        if (enabled !== undefined) updates.share_enabled = enabled
+
+        if (mode !== undefined) updates.share_mode = mode
+
+        // Handle email list modifications
+        let emails: string[] = [...(pg.shared_with_emails ?? [])]
+        if (Array.isArray(add_emails)) {
+          for (const email of add_emails) {
+            const clean = email.trim().toLowerCase()
+            if (clean && !emails.includes(clean)) emails.push(clean)
+          }
+        }
+        if (Array.isArray(remove_emails)) {
+          const toRemove = remove_emails.map((e: string) => e.trim().toLowerCase())
+          emails = emails.filter(e => !toRemove.includes(e))
+        }
+        if (Array.isArray(add_emails) || Array.isArray(remove_emails)) {
+          updates.shared_with_emails = emails
+        }
+
+        if (Object.keys(updates).length === 0) {
+          // Nothing to update — just return current state
+          const shareUrl = pg.share_token ? `https://theparchment.app/share/${pg.share_token}` : null
+          return json({
+            success: true,
+            share_enabled: pg.share_enabled,
+            share_mode: pg.share_mode,
+            share_token: pg.share_token,
+            shared_with_emails: pg.shared_with_emails,
+            share_url: shareUrl,
+          }, corsHeaders)
+        }
+
+        const { error } = await supabase.from('pages').update(updates).eq('id', page_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+
+        const finalToken = shareToken ?? pg.share_token
+        const shareUrl = finalToken ? `https://theparchment.app/share/${finalToken}` : null
+
+        return json({
+          success: true,
+          share_enabled: enabled !== undefined ? enabled : pg.share_enabled,
+          share_mode: mode !== undefined ? mode : pg.share_mode,
+          share_token: finalToken,
+          shared_with_emails: emails,
+          share_url: shareUrl,
+        }, corsHeaders)
+      }
+
       default:
         return json({ error: `Unknown action: ${action}`, available_actions: [
           'list_collections', 'create_collection', 'delete_collection', 'rename_collection',
           'list_pages', 'create_page', 'delete_page', 'rename_page', 'get_page',
           'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block',
+          'share_page',
         ]}, corsHeaders, 400)
     }
   } catch (err) {

@@ -153,6 +153,70 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
 | \`divider\` | Horizontal rule (content: "") |
 | \`code\` | Code block |
 
+## Page Sharing
+
+You can share a page publicly (anyone with the link) or privately (specific Parchment users by email) on your human's behalf.
+
+### Enable public sharing
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "share_page",
+    "page_id": "PAGE_ID",
+    "enabled": true,
+    "mode": "public"
+  }'
+\`\`\`
+
+Response includes \`share_url\` — the link you can hand to someone.
+
+### Share privately with specific people
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "share_page",
+    "page_id": "PAGE_ID",
+    "enabled": true,
+    "mode": "private",
+    "add_emails": ["friend@example.com", "colleague@example.com"]
+  }'
+\`\`\`
+
+Private shares require the recipient to have a Parchment account.
+
+### Remove someone from a private share
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "share_page",
+    "page_id": "PAGE_ID",
+    "remove_emails": ["friend@example.com"]
+  }'
+\`\`\`
+
+### Disable sharing (revoke access)
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "share_page", "page_id": "PAGE_ID", "enabled": false}'
+\`\`\`
+
+### share_page response fields
+| Field | Description |
+|-------|-------------|
+| \`share_enabled\` | Whether sharing is currently on |
+| \`share_mode\` | \`"public"\` or \`"private"\` |
+| \`share_token\` | The UUID token used in the share URL |
+| \`shared_with_emails\` | Array of invited emails (private mode) |
+| \`share_url\` | Full URL to share — null if never enabled |
+
 ## Full API Docs
 
 Visit **https://theparchment.app/docs/api** for the complete API reference with all actions, parameters, and response formats.

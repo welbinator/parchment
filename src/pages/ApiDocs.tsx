@@ -77,6 +77,7 @@ export default function ApiDocs() {
               'replace_blocks',
               'update_blocks (alias for append_blocks)',
               'delete_block',
+              'share_page',
             ].map((action) => (
               <li key={action} className="border border-border rounded px-3 py-2 font-mono bg-card">{action}</li>
             ))}
@@ -158,6 +159,63 @@ export default function ApiDocs() {
   -H "Content-Type: application/json" \\
   -H "x-api-key: pmt_your_key" \\
   -d '{"action":"delete_block","page_id":"<page_id>","block_id":"<block_id>"}'`}</CodeBlock>
+        </section>
+
+        {/* Data export */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">share_page</h2>
+          <p className="text-muted-foreground mb-3">
+            Share a page publicly (anyone with the link) or privately (specific Parchment users by email). All fields are optional — only the ones you pass are changed. Requires <code className="bg-muted px-1 py-0.5 rounded">can_create_pages</code> permission.
+          </p>
+          <h3 className="text-lg font-medium mb-2">Enable public sharing</h3>
+          <CodeBlock>{`curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{
+    "action": "share_page",
+    "page_id": "<page_id>",
+    "enabled": true,
+    "mode": "public"
+  }'`}</CodeBlock>
+          <p className="text-muted-foreground mt-2 text-sm">The response includes <code className="bg-muted px-1 py-0.5 rounded">share_url</code> — the link you can hand to someone.</p>
+
+          <h3 className="text-lg font-medium mt-4 mb-2">Share privately with specific people</h3>
+          <CodeBlock>{`curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{
+    "action": "share_page",
+    "page_id": "<page_id>",
+    "enabled": true,
+    "mode": "private",
+    "add_emails": ["friend@example.com", "colleague@example.com"]
+  }'`}</CodeBlock>
+          <p className="text-muted-foreground mt-2 text-sm">Private shares require the recipient to have a Parchment account. They'll be prompted to sign in when visiting the link.</p>
+
+          <h3 className="text-lg font-medium mt-4 mb-2">Remove someone from a private share</h3>
+          <CodeBlock>{`curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{
+    "action": "share_page",
+    "page_id": "<page_id>",
+    "remove_emails": ["friend@example.com"]
+  }'`}</CodeBlock>
+
+          <h3 className="text-lg font-medium mt-4 mb-2">Disable sharing (revoke access)</h3>
+          <CodeBlock>{`curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{"action":"share_page","page_id":"<page_id>","enabled":false}'`}</CodeBlock>
+
+          <h3 className="text-lg font-medium mt-4 mb-2">Response fields</h3>
+          <ul className="list-disc pl-6 text-muted-foreground space-y-1 text-sm">
+            <li><code className="bg-muted px-1 py-0.5 rounded">share_enabled</code> — whether sharing is currently on</li>
+            <li><code className="bg-muted px-1 py-0.5 rounded">share_mode</code> — <code className="bg-muted px-1 py-0.5 rounded">"public"</code> or <code className="bg-muted px-1 py-0.5 rounded">"private"</code></li>
+            <li><code className="bg-muted px-1 py-0.5 rounded">share_token</code> — UUID token used in the share URL</li>
+            <li><code className="bg-muted px-1 py-0.5 rounded">shared_with_emails</code> — array of invited emails (private mode)</li>
+            <li><code className="bg-muted px-1 py-0.5 rounded">share_url</code> — full URL to share, or <code className="bg-muted px-1 py-0.5 rounded">null</code> if never enabled</li>
+          </ul>
         </section>
 
         {/* Data export */}

@@ -18,6 +18,7 @@ import Trash from "./pages/Trash";
 import NotFound from "./pages/NotFound";
 import SharedPageView from "./pages/SharedPageView";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import FeedbackWidget from "./components/FeedbackWidget";
 import { Loader2 } from 'lucide-react';
 import MigrationModal from '@/components/MigrationModal';
 import { supabase } from '@/integrations/supabase/client';
@@ -171,6 +172,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <PWAInstallPrompt />
+        <FeedbackWidget />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />

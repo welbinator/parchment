@@ -114,6 +114,7 @@ export default function PageEditor() {
                     block={block as any}
                     pageId={page.id}
                     childBlocks={childBlocks as any}
+                    groupBlocksEnabled={groupBlocksEnabled}
                   />
                 );
               }
@@ -143,6 +144,7 @@ export default function PageEditor() {
                   focusBlockId={focusBlockId}
                   onFocusHandled={() => setFocusBlockId(null)}
                   onNewBlock={(id) => setFocusBlockId(id)}
+                  groupBlocksEnabled={groupBlocksEnabled}
                 />
               );
             })}

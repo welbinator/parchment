@@ -32,9 +32,10 @@ interface GroupBlockProps {
   block: DbBlock;
   pageId: string;
   childBlocks: DbBlock[];
+  groupBlocksEnabled: boolean;
 }
 
-export default function GroupBlock({ block, pageId, childBlocks }: GroupBlockProps) {
+export default function GroupBlock({ block, pageId, childBlocks, groupBlocksEnabled }: GroupBlockProps) {
   const { addBlock, deleteGroup } = useAppStore();
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
 
@@ -132,6 +133,7 @@ export default function GroupBlock({ block, pageId, childBlocks }: GroupBlockPro
                 onFocusHandled={() => setFocusBlockId(null)}
                 onNewBlock={(id) => setFocusBlockId(id)}
                 groupId={block.id}
+                groupBlocksEnabled={groupBlocksEnabled}
               />
             );
           })

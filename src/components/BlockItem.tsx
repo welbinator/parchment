@@ -91,9 +91,10 @@ interface BlockItemProps {
   onFocusHandled: () => void;
   onNewBlock: (newBlockId: string) => void;
   groupId?: string | null;
+  groupBlocksEnabled?: boolean;
 }
 
-export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock, groupId = null }: BlockItemProps) {
+export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock, groupId = null, groupBlocksEnabled = false }: BlockItemProps) {
   const { updateBlock, deleteBlock, addBlock, changeBlockType, undoDeleteBlock } = useAppStore();
   const ref = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -204,9 +205,10 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       }
       if (e.key === 'Enter') {
         e.preventDefault();
-        const filtered = blockTypeOptions.filter((o) =>
-          o.label.toLowerCase().includes(slashFilter)
-        );
+        const filtered = blockTypeOptions.filter((o) => {
+          if (o.type === 'group' && !groupBlocksEnabled) return false;
+          return o.label.toLowerCase().includes(slashFilter);
+        });
         if (filtered.length > 0) {
           selectSlashOption(filtered[0].type);
         }
@@ -265,6 +267,23 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
         <button
           onClick={handleDeleteBlock}
           className="ml-2 p-0.5 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+        >
+          <Trash2 size={12} />
+        </button>
+      </div>
+    );
+  }
+
+  // Group blocks are rendered by GroupBlock in PageEditor — this is a fallback
+  // for when the flag is off or block somehow escapes the PageEditor check
+  if (block.type === 'group') {
+    return (
+      <div className="group flex items-center gap-2 py-2 px-3 rounded border border-dashed border-border text-xs text-muted-foreground">
+        <Group size={12} />
+        <span>Group block (enable the group-blocks flag to use)</span>
+        <button
+          onClick={handleDeleteBlock}
+          className="ml-auto p-0.5 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
         >
           <Trash2 size={12} />
         </button>
@@ -352,7 +371,10 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       {showSlashMenu && (
         <div className="absolute left-8 top-full z-50 mt-1 bg-popover border border-border rounded-lg shadow-lg p-1 w-56 animate-fade-in">
           {blockTypeOptions
-            .filter((o) => o.label.toLowerCase().includes(slashFilter))
+            .filter((o) => {
+              if (o.type === 'group' && !groupBlocksEnabled) return false;
+              return o.label.toLowerCase().includes(slashFilter);
+            })
             .map((opt) => (
               <button
                 key={opt.type}

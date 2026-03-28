@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
@@ -10,12 +10,37 @@ const NAV_LINKS = [
 
 export default function PublicNav() {
   const [open, setOpen] = useState(false);
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
+  const navigate = useNavigate();
+
+  // After navigating to / with a hash, scroll to the target once the page renders
+  useEffect(() => {
+    if (pathname === '/' && hash) {
+      const id = hash.replace('#', '');
+      // Small delay to let Landing render before we try to find the element
+      const timer = setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, hash]);
+
+  const handleFeaturesClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpen(false);
+    if (pathname === '/') {
+      // Already on home — just scroll
+      document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Navigate home with hash; useEffect above handles the scroll
+      navigate('/#features');
+    }
+  };
 
   const linkClass = (href: string) => {
-    const active = href === '/' ? pathname === '/' : pathname.startsWith(href.replace('/#features', ''));
+    const active = href === '/' ? pathname === '/' : pathname.startsWith(href.split('#')[0]);
     return `text-sm transition-colors ${
-      active
+      active && !href.includes('#features')
         ? 'text-foreground font-medium'
         : 'text-muted-foreground hover:text-foreground'
     }`;
@@ -31,8 +56,8 @@ export default function PublicNav() {
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((l) =>
-            l.href.startsWith('/#') ? (
-              <a key={l.label} href={l.href} className={linkClass(l.href)}>
+            l.href === '/#features' ? (
+              <a key={l.label} href={l.href} onClick={handleFeaturesClick} className={linkClass(l.href)}>
                 {l.label}
               </a>
             ) : (
@@ -59,13 +84,8 @@ export default function PublicNav() {
       {open && (
         <div className="md:hidden border-t border-border bg-background px-6 py-4 space-y-3">
           {NAV_LINKS.map((l) =>
-            l.href.startsWith('/#') ? (
-              <a
-                key={l.label}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className={`block ${linkClass(l.href)}`}
-              >
+            l.href === '/#features' ? (
+              <a key={l.label} href={l.href} onClick={handleFeaturesClick} className={`block ${linkClass(l.href)}`}>
                 {l.label}
               </a>
             ) : (

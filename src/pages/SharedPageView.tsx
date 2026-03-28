@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Lock } from 'lucide-react';
+import { Loader2, Lock, Group } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
 interface SharedPage {
@@ -20,6 +20,7 @@ interface SharedBlock {
   checked: boolean | null;
   list_start: boolean | null;
   position: number;
+  group_id: string | null;
 }
 
 function convertStyledJsonToHtml(content: string): string {
@@ -50,6 +51,41 @@ function renderBlockContent(content: string): string {
   const URL_REGEX = /(?<!\S)(https?:\/\/[^\s<]+[^\s<.,;:!?)"'\]])/g;
   const linked = converted.replace(URL_REGEX, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${url}</a>`);
   return DOMPurify.sanitize(linked, { ADD_ATTR: ['target', 'rel', 'style'] });
+}
+
+function parseGroupStyle(content: string): { bgColor?: string; borderColor?: string } {
+  if (!content || !content.trim().startsWith('{')) return {};
+  try { return JSON.parse(content); } catch { return {}; }
+}
+
+function ReadOnlyGroupBlock({ block, allBlocks }: { block: SharedBlock; allBlocks: SharedBlock[] }) {
+  const children = allBlocks
+    .filter((b) => b.group_id === block.id)
+    .sort((a, b) => a.position - b.position);
+
+  const groupStyle = parseGroupStyle(block.content);
+  const containerStyle: React.CSSProperties = {};
+  if (groupStyle.bgColor) containerStyle.backgroundColor = groupStyle.bgColor;
+  if (groupStyle.borderColor) containerStyle.borderColor = groupStyle.borderColor;
+
+  return (
+    <div
+      className={`relative border rounded-lg p-4 ${!groupStyle.bgColor ? 'bg-muted/30' : ''} ${!groupStyle.borderColor ? 'border-border' : ''}`}
+      style={containerStyle}
+    >
+      <div className="absolute -top-3 left-3">
+        <div className="flex items-center gap-1 bg-background border border-border rounded-md px-2 py-0.5 text-xs text-muted-foreground shadow-sm">
+          <Group size={10} />
+          <span>Group</span>
+        </div>
+      </div>
+      <div className="space-y-3 mt-1">
+        {children.map((child, idx) => (
+          <ReadOnlyBlock key={child.id} block={child} index={idx} blocks={children} />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: number; blocks: SharedBlock[] }) {
@@ -171,7 +207,7 @@ export default function SharedPageView() {
     // Fetch blocks
     const { data: blocksData } = await supabase
       .from('blocks')
-      .select('id, type, content, checked, list_start, position')
+      .select('id, type, content, checked, list_start, position, group_id')
       .eq('page_id', pageData.id)
       .order('position');
 
@@ -221,9 +257,14 @@ export default function SharedPageView() {
 
         {/* Blocks */}
         <div className="space-y-2">
-          {blocks.map((block, index) => (
-            <ReadOnlyBlock key={block.id} block={block} index={index} blocks={blocks} />
-          ))}
+          {blocks
+            .filter((b) => !b.group_id)
+            .map((block, index, topLevel) => {
+              if (block.type === 'group') {
+                return <ReadOnlyGroupBlock key={block.id} block={block} allBlocks={blocks} />;
+              }
+              return <ReadOnlyBlock key={block.id} block={block} index={index} blocks={topLevel} />;
+            })}
         </div>
 
         {/* Footer */}

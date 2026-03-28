@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { MessageSquare, X, Send, Loader2 } from 'lucide-react';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export default function FeedbackWidget() {
-  const feedbackEnabled = useFeatureFlag('feedback');
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -14,7 +12,7 @@ export default function FeedbackWidget() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  if (!feedbackEnabled || !user) return null;
+  if (!user) return null;
 
   const handleSubmit = async () => {
     if (!message.trim()) return;

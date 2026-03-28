@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, Lock, Group } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
 interface SharedPage {
@@ -73,13 +73,7 @@ function ReadOnlyGroupBlock({ block, allBlocks }: { block: SharedBlock; allBlock
       className={`relative border rounded-lg p-4 ${!groupStyle.bgColor ? 'bg-muted/30' : ''} ${!groupStyle.borderColor ? 'border-border' : ''}`}
       style={containerStyle}
     >
-      <div className="absolute -top-3 left-3">
-        <div className="flex items-center gap-1 bg-background border border-border rounded-md px-2 py-0.5 text-xs text-muted-foreground shadow-sm">
-          <Group size={10} />
-          <span>Group</span>
-        </div>
-      </div>
-      <div className="space-y-3 mt-1">
+      <div className="space-y-3">
         {children.map((child, idx) => (
           <ReadOnlyBlock key={child.id} block={child} index={idx} blocks={children} />
         ))}

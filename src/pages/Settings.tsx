@@ -152,6 +152,42 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
 | \`quote\` | Blockquote |
 | \`divider\` | Horizontal rule (content: "") |
 | \`code\` | Code block |
+| \`group\` | Container block — groups child blocks together. Use \`group_id\` on child blocks to associate them with this group. |
+
+## Group Blocks
+
+A group block is a container (like a \`<div>\`) that logically groups child blocks. Deleting the group deletes all its children at once.
+
+### Create a group with children
+\`\`\`bash
+# Step 1: create the group block
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action":"append_blocks","page_id":"PAGE_ID","blocks":[{"type":"group","content":""}]}'
+# → returns the group block id
+
+# Step 2: add children using the returned group id
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "append_blocks",
+    "page_id": "PAGE_ID",
+    "blocks": [
+      { "type": "text", "content": "Email: user@example.com", "group_id": "GROUP_ID" },
+      { "type": "text", "content": "Date: 2026-03-28", "group_id": "GROUP_ID" }
+    ]
+  }'
+\`\`\`
+
+### Delete a group (and all its children)
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action":"delete_group","page_id":"PAGE_ID","group_block_id":"GROUP_ID"}'
+\`\`\`
 
 ## Page Sharing
 

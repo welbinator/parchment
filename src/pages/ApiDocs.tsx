@@ -77,6 +77,7 @@ export default function ApiDocs() {
               'replace_blocks',
               'update_blocks (alias for append_blocks)',
               'delete_block',
+              'delete_group',
               'share_page',
             ].map((action) => (
               <li key={action} className="border border-border rounded px-3 py-2 font-mono bg-card">{action}</li>
@@ -159,6 +160,44 @@ export default function ApiDocs() {
   -H "Content-Type: application/json" \\
   -H "x-api-key: pmt_your_key" \\
   -d '{"action":"delete_block","page_id":"<page_id>","block_id":"<block_id>"}'`}</CodeBlock>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">Group Blocks</h2>
+          <p className="text-muted-foreground mb-3">
+            A <code className="bg-muted px-1 py-0.5 rounded">group</code> block is a container — like a <code className="bg-muted px-1 py-0.5 rounded">&lt;div&gt;</code> in HTML — that holds child blocks together. Deleting a group deletes all its children in one operation.
+          </p>
+          <h3 className="text-lg font-medium mb-2">Create a group with child blocks</h3>
+          <p className="text-muted-foreground mb-2 text-sm">First create the group block, then append child blocks with <code className="bg-muted px-1 py-0.5 rounded">group_id</code> set to the group's id.</p>
+          <CodeBlock>{`# Step 1: create the group block
+curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{
+    "action": "append_blocks",
+    "page_id": "<page_id>",
+    "blocks": [{ "type": "group", "content": "" }]
+  }'
+# → returns { "blocks": [{ "id": "<group_id>", "type": "group", ... }] }
+
+# Step 2: add children using the returned group id
+curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{
+    "action": "append_blocks",
+    "page_id": "<page_id>",
+    "blocks": [
+      { "type": "text", "content": "Email: user@example.com", "group_id": "<group_id>" },
+      { "type": "text", "content": "Date: 2026-03-28", "group_id": "<group_id>" },
+      { "type": "text", "content": "Message: Great app!", "group_id": "<group_id>" }
+    ]
+  }'`}</CodeBlock>
+          <h3 className="text-lg font-medium mt-4 mb-2">Delete a group (and all its children)</h3>
+          <CodeBlock>{`curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{"action":"delete_group","page_id":"<page_id>","group_block_id":"<group_id>"}'`}</CodeBlock>
         </section>
 
         {/* Data export */}
@@ -250,7 +289,7 @@ echo "$collections" > export_collections.json
         <section className="mb-8">
           <h2 className="text-2xl font-semibold font-display mb-3">Block Types</h2>
           <ul className="grid sm:grid-cols-2 gap-2 text-sm">
-            {['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo (checkbox)', 'quote', 'divider', 'code'].map((t) => (
+            {['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo (checkbox)', 'quote', 'divider', 'code', 'group'].map((t) => (
               <li key={t} className="border border-border rounded px-3 py-2 font-mono bg-card">{t}</li>
             ))}
           </ul>

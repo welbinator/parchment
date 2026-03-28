@@ -17,6 +17,7 @@ import {
   Quote,
   Minus,
   Code,
+  Group,
 } from 'lucide-react';
 
 const blockTypeOptions: { type: BlockType; label: string; icon: React.ReactNode }[] = [
@@ -30,6 +31,7 @@ const blockTypeOptions: { type: BlockType; label: string; icon: React.ReactNode 
   { type: 'quote', label: 'Quote', icon: <Quote size={14} /> },
   { type: 'divider', label: 'Divider', icon: <Minus size={14} /> },
   { type: 'code', label: 'Code', icon: <Code size={14} /> },
+  { type: 'group', label: 'Group', icon: <Group size={14} /> },
 ];
 
 // Convert styled JSON arrays to HTML (for content saved before server-side conversion)
@@ -88,9 +90,10 @@ interface BlockItemProps {
   focusBlockId: string | null;
   onFocusHandled: () => void;
   onNewBlock: (newBlockId: string) => void;
+  groupId?: string | null;
 }
 
-export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock }: BlockItemProps) {
+export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock, groupId = null }: BlockItemProps) {
   const { updateBlock, deleteBlock, addBlock, changeBlockType, undoDeleteBlock } = useAppStore();
   const ref = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -214,7 +217,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
 
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      const newId = addBlock(pageId, block.id, 'text');
+      const newId = addBlock(pageId, block.id, 'text', groupId);
       onNewBlock(newId);
       return;
     }
@@ -222,7 +225,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       const newType: BlockType = block.type === 'todo' ? 'todo' : block.type === 'bullet_list' ? 'bullet_list' : block.type === 'numbered_list' ? 'numbered_list' : 'text';
-      const newId = addBlock(pageId, block.id, newType);
+      const newId = addBlock(pageId, block.id, newType, groupId);
       onNewBlock(newId);
     }
 
@@ -247,9 +250,12 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const selectSlashOption = (type: BlockType) => {
     setShowSlashMenu(false);
     if (ref.current) ref.current.innerHTML = '';
+    // Group blocks are handled by PageEditor — just change the type; PageEditor will swap to GroupBlock
     changeBlockType(pageId, block.id, type);
     updateBlock(pageId, block.id, { content: '', listStart: type === 'numbered_list' ? true : undefined });
-    setTimeout(() => ref.current?.focus(), 0);
+    if (type !== 'group') {
+      setTimeout(() => ref.current?.focus(), 0);
+    }
   };
 
   if (block.type === 'divider') {

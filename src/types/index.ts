@@ -8,7 +8,8 @@ export type BlockType =
   | 'todo' 
   | 'quote' 
   | 'divider' 
-  | 'code';
+  | 'code'
+  | 'group';
 
 export interface Block {
   id: string;
@@ -16,6 +17,7 @@ export interface Block {
   content: string;
   checked?: boolean;
   listStart?: boolean;
+  groupId?: string | null;
 }
 
 export type PageType = 'blank' | 'notes' | 'roadmap' | 'checklist';

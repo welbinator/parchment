@@ -65,6 +65,7 @@ curl -X POST https://theparchment.app/functions/v1/api \
 - replace_blocks (deletes all existing blocks, writes new ones in array order — use for full rewrites)
 - update_blocks (alias for append_blocks — kept for backwards compatibility)
 - delete_block
+- delete_group
 
 ## Block Types
 - text
@@ -77,6 +78,7 @@ curl -X POST https://theparchment.app/functions/v1/api \
 - quote
 - divider
 - code
+- group (container block — groups child blocks together; use group_id on child blocks to associate them)
 
 ## Block Content Format
 Block content is stored as HTML strings. Use standard HTML tags for formatting:
@@ -138,6 +140,17 @@ curl -X POST https://theparchment.app/functions/v1/api \
   -H "Content-Type: application/json" \
   -H "x-api-key: pmt_your_key" \
   -d '{"action":"delete_block","page_id":"&lt;page_id&gt;","block_id":"&lt;block_id&gt;"}'
+
+## Group Blocks
+A group block is a container (like a div) that holds child blocks together.
+Create a group block first, then append child blocks with group_id set to the group's id.
+Use delete_group to delete the group and all its children in one operation.
+
+## delete_group
+curl -X POST https://theparchment.app/functions/v1/api \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"delete_group","page_id":"&lt;page_id&gt;","group_block_id":"&lt;group_id&gt;"}'
 
 ## Data Export
 Use list_collections to get all collections, list_pages for each collection,

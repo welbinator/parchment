@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 const MAX_BLOCK_CONTENT_BYTES = 10 * 1024 // 10KB per block
-const VALID_BLOCK_TYPES = new Set(['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo', 'quote', 'divider', 'code'])
+const VALID_BLOCK_TYPES = new Set(['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo', 'quote', 'divider', 'code', 'group'])
 
 // Convert styled text JSON arrays to HTML
 // Bots sometimes send [{"text":"hello","bold":true}] instead of "<b>hello</b>"
@@ -214,6 +214,7 @@ Deno.serve(async (req) => {
             content,
             checked: block.checked ?? null,
             position,
+            group_id: block.group_id || null,
           }).select().single()
           if (inserted) insertedBlocks.push(inserted)
         }
@@ -258,6 +259,7 @@ Deno.serve(async (req) => {
             content,
             checked: block.checked ?? null,
             position: i,
+            group_id: block.group_id || null,
           }).select().single()
           if (inserted) insertedBlocks.push(inserted)
         }
@@ -273,6 +275,22 @@ Deno.serve(async (req) => {
         const { data: blk } = await supabase.from('blocks').select('id').eq('id', block_id).eq('page_id', page_id).single()
         if (!blk) return json({ error: 'Block not found' }, corsHeaders, 404)
         const { error } = await supabase.from('blocks').delete().eq('id', block_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
+      }
+
+      case 'delete_group': {
+        if (!permissions.can_write_blocks) return deny(corsHeaders)
+        const { page_id, group_block_id } = body
+        if (!page_id || !group_block_id) return json({ error: 'page_id and group_block_id are required' }, corsHeaders, 400)
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+        const { data: grp } = await supabase.from('blocks').select('id, type').eq('id', group_block_id).eq('page_id', page_id).single()
+        if (!grp) return json({ error: 'Group block not found' }, corsHeaders, 404)
+        if (grp.type !== 'group') return json({ error: 'Block is not a group block' }, corsHeaders, 400)
+        // Delete children first (CASCADE handles it but be explicit)
+        await supabase.from('blocks').delete().eq('group_id', group_block_id)
+        const { error } = await supabase.from('blocks').delete().eq('id', group_block_id)
         if (error) return json({ error: error.message }, corsHeaders, 400)
         return json({ success: true }, corsHeaders)
       }
@@ -383,7 +401,7 @@ Deno.serve(async (req) => {
         return json({ error: `Unknown action: ${action}`, available_actions: [
           'list_collections', 'create_collection', 'delete_collection', 'rename_collection',
           'list_pages', 'create_page', 'delete_page', 'rename_page', 'get_page',
-          'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block',
+          'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block', 'delete_group',
           'share_page',
         ]}, corsHeaders, 400)
     }

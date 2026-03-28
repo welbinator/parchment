@@ -1,14 +1,17 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import BlockItem from './BlockItem';
+import GroupBlock from './GroupBlock';
 import UserMenu from './UserMenu';
 import ShareButton from './ShareButton';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 export default function PageEditor() {
   const { pages, blocks, activePageId, updatePageTitle, updatePageSharing, addBlock, sidebarOpen, setSidebarOpen, undoDeleteBlock, lastDeletedBlock } = useAppStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
+  const groupBlocksEnabled = useFeatureFlag('group-blocks');
 
   // Ctrl+Z to undo block deletion
   useEffect(() => {
@@ -26,6 +29,14 @@ export default function PageEditor() {
   }, []);
 
   const pageBlocks = useMemo(() => {
+    if (!page) return [];
+    // Top-level blocks only (no group children) — children are rendered inside GroupBlock
+    return blocks
+      .filter((b) => b.page_id === page.id && !b.group_id)
+      .sort((a, b) => a.position - b.position);
+  }, [blocks, page]);
+
+  const allPageBlocks = useMemo(() => {
     if (!page) return [];
     return blocks.filter((b) => b.page_id === page.id).sort((a, b) => a.position - b.position);
   }, [blocks, page]);
@@ -94,6 +105,19 @@ export default function PageEditor() {
 
           <div className="space-y-3">
             {pageBlocks.map((block, index) => {
+              // Render group blocks via GroupBlock component
+              if (block.type === 'group' && groupBlocksEnabled) {
+                const childBlocks = allPageBlocks.filter((b) => b.group_id === block.id);
+                return (
+                  <GroupBlock
+                    key={block.id}
+                    block={block as any}
+                    pageId={page.id}
+                    childBlocks={childBlocks as any}
+                  />
+                );
+              }
+
               let listIndex = 0;
               if (block.type === 'numbered_list') {
                 if (block.list_start) {

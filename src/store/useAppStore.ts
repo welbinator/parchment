@@ -36,6 +36,7 @@ interface DbBlock {
   list_start: boolean | null;
   position: number;
   created_at: string;
+  group_id: string | null;
 }
 
 interface AppState {
@@ -72,9 +73,10 @@ interface AppState {
   deletePage: (id: string) => Promise<void>;
 
   // Blocks
-  addBlock: (pageId: string, afterBlockId: string | null, type?: BlockType) => string;
+  addBlock: (pageId: string, afterBlockId: string | null, type?: BlockType, groupId?: string | null) => string;
   updateBlock: (pageId: string, blockId: string, updates: Partial<Block>) => void;
   deleteBlock: (pageId: string, blockId: string) => Promise<void>;
+  deleteGroup: (pageId: string, groupBlockId: string) => Promise<void>;
   undoDeleteBlock: () => void;
   changeBlockType: (pageId: string, blockId: string, type: BlockType) => void;
 
@@ -357,13 +359,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  addBlock: (pageId, afterBlockId, type = 'text') => {
+  addBlock: (pageId, afterBlockId, type = 'text', groupId = null) => {
     const blockId = uid();
     set((s) => {
-      const pageBlocks = s.blocks.filter((b) => b.page_id === pageId).sort((a, b) => a.position - b.position);
-      let insertIdx = pageBlocks.length;
+      // For group children, scope positioning to siblings within the group
+      const scopedBlocks = groupId
+        ? s.blocks.filter((b) => b.page_id === pageId && b.group_id === groupId).sort((a, b) => a.position - b.position)
+        : s.blocks.filter((b) => b.page_id === pageId && !b.group_id).sort((a, b) => a.position - b.position);
+
+      let insertIdx = scopedBlocks.length;
       if (afterBlockId) {
-        const idx = pageBlocks.findIndex((b) => b.id === afterBlockId);
+        const idx = scopedBlocks.findIndex((b) => b.id === afterBlockId);
         if (idx >= 0) insertIdx = idx + 1;
       }
 
@@ -376,17 +382,17 @@ export const useAppStore = create<AppState>((set, get) => ({
         list_start: null,
         position: insertIdx,
         created_at: new Date().toISOString(),
+        group_id: groupId,
       };
 
-      // Reposition
-      const updatedBlocks = [...pageBlocks];
-      updatedBlocks.splice(insertIdx, 0, newBlock);
-      const repositioned = updatedBlocks.map((b, i) => ({ ...b, position: i }));
+      // Reposition scoped siblings
+      const updatedScoped = [...scopedBlocks];
+      updatedScoped.splice(insertIdx, 0, newBlock);
+      const repositioned = updatedScoped.map((b, i) => ({ ...b, position: i }));
 
       // Save to db
       markLocalMutation();
-      supabase.from('blocks').insert({ ...newBlock, position: insertIdx }).then(() => {
-        // Update positions of shifted blocks
+      supabase.from('blocks').insert({ ...newBlock, position: insertIdx, group_id: groupId }).then(() => {
         repositioned.forEach((b) => {
           if (b.id !== blockId) {
             supabase.from('blocks').update({ position: b.position }).eq('id', b.id);
@@ -394,7 +400,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         });
       });
 
-      const otherBlocks = s.blocks.filter((b) => b.page_id !== pageId);
+      const otherBlocks = s.blocks.filter((b) => !(b.page_id === pageId && (groupId ? b.group_id === groupId : !b.group_id)));
       return { blocks: [...otherBlocks, ...repositioned] };
     });
     return blockId;
@@ -439,12 +445,24 @@ export const useAppStore = create<AppState>((set, get) => ({
           list_start: null,
           position: 0,
           created_at: new Date().toISOString(),
+          group_id: null,
         };
         supabase.from('blocks').insert(newBlock);
         newState.blocks = [...remaining, newBlock];
       }
       return newState as any;
     });
+  },
+
+  deleteGroup: async (pageId, groupBlockId) => {
+    // Delete all child blocks first (CASCADE would handle it but let's be explicit for state sync)
+    markLocalMutation();
+    await supabase.from('blocks').delete().eq('group_id', groupBlockId);
+    await supabase.from('blocks').delete().eq('id', groupBlockId);
+    set((s) => ({
+      blocks: s.blocks.filter((b) => b.id !== groupBlockId && b.group_id !== groupBlockId),
+      lastDeletedBlock: null,
+    }));
   },
 
   undoDeleteBlock: () => {
@@ -460,6 +478,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       checked: block.checked,
       list_start: block.list_start,
       position: block.position,
+      group_id: block.group_id,
     });
     set((s) => ({
       blocks: [...s.blocks, block],

@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
 import EditableName from './EditableName';
 import { useAuth } from '@/hooks/useAuth';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Plus,
@@ -31,9 +30,7 @@ interface AppSidebarProps {
   resizableSidebar?: boolean;
 }
 
-export default function AppSidebar({ resizableSidebar: resizableProp = false }: AppSidebarProps) {
-  const resizableSidebarFlag = useFeatureFlag('resizable-sidebar');
-  const resizableSidebar = resizableProp || resizableSidebarFlag;
+export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps) {
   const {
     collections,
     pages,

@@ -8,9 +8,10 @@ const STORAGE_KEY = 'parchment-sidebar-width';
 
 interface Props {
   children: React.ReactNode;
+  enabled: boolean;
 }
 
-export default function ResizableSidebarWrapper({ children }: Props) {
+export default function ResizableSidebarWrapper({ children, enabled }: Props) {
   const { sidebarOpen } = useAppStore();
   const [width, setWidth] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -57,6 +58,9 @@ export default function ResizableSidebarWrapper({ children }: Props) {
   }, [dragging, width]);
 
   if (!sidebarOpen) return null;
+
+  // When flag is off, just render children without any resizing logic
+  if (!enabled) return <>{children}</>;
 
   return (
     <div className="relative flex-shrink-0 h-screen flex" style={{ width }}>

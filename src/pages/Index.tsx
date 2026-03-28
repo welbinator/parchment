@@ -4,27 +4,13 @@ import ResizableSidebarWrapper from '@/components/ResizableSidebarWrapper';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
 const Index = () => {
-  const { enabled: resizableSidebar, loading: flagLoading } = useFeatureFlag('resizable-sidebar', true);
-
-  // Don't render until we know which layout to use — prevents flash/swap on mount
-  if (flagLoading) {
-    return (
-      <div className="flex h-screen overflow-hidden bg-background">
-        <AppSidebar />
-        <PageEditor />
-      </div>
-    );
-  }
+  const { enabled: resizableSidebar } = useFeatureFlag('resizable-sidebar', true);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {resizableSidebar ? (
-        <ResizableSidebarWrapper>
-          <AppSidebar resizableSidebar />
-        </ResizableSidebarWrapper>
-      ) : (
-        <AppSidebar />
-      )}
+      <ResizableSidebarWrapper enabled={resizableSidebar}>
+        <AppSidebar resizableSidebar={resizableSidebar} />
+      </ResizableSidebarWrapper>
       <PageEditor />
     </div>
   );

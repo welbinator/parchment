@@ -13,6 +13,25 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.4.1',
+    date: '2026-03-28',
+    title: 'Resizable Sidebar & Bug Fixes',
+    changes: [
+      {
+        type: 'feature',
+        description: 'Resizable sidebar — drag the border between the sidebar and main content to make the sidebar wider or narrower. Your preferred width is saved automatically.',
+      },
+      {
+        type: 'improvement',
+        description: 'Pages are now visually indented under their collection with a subtle tree-style border, making the hierarchy between collections and pages much clearer.',
+      },
+      {
+        type: 'fix',
+        description: 'Fixed a bug where closing the sidebar on mobile would briefly show a fullscreen black panel before the layout settled.',
+      },
+    ],
+  },
+  {
     version: '1.4.0',
     date: '2026-03-27',
     title: 'Page Sharing, Beta Tester Program & PWA',

@@ -31,7 +31,7 @@ const FEATURES = [
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <PublicNav />
 
       {/* Hero */}
       <header className="relative overflow-hidden pt-32 pb-20 md:pt-44 md:pb-32">

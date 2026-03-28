@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, FolderOpen, FileText, Type, Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Quote, Code, Minus, Slash, Trash2, RotateCcw, Keyboard, Sparkles, Link2 } from 'lucide-react';
+import PublicNav from '@/components/PublicNav';
 
 interface Section {
   id: string;
@@ -20,25 +21,7 @@ const sections: Section[] = [
 export default function Docs() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-xl font-bold font-display text-gradient-primary">
-            Parchment
-          </Link>
-          <div className="hidden md:flex items-center gap-8">
-            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Home</Link>
-            <Link to="/docs/api" className="text-sm text-muted-foreground hover:text-foreground transition-colors">API</Link>
-            <Link to="/changelog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Changelog</Link>
-            <Link
-              to="/auth"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
       <div className="mx-auto max-w-6xl px-6 pt-28 pb-20 flex gap-12">
         {/* Sidebar TOC */}

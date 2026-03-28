@@ -26,7 +26,11 @@ const pageTypeIcons: Record<string, React.ReactNode> = {
   checklist: <CheckSquare size={14} />,
 };
 
-export default function AppSidebar() {
+interface AppSidebarProps {
+  resizableSidebar?: boolean;
+}
+
+export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps) {
   const {
     collections,
     pages,
@@ -95,7 +99,7 @@ export default function AppSidebar() {
   if (!sidebarOpen) return null;
 
   return (
-    <aside className="w-64 h-screen flex flex-col bg-sidebar border-r border-sidebar-border shrink-0">
+    <aside className={`${resizableSidebar ? 'w-full' : 'w-64'} h-screen flex flex-col bg-sidebar border-r border-sidebar-border shrink-0`}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border">
         <span className="font-display font-semibold text-sm tracking-wide text-gradient-primary">
@@ -176,7 +180,7 @@ export default function AppSidebar() {
               )}
 
               {isExpanded && (
-                <div className="ml-4">
+                <div className={resizableSidebar ? 'ml-6' : 'ml-4'}>
                   {collectionPages.map((page) => (
                     <button
                       key={page.id}

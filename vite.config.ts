@@ -45,6 +45,7 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallback: null,
         navigateFallbackDenylist: [/^\/auth\/v1\//, /^\/functions\/v1\//],
         runtimeCaching: [
           {

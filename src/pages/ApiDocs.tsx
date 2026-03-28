@@ -2,6 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import UserMenu from '@/components/UserMenu';
+import PublicNav from '@/components/PublicNav';
 
 const API_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
 
@@ -17,7 +18,7 @@ export default function ApiDocs() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {user && (
+      {user ? (
         <div className="sticky top-0 z-50 bg-background/80 backdrop-blur border-b border-border">
           <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
             <button
@@ -30,8 +31,10 @@ export default function ApiDocs() {
             <UserMenu />
           </div>
         </div>
+      ) : (
+        <PublicNav />
       )}
-      <div className="max-w-3xl mx-auto px-6 py-12">
+      <div className={`max-w-3xl mx-auto px-6 py-12 ${!user ? 'pt-28' : ''}`}>
         <header className="mb-10">
           <h1 className="text-4xl font-bold font-display mb-3">Parchment API</h1>
           <p className="text-muted-foreground">Programmatically manage your collections, pages, and blocks.</p>

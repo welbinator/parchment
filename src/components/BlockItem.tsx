@@ -115,9 +115,6 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const listIndentEnabled = useFeatureFlag('list-indent');
   const indentLevel = block.indentLevel ?? 0;
-  if (block.type === 'numbered_list' || block.type === 'bullet_list') {
-    console.log('[BlockItem render]', block.id.slice(0, 8), 'indentLevel:', indentLevel, 'listIndentEnabled:', listIndentEnabled);
-  }
 
   const handleDeleteBlock = useCallback(() => {
     deleteBlock(pageId, block.id);
@@ -228,13 +225,11 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     const onTab = (e: globalThis.KeyboardEvent) => {
       if (e.key !== 'Tab') return;
       const { listIndentEnabled, blockType, indentLevel, blockId, pageId } = tabHandlerRef.current;
-      console.log('[TAB]', { listIndentEnabled, blockType, indentLevel, blockId });
-      if (!listIndentEnabled) { console.log('[TAB] flag off — skipping'); return; }
-      if (blockType !== 'numbered_list' && blockType !== 'bullet_list') { console.log('[TAB] not a list block — skipping'); return; }
+      if (!listIndentEnabled) return;
+      if (blockType !== 'numbered_list' && blockType !== 'bullet_list') return;
       e.preventDefault();
       e.stopPropagation();
       const next = e.shiftKey ? Math.max(0, indentLevel - 1) : Math.min(4, indentLevel + 1);
-      console.log('[TAB] indenting', indentLevel, '->', next);
       if (next !== indentLevel) {
         updateBlock(pageId, blockId, { indentLevel: next });
       }

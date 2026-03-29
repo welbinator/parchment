@@ -409,11 +409,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   updateBlock: (pageId, blockId, updates) => {
-    markLocalMutation(); // suppress realtime refetch immediately, before the debounced save fires
+    markLocalMutation();
     set((s) => {
       const newBlocks = s.blocks.map((b) => {
         if (b.id !== blockId) return b;
-        const updated = {
+        return {
           ...b,
           content: updates.content !== undefined ? updates.content : b.content,
           checked: updates.checked !== undefined ? updates.checked : b.checked,
@@ -421,9 +421,9 @@ export const useAppStore = create<AppState>((set, get) => ({
           indent_level: updates.indentLevel !== undefined ? updates.indentLevel : b.indent_level,
           type: updates.type !== undefined ? updates.type : b.type,
         };
-        return updated;
       });
       const updated = newBlocks.find((b) => b.id === blockId);
+      console.log('[store set] indent_level for', blockId.slice(0,8), '=', updated?.indent_level, '| updates.indentLevel =', updates.indentLevel);
       if (updated) debounceSaveBlock(updated);
       return { blocks: newBlocks };
     });

@@ -3,7 +3,6 @@ import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
 import FloatingToolbar from './FloatingToolbar';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import DOMPurify from 'dompurify';
 import {
   GripVertical,
@@ -103,7 +102,6 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
-  const slashKeyboardNavEnabled = useFeatureFlag('slash-keyboard-nav');
 
   const handleDeleteBlock = useCallback(() => {
     deleteBlock(pageId, block.id);
@@ -212,8 +210,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
         if (o.type === 'group' && !groupBlocksEnabled) return false;
         return o.label.toLowerCase().includes(slashFilter);
       });
-      if (slashKeyboardNavEnabled) {
-        if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown') {
           e.preventDefault();
           setSlashMenuIndex((i) => (i + 1) % Math.max(filtered.length, 1));
           return;
@@ -223,11 +220,10 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
           setSlashMenuIndex((i) => (i - 1 + Math.max(filtered.length, 1)) % Math.max(filtered.length, 1));
           return;
         }
-      }
       if (e.key === 'Enter') {
         e.preventDefault();
         if (filtered.length > 0) {
-          const idx = slashKeyboardNavEnabled ? slashMenuIndex : 0;
+          const idx = slashMenuIndex;
           selectSlashOption(filtered[Math.min(idx, filtered.length - 1)].type);
         }
         return;
@@ -401,7 +397,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
                   selectSlashOption(opt.type);
                 }}
                 className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md text-popover-foreground transition-colors ${
-                  slashKeyboardNavEnabled && idx === slashMenuIndex
+                  idx === slashMenuIndex
                     ? 'bg-accent'
                     : 'hover:bg-accent'
                 }`}

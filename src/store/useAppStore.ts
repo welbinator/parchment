@@ -147,7 +147,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
-      supabase.from('blocks').select('*, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
+      supabase.from('blocks').select('id, page_id, type, content, checked, list_start, indent_level, position, created_at, group_id, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
     ]);
 
     const collections = (collectionsRes.data ?? []) as DbCollection[];
@@ -219,7 +219,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
-      supabase.from('blocks').select('*, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
+      supabase.from('blocks').select('id, page_id, type, content, checked, list_start, indent_level, position, created_at, group_id, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
     ]);
 
     const collections = (collectionsRes.data ?? []) as DbCollection[];

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import BlockItem from './BlockItem';
 import GroupBlock from './GroupBlock';
@@ -12,6 +12,15 @@ export default function PageEditor() {
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const groupBlocksEnabled = useFeatureFlag('group-blocks');
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize the title textarea to fit its content
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [page?.title]);
 
   // Ctrl+Z to undo block deletion
   useEffect(() => {
@@ -96,11 +105,13 @@ export default function PageEditor() {
       {/* Editor area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-12">
-          <input
+          <textarea
+            ref={titleRef}
             value={page.title}
             onChange={(e) => updatePageTitle(page.id, e.target.value)}
             placeholder="Untitled"
-            className="w-full text-4xl font-bold font-display bg-transparent outline-none text-foreground placeholder:text-muted-foreground/40 mb-8"
+            rows={1}
+            className="w-full text-4xl font-bold font-display bg-transparent outline-none text-foreground placeholder:text-muted-foreground/40 mb-8 resize-none overflow-hidden leading-tight"
           />
 
           <div className="space-y-3">

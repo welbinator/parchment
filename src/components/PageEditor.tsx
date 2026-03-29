@@ -145,9 +145,6 @@ export default function PageEditor() {
                   ) start--;
                   listIndex = index - start;
                 }
-                if (block.indent_level > 0) {
-                  console.log('[render]', block.id.slice(0,8), 'indent:', block.indent_level, 'listIndex:', listIndex, 'label will be:', block.indent_level >= 2 ? `${listIndex+1} (roman)` : `${String.fromCharCode(97+listIndex)} (letter)`);
-                }
               }
               return (
                 <BlockItem

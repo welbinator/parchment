@@ -154,10 +154,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     const pages = (pagesRes.data ?? []) as DbPage[];
     const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
 
-    const indented = blocks.filter(b => b.indent_level > 0);
-    console.log('[init] total blocks:', blocks.length, '| indented:', indented.length);
-    console.log('[init] first list block:', JSON.stringify(blocks.find(b => b.type === 'numbered_list' || b.type === 'bullet_list')));
-
     // If new user, create a welcome collection + page
     if (collections.length === 0) {
       // Re-check immediately before inserting to guard against concurrent init calls
@@ -219,7 +215,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   refetch: async () => {
     const { userId } = get();
     if (!userId) return;
-    console.log('[refetch] called from:', new Error().stack?.split('\n')[2]?.trim());
 
     const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
@@ -230,10 +225,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     const collections = (collectionsRes.data ?? []) as DbCollection[];
     const pages = (pagesRes.data ?? []) as DbPage[];
     const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
-
-    const refetchIndented = blocks.filter(b => b.indent_level > 0);
-    console.log('[refetch]', new Date().toISOString(), 'total blocks:', blocks.length, '| indented:', refetchIndented.length);
-    console.log('[refetch] first list block:', JSON.stringify(blocks.find(b => b.type === 'numbered_list' || b.type === 'bullet_list')));
 
     set((s) => ({
       collections,

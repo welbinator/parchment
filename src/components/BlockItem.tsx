@@ -383,7 +383,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     <div
       ref={wrapperRef}
       className="group flex items-start gap-1 relative"
-      style={listIndentEnabled && indentLevel > 0 ? { paddingLeft: `${indentLevel * 1.5}rem` } : undefined}
+      style={indentLevel > 0 ? { paddingLeft: `${indentLevel * 1.5}rem` } : undefined}
     >
       {/* Block handle */}
       <div className="flex items-center gap-0.5 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -413,9 +413,9 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       {/* Numbered list index */}
       {block.type === 'numbered_list' && (
         <span className="mt-0.5 text-sm text-muted-foreground shrink-0 w-5 text-right pr-1">
-          {listIndentEnabled && indentLevel >= 2
+          {indentLevel >= 2
             ? `${toRoman(listIndex + 1)}.`
-            : listIndentEnabled && indentLevel === 1
+            : indentLevel === 1
             ? `${String.fromCharCode(97 + (listIndex % 26))}.`
             : `${listIndex + 1}.`}
         </span>

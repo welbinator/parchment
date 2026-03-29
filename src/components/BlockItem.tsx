@@ -199,15 +199,29 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    // List indent/outdent with TAB / SHIFT+TAB
-    if (e.key === 'Tab' && listIndentEnabled && (block.type === 'numbered_list' || block.type === 'bullet_list')) {
+  // Native TAB handler — must be DOM-level to beat browser focus management
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !listIndentEnabled) return;
+    const onTab = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (block.type !== 'numbered_list' && block.type !== 'bullet_list') return;
       e.preventDefault();
+      e.stopPropagation();
       const current = block.indentLevel ?? 0;
       const next = e.shiftKey ? Math.max(0, current - 1) : Math.min(4, current + 1);
       if (next !== current) {
         updateBlock(pageId, block.id, { indentLevel: next });
       }
+    };
+    el.addEventListener('keydown', onTab);
+    return () => el.removeEventListener('keydown', onTab);
+  }, [listIndentEnabled, block.type, block.indentLevel, block.id, pageId, updateBlock]);
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // List indent/outdent handled by native listener above (TAB)
+    if (e.key === 'Tab' && listIndentEnabled && (block.type === 'numbered_list' || block.type === 'bullet_list')) {
+      e.preventDefault();
       return;
     }
 

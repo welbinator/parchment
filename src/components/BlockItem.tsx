@@ -291,7 +291,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
 
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      const newId = addBlock(pageId, block.id, 'text', groupId);
+      const newId = addBlock(pageId, block.id, 'text', groupId, 0);
       onNewBlock(newId);
       return;
     }
@@ -299,7 +299,9 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       const newType: BlockType = block.type === 'todo' ? 'todo' : block.type === 'bullet_list' ? 'bullet_list' : block.type === 'numbered_list' ? 'numbered_list' : 'text';
-      const newId = addBlock(pageId, block.id, newType, groupId);
+      // Inherit indent level for list blocks so sub-items continue at the same level
+      const inheritedIndent = (newType === 'bullet_list' || newType === 'numbered_list') ? indentLevel : 0;
+      const newId = addBlock(pageId, block.id, newType, groupId, inheritedIndent);
       onNewBlock(newId);
     }
 

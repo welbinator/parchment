@@ -74,7 +74,7 @@ interface AppState {
   deletePage: (id: string) => Promise<void>;
 
   // Blocks
-  addBlock: (pageId: string, afterBlockId: string | null, type?: BlockType, groupId?: string | null) => string;
+  addBlock: (pageId: string, afterBlockId: string | null, type?: BlockType, groupId?: string | null, indentLevel?: number) => string;
   updateBlock: (pageId: string, blockId: string, updates: Partial<Block>) => void;
   deleteBlock: (pageId: string, blockId: string) => Promise<void>;
   deleteGroup: (pageId: string, groupBlockId: string) => Promise<void>;
@@ -361,7 +361,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
-  addBlock: (pageId, afterBlockId, type = 'text', groupId = null) => {
+  addBlock: (pageId, afterBlockId, type = 'text', groupId = null, indentLevel = 0) => {
     const blockId = uid();
     set((s) => {
       // For group children, scope positioning to siblings within the group
@@ -382,6 +382,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         content: '',
         checked: type === 'todo' ? false : null,
         list_start: null,
+        indent_level: indentLevel,
         position: insertIdx,
         created_at: new Date().toISOString(),
         group_id: groupId,
@@ -423,7 +424,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         };
       });
       const updated = newBlocks.find((b) => b.id === blockId);
-      console.log('[store set] indent_level for', blockId.slice(0,8), '=', updated?.indent_level, '| updates.indentLevel =', updates.indentLevel);
       if (updated) debounceSaveBlock(updated);
       return { blocks: newBlocks };
     });

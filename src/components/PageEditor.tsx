@@ -155,7 +155,7 @@ export default function PageEditor() {
                     content: block.content,
                     checked: block.checked ?? undefined,
                     listStart: block.list_start ?? undefined,
-                    indentLevel: (() => { const v = block.indent_level ?? 0; if (block.type === 'numbered_list' || block.type === 'bullet_list') console.log('[PageEditor passing indentLevel]', block.id.slice(0,8), v); return v; })(),
+                    indentLevel: block.indent_level ?? 0,
                   }}
                   pageId={page.id}
                   listIndex={listIndex}

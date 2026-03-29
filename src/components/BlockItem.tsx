@@ -3,7 +3,6 @@ import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
 import FloatingToolbar from './FloatingToolbar';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import DOMPurify from 'dompurify';
 import {
   GripVertical,
@@ -113,9 +112,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
-  const listIndentEnabled = useFeatureFlag('list-indent');
   const indentLevel = block.indentLevel ?? 0;
-
   const handleDeleteBlock = useCallback(() => {
     deleteBlock(pageId, block.id);
     toast('Block deleted', {
@@ -201,16 +198,14 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
 
   // Stable ref so the TAB listener always sees latest values without re-attaching
   const tabHandlerRef = useRef<{
-    listIndentEnabled: boolean;
     blockType: string;
     indentLevel: number;
     blockId: string;
     pageId: string;
-  }>({ listIndentEnabled, blockType: block.type, indentLevel: block.indentLevel ?? 0, blockId: block.id, pageId });
+  }>({ blockType: block.type, indentLevel: block.indentLevel ?? 0, blockId: block.id, pageId });
 
   useEffect(() => {
     tabHandlerRef.current = {
-      listIndentEnabled,
       blockType: block.type,
       indentLevel: block.indentLevel ?? 0,
       blockId: block.id,
@@ -224,8 +219,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     if (!el) return;
     const onTab = (e: globalThis.KeyboardEvent) => {
       if (e.key !== 'Tab') return;
-      const { listIndentEnabled, blockType, indentLevel, blockId, pageId } = tabHandlerRef.current;
-      if (!listIndentEnabled) return;
+      const { blockType, indentLevel, blockId, pageId } = tabHandlerRef.current;
       if (blockType !== 'numbered_list' && blockType !== 'bullet_list') return;
       e.preventDefault();
       e.stopPropagation();
@@ -236,14 +230,9 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     };
     el.addEventListener('keydown', onTab);
     return () => el.removeEventListener('keydown', onTab);
-  }, [updateBlock]); // stable: only re-attach if updateBlock identity changes
+  }, [updateBlock]);
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    // List indent/outdent handled by native listener above (TAB)
-    if (e.key === 'Tab' && listIndentEnabled && (block.type === 'numbered_list' || block.type === 'bullet_list')) {
-      e.preventDefault();
-      return;
-    }
 
     // Bold/Italic shortcuts
     if ((e.ctrlKey || e.metaKey) && e.key === 'b') {

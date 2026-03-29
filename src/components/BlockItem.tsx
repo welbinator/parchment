@@ -1,8 +1,9 @@
-import { useRef, useEffect, useState, useCallback, KeyboardEvent } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo, KeyboardEvent } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
 import FloatingToolbar from './FloatingToolbar';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import DOMPurify from 'dompurify';
 import {
   GripVertical,
@@ -101,6 +102,8 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const initializedRef = useRef(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
+  const [slashMenuIndex, setSlashMenuIndex] = useState(0);
+  const slashKeyboardNavEnabled = useFeatureFlag('slash-keyboard-nav');
 
   const handleDeleteBlock = useCallback(() => {
     deleteBlock(pageId, block.id);
@@ -155,10 +158,12 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     if (text === '/') {
       setShowSlashMenu(true);
       setSlashFilter('');
+      setSlashMenuIndex(0);
       return;
     }
     if (showSlashMenu && text.startsWith('/')) {
       setSlashFilter(text.slice(1).toLowerCase());
+      setSlashMenuIndex(0);
       return;
     }
     if (showSlashMenu && !text.startsWith('/')) {
@@ -203,14 +208,27 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
         setShowSlashMenu(false);
         return;
       }
+      const filtered = blockTypeOptions.filter((o) => {
+        if (o.type === 'group' && !groupBlocksEnabled) return false;
+        return o.label.toLowerCase().includes(slashFilter);
+      });
+      if (slashKeyboardNavEnabled) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setSlashMenuIndex((i) => (i + 1) % Math.max(filtered.length, 1));
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setSlashMenuIndex((i) => (i - 1 + Math.max(filtered.length, 1)) % Math.max(filtered.length, 1));
+          return;
+        }
+      }
       if (e.key === 'Enter') {
         e.preventDefault();
-        const filtered = blockTypeOptions.filter((o) => {
-          if (o.type === 'group' && !groupBlocksEnabled) return false;
-          return o.label.toLowerCase().includes(slashFilter);
-        });
         if (filtered.length > 0) {
-          selectSlashOption(filtered[0].type);
+          const idx = slashKeyboardNavEnabled ? slashMenuIndex : 0;
+          selectSlashOption(filtered[Math.min(idx, filtered.length - 1)].type);
         }
         return;
       }
@@ -375,14 +393,18 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
               if (o.type === 'group' && !groupBlocksEnabled) return false;
               return o.label.toLowerCase().includes(slashFilter);
             })
-            .map((opt) => (
+            .map((opt, idx) => (
               <button
                 key={opt.type}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   selectSlashOption(opt.type);
                 }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-accent text-popover-foreground transition-colors"
+                className={`flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md text-popover-foreground transition-colors ${
+                  slashKeyboardNavEnabled && idx === slashMenuIndex
+                    ? 'bg-accent'
+                    : 'hover:bg-accent'
+                }`}
               >
                 <span className="text-muted-foreground">{opt.icon}</span>
                 {opt.label}

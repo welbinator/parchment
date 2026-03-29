@@ -199,25 +199,46 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     }
   };
 
+  // Stable ref so the TAB listener always sees latest values without re-attaching
+  const tabHandlerRef = useRef<{
+    listIndentEnabled: boolean;
+    blockType: string;
+    indentLevel: number;
+    blockId: string;
+    pageId: string;
+  }>({ listIndentEnabled, blockType: block.type, indentLevel: block.indentLevel ?? 0, blockId: block.id, pageId });
+
+  useEffect(() => {
+    tabHandlerRef.current = {
+      listIndentEnabled,
+      blockType: block.type,
+      indentLevel: block.indentLevel ?? 0,
+      blockId: block.id,
+      pageId,
+    };
+  });
+
   // Native TAB handler — must be DOM-level to beat browser focus management
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const onTab = (e: globalThis.KeyboardEvent) => {
       if (e.key !== 'Tab') return;
-      if (!listIndentEnabled) return;
-      if (block.type !== 'numbered_list' && block.type !== 'bullet_list') return;
+      const { listIndentEnabled, blockType, indentLevel, blockId, pageId } = tabHandlerRef.current;
+      console.log('[TAB]', { listIndentEnabled, blockType, indentLevel, blockId });
+      if (!listIndentEnabled) { console.log('[TAB] flag off — skipping'); return; }
+      if (blockType !== 'numbered_list' && blockType !== 'bullet_list') { console.log('[TAB] not a list block — skipping'); return; }
       e.preventDefault();
       e.stopPropagation();
-      const current = block.indentLevel ?? 0;
-      const next = e.shiftKey ? Math.max(0, current - 1) : Math.min(4, current + 1);
-      if (next !== current) {
-        updateBlock(pageId, block.id, { indentLevel: next });
+      const next = e.shiftKey ? Math.max(0, indentLevel - 1) : Math.min(4, indentLevel + 1);
+      console.log('[TAB] indenting', indentLevel, '->', next);
+      if (next !== indentLevel) {
+        updateBlock(pageId, blockId, { indentLevel: next });
       }
     };
     el.addEventListener('keydown', onTab);
     return () => el.removeEventListener('keydown', onTab);
-  });
+  }, [updateBlock]); // stable: only re-attach if updateBlock identity changes
 
   const handleKeyDown = (e: KeyboardEvent) => {
     // List indent/outdent handled by native listener above (TAB)

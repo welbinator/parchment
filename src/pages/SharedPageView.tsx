@@ -19,8 +19,19 @@ interface SharedBlock {
   content: string;
   checked: boolean | null;
   list_start: boolean | null;
+  indent_level: number;
   position: number;
   group_id: string | null;
+}
+
+function toRoman(n: number): string {
+  const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+  const syms = ['m','cm','d','cd','c','xc','l','xl','x','ix','v','iv','i'];
+  let result = '';
+  for (let i = 0; i < vals.length; i++) {
+    while (n >= vals[i]) { result += syms[i]; n -= vals[i]; }
+  }
+  return result;
 }
 
 function convertStyledJsonToHtml(content: string): string {
@@ -108,8 +119,9 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
   }
 
   if (block.type === 'bullet_list') {
+    const indent = block.indent_level ?? 0;
     return (
-      <div className="flex items-start gap-2 py-0.5">
+      <div className="flex items-start gap-2 py-0.5" style={indent > 0 ? { paddingLeft: `${indent * 1.5}rem` } : undefined}>
         <span className="text-primary mt-1 shrink-0">•</span>
         <span className="text-base text-foreground" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
@@ -117,16 +129,23 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
   }
 
   if (block.type === 'numbered_list') {
-    // Count from the last list_start or beginning
+    const indent = block.indent_level ?? 0;
+    // Count only same-level consecutive numbered_list items
     let num = 1;
     for (let i = index - 1; i >= 0; i--) {
       if (blocks[i].type !== 'numbered_list') break;
       if (blocks[i].list_start) break;
+      if ((blocks[i].indent_level ?? 0) !== indent) continue;
       num++;
     }
+    const label = indent >= 2
+      ? `${toRoman(num)}.`
+      : indent === 1
+      ? `${String.fromCharCode(97 + ((num - 1) % 26))}.`
+      : `${num}.`;
     return (
-      <div className="flex items-start gap-2 py-0.5">
-        <span className="text-muted-foreground text-sm mt-0.5 shrink-0 w-5 text-right">{num}.</span>
+      <div className="flex items-start gap-2 py-0.5" style={indent > 0 ? { paddingLeft: `${indent * 1.5}rem` } : undefined}>
+        <span className="text-muted-foreground text-sm mt-0.5 shrink-0 w-5 text-right">{label}</span>
         <span className="text-base text-foreground" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     );

@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
 import FloatingToolbar from './FloatingToolbar';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import DOMPurify from 'dompurify';
 import {
   GripVertical,
@@ -35,6 +36,16 @@ const blockTypeOptions: { type: BlockType; label: string; icon: React.ReactNode 
 ];
 
 // Convert styled JSON arrays to HTML (for content saved before server-side conversion)
+function toRoman(n: number): string {
+  const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+  const syms = ['m','cm','d','cd','c','xc','l','xl','x','ix','v','iv','i'];
+  let result = '';
+  for (let i = 0; i < vals.length; i++) {
+    while (n >= vals[i]) { result += syms[i]; n -= vals[i]; }
+  }
+  return result;
+}
+
 function convertStyledJsonToHtml(content: string): string {
   if (!content || !content.trim().startsWith('[')) return content;
   try {
@@ -102,6 +113,8 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashFilter, setSlashFilter] = useState('');
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
+  const listIndentEnabled = useFeatureFlag('list-indent');
+  const indentLevel = block.indentLevel ?? 0;
 
   const handleDeleteBlock = useCallback(() => {
     deleteBlock(pageId, block.id);
@@ -187,6 +200,17 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
+    // List indent/outdent with TAB / SHIFT+TAB
+    if (e.key === 'Tab' && listIndentEnabled && (block.type === 'numbered_list' || block.type === 'bullet_list')) {
+      e.preventDefault();
+      const current = block.indentLevel ?? 0;
+      const next = e.shiftKey ? Math.max(0, current - 1) : Math.min(4, current + 1);
+      if (next !== current) {
+        updateBlock(pageId, block.id, { indentLevel: next });
+      }
+      return;
+    }
+
     // Bold/Italic shortcuts
     if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
       e.preventDefault();
@@ -320,7 +344,11 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const showToolbar = block.type !== 'code';
 
   return (
-    <div ref={wrapperRef} className="group flex items-start gap-1 relative">
+    <div
+      ref={wrapperRef}
+      className="group flex items-start gap-1 relative"
+      style={listIndentEnabled && indentLevel > 0 ? { paddingLeft: `${indentLevel * 1.5}rem` } : undefined}
+    >
       {/* Block handle */}
       <div className="flex items-center gap-0.5 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
         <button className="p-0.5 text-muted-foreground hover:text-foreground cursor-grab">
@@ -349,7 +377,11 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       {/* Numbered list index */}
       {block.type === 'numbered_list' && (
         <span className="mt-0.5 text-sm text-muted-foreground shrink-0 w-5 text-right pr-1">
-          {listIndex + 1}.
+          {listIndentEnabled && indentLevel >= 2
+            ? `${toRoman(listIndex + 1)}.`
+            : listIndentEnabled && indentLevel === 1
+            ? `${String.fromCharCode(97 + (listIndex % 26))}.`
+            : `${listIndex + 1}.`}
         </span>
       )}
 

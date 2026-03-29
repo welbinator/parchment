@@ -17,6 +17,7 @@ export interface Block {
   content: string;
   checked?: boolean;
   listStart?: boolean;
+  indentLevel?: number;
   groupId?: string | null;
 }
 

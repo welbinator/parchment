@@ -34,6 +34,7 @@ interface DbBlock {
   content: string;
   checked: boolean | null;
   list_start: boolean | null;
+  indent_level: number;
   position: number;
   created_at: string;
   group_id: string | null;
@@ -119,6 +120,7 @@ function debounceSaveBlock(block: DbBlock) {
       content: block.content,
       checked: block.checked,
       list_start: block.list_start,
+      indent_level: block.indent_level,
       type: block.type,
       position: block.position,
     }).eq('id', block.id);
@@ -415,6 +417,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           content: updates.content !== undefined ? updates.content : b.content,
           checked: updates.checked !== undefined ? updates.checked : b.checked,
           list_start: updates.listStart !== undefined ? updates.listStart : b.list_start,
+          indent_level: updates.indentLevel !== undefined ? updates.indentLevel : b.indent_level,
           type: updates.type !== undefined ? updates.type : b.type,
         };
       });

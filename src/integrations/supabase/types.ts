@@ -112,6 +112,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          indent_level: number
           list_start: boolean | null
           page_id: string
           position: number
@@ -122,6 +123,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          indent_level?: number
           list_start?: boolean | null
           page_id: string
           position?: number
@@ -132,6 +134,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          indent_level?: number
           list_start?: boolean | null
           page_id?: string
           position?: number

@@ -14,6 +14,25 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.5.0',
+    date: '2026-03-29',
+    title: 'Nested Lists, Keyboard Navigation & Long Title Support',
+    changes: [
+      {
+        type: 'feature',
+        description: 'Nested list indentation — press TAB on any numbered or bullet list item to indent it into a sub-list. SHIFT+TAB outdents. Numbered sub-lists automatically use letter labels (a., b., c.) at level 2 and roman numerals (i., ii., iii.) at level 3+.',
+      },
+      {
+        type: 'feature',
+        description: 'Slash command keyboard navigation — use the arrow keys to move through the slash command menu and press Enter to select. No more reaching for the mouse.',
+      },
+      {
+        type: 'fix',
+        description: 'Page titles no longer truncate when they\'re too long — the title field now grows to wrap across multiple lines, just like a regular heading.',
+      },
+    ],
+  },
+  {
     version: '1.4.1',
     date: '2026-03-28',
     title: 'Resizable Sidebar, Group Blocks & Bug Fixes',

@@ -115,6 +115,9 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const listIndentEnabled = useFeatureFlag('list-indent');
   const indentLevel = block.indentLevel ?? 0;
+  if (block.type === 'numbered_list' || block.type === 'bullet_list') {
+    console.log('[BlockItem render]', block.id.slice(0, 8), 'indentLevel:', indentLevel, 'listIndentEnabled:', listIndentEnabled);
+  }
 
   const handleDeleteBlock = useCallback(() => {
     deleteBlock(pageId, block.id);

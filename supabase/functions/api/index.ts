@@ -213,6 +213,7 @@ Deno.serve(async (req) => {
             type: block.type || 'text',
             content,
             checked: block.checked ?? null,
+            indent_level: block.indent_level ?? 0,
             position,
             group_id: block.group_id || null,
           }).select().single()
@@ -258,6 +259,7 @@ Deno.serve(async (req) => {
             type: block.type || 'text',
             content,
             checked: block.checked ?? null,
+            indent_level: block.indent_level ?? 0,
             position: i,
             group_id: block.group_id || null,
           }).select().single()

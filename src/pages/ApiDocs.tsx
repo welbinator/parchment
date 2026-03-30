@@ -291,11 +291,33 @@ echo "$collections" > export_collections.json
 
         <section className="mb-8">
           <h2 className="text-2xl font-semibold font-display mb-3">Block Types</h2>
-          <ul className="grid sm:grid-cols-2 gap-2 text-sm">
+          <ul className="grid sm:grid-cols-2 gap-2 text-sm mb-6">
             {['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo (checkbox)', 'quote', 'divider', 'code', 'group'].map((t) => (
               <li key={t} className="border border-border rounded px-3 py-2 font-mono bg-card">{t}</li>
             ))}
           </ul>
+
+          <h3 className="text-lg font-medium mb-2">Block Fields</h3>
+          <p className="text-muted-foreground text-sm mb-3">All blocks support these fields when using <code className="bg-muted px-1 py-0.5 rounded">append_blocks</code> or <code className="bg-muted px-1 py-0.5 rounded">replace_blocks</code>:</p>
+          <ul className="space-y-2 text-sm text-muted-foreground mb-4">
+            <li><code className="bg-muted px-1 py-0.5 rounded text-foreground">type</code> — block type (see list above)</li>
+            <li><code className="bg-muted px-1 py-0.5 rounded text-foreground">content</code> — text content (plain string)</li>
+            <li><code className="bg-muted px-1 py-0.5 rounded text-foreground">checked</code> — boolean, for <code className="bg-muted px-1 py-0.5 rounded">todo</code> blocks only</li>
+            <li><code className="bg-muted px-1 py-0.5 rounded text-foreground">indent_level</code> — integer 0–4, for <code className="bg-muted px-1 py-0.5 rounded">numbered_list</code> and <code className="bg-muted px-1 py-0.5 rounded">bullet_list</code> blocks. Controls nesting depth. Level 0 = top-level (1, 2, 3), level 1 = letters (a, b, c), level 2+ = roman numerals (i, ii, iii). Defaults to 0.</li>
+          </ul>
+          <h3 className="text-lg font-medium mb-2">Nested list example</h3>
+          <CodeBlock>{`curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{
+    "action": "replace_blocks",
+    "page_id": "<page_id>",
+    "blocks": [
+      { "type": "numbered_list", "content": "Top level item", "indent_level": 0 },
+      { "type": "numbered_list", "content": "Sub-item", "indent_level": 1 },
+      { "type": "numbered_list", "content": "Sub-sub-item", "indent_level": 2 }
+    ]
+  }'`}</CodeBlock>
         </section>
       </div>
     </main>

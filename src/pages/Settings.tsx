@@ -148,11 +148,37 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
 | \`heading3\` | Small heading |
 | \`text\` | Body text |
 | \`todo\` | Checkbox item (add \`"checked": true/false\`) |
-| \`bullet\` | Bullet list item |
+| \`bullet_list\` | Bullet list item |
+| \`numbered_list\` | Numbered list item |
 | \`quote\` | Blockquote |
 | \`divider\` | Horizontal rule (content: "") |
 | \`code\` | Code block |
 | \`group\` | Container block — groups child blocks together. Use \`group_id\` on child blocks to associate them with this group. |
+
+## Nested Lists (indent_level)
+
+Bullet and numbered list blocks support an \`indent_level\` field (integer, 0–4) to create nested sub-lists.
+
+- **Level 0** (default): top-level items — rendered as 1, 2, 3 for numbered lists
+- **Level 1**: sub-items — rendered as a, b, c
+- **Level 2+**: deep sub-items — rendered as i, ii, iii (roman numerals)
+
+### Example: nested numbered list
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "replace_blocks",
+    "page_id": "PAGE_ID",
+    "blocks": [
+      { "type": "numbered_list", "content": "First item", "indent_level": 0 },
+      { "type": "numbered_list", "content": "Sub-item A", "indent_level": 1 },
+      { "type": "numbered_list", "content": "Sub-sub-item i", "indent_level": 2 },
+      { "type": "numbered_list", "content": "Second item", "indent_level": 0 }
+    ]
+  }'
+\`\`\`
 
 ## Group Blocks
 

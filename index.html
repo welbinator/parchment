@@ -80,6 +80,13 @@ curl -X POST https://theparchment.app/functions/v1/api \
 - code
 - group (container block — groups child blocks together; use group_id on child blocks to associate them)
 
+## Nested Lists (indent_level)
+bullet_list and numbered_list blocks support an indent_level field (integer, 0-4) for nested sub-lists.
+- Level 0 (default): top-level — rendered as 1, 2, 3
+- Level 1: sub-items — rendered as a, b, c
+- Level 2+: deep sub-items — rendered as i, ii, iii (roman numerals)
+Example: {"type":"numbered_list","content":"Sub-item","indent_level":1}
+
 ## Block Content Format
 Block content is stored as HTML strings. Use standard HTML tags for formatting:
 - Bold: &lt;b&gt;bold&lt;/b&gt; or &lt;strong&gt;bold&lt;/strong&gt;

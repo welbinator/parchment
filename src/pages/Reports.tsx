@@ -118,8 +118,8 @@ export default function Reports() {
               Back to overview
             </button>
             <h2 className="text-xl font-semibold mb-4">All Users ({usersList.length})</h2>
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full">
+            <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
+              <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">User</th>

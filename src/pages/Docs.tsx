@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, BookOpen, FolderOpen, FileText, Type, Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Quote, Code, Minus, Slash, Trash2, RotateCcw, Keyboard, Sparkles, Link2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, FolderOpen, FileText, Type, Heading1, Heading2, Heading3, List, ListOrdered, CheckSquare, Quote, Code, Minus, Slash, Trash2, RotateCcw, Keyboard, Sparkles, Link2, Group } from 'lucide-react';
 import PublicNav from '@/components/PublicNav';
 
 interface Section {
@@ -118,12 +118,13 @@ export default function Docs() {
                 { icon: <Heading1 size={16} />, name: 'Heading 1', desc: 'Large section heading.' },
                 { icon: <Heading2 size={16} />, name: 'Heading 2', desc: 'Medium sub-heading.' },
                 { icon: <Heading3 size={16} />, name: 'Heading 3', desc: 'Small sub-heading.' },
-                { icon: <List size={16} />, name: 'Bullet List', desc: 'Unordered list with bullet points.' },
-                { icon: <ListOrdered size={16} />, name: 'Numbered List', desc: 'Ordered list with auto-incrementing numbers.' },
+                { icon: <List size={16} />, name: 'Bullet List', desc: 'Unordered list with bullet points. Press TAB to indent, SHIFT+TAB to outdent.' },
+                { icon: <ListOrdered size={16} />, name: 'Numbered List', desc: 'Ordered list. Numbers at the top level, letters (a, b, c) at level 2, roman numerals (i, ii, iii) at level 3+. Press TAB to indent, SHIFT+TAB to outdent.' },
                 { icon: <CheckSquare size={16} />, name: 'To-do', desc: 'Checkbox item — click the checkbox to mark it done.' },
                 { icon: <Quote size={16} />, name: 'Quote', desc: 'Indented block with a left border, great for callouts or citations.' },
                 { icon: <Code size={16} />, name: 'Code', desc: 'Monospace code block. Formatting toolbar is hidden in code blocks.' },
                 { icon: <Minus size={16} />, name: 'Divider', desc: 'A horizontal rule to visually separate sections.' },
+                { icon: <Group size={16} />, name: 'Group', desc: 'A container block that groups related blocks together. Delete the whole group at once, or style it with a custom background and border color.' },
               ].map(({ icon, name, desc }) => (
                 <div key={name} className="flex gap-4 items-start border border-border rounded-lg px-4 py-3 bg-card">
                   <span className="text-primary mt-0.5 shrink-0">{icon}</span>
@@ -142,7 +143,7 @@ export default function Docs() {
               <Slash size={20} className="text-primary" /> Slash Commands
             </h2>
             <p className="text-foreground/85 text-sm leading-relaxed mb-4">
-              Type <kbd className="bg-muted border border-border rounded px-1.5 py-0.5 text-xs font-mono">/</kbd> anywhere in a block to open the command menu. Start typing to filter, then click or press <kbd className="bg-muted border border-border rounded px-1.5 py-0.5 text-xs font-mono">Enter</kbd> to convert the current block to that type.
+              Type <kbd className="bg-muted border border-border rounded px-1.5 py-0.5 text-xs font-mono">/</kbd> anywhere in a block to open the command menu. Start typing to filter the options, then use <kbd className="bg-muted border border-border rounded px-1.5 py-0.5 text-xs font-mono">↑</kbd> <kbd className="bg-muted border border-border rounded px-1.5 py-0.5 text-xs font-mono">↓</kbd> to navigate and <kbd className="bg-muted border border-border rounded px-1.5 py-0.5 text-xs font-mono">Enter</kbd> to select — or just click the option you want.
             </p>
             <p className="text-foreground/85 text-sm leading-relaxed">
               This works on any block type — you can switch a paragraph to a heading, a bullet list to a to-do, or anything else without losing your content.
@@ -218,7 +219,12 @@ export default function Docs() {
                     { action: 'New block', shortcut: 'Enter' },
                     { action: 'Delete block (when empty)', shortcut: 'Backspace' },
                     { action: 'Undo last block deletion', shortcut: 'Ctrl+Z / Cmd+Z' },
+                    { action: 'Indent list item', shortcut: 'Tab' },
+                    { action: 'Outdent list item', shortcut: 'Shift+Tab' },
                     { action: 'Open slash command menu', shortcut: '/' },
+                    { action: 'Navigate slash command menu', shortcut: '↑ / ↓' },
+                    { action: 'Select slash command', shortcut: 'Enter' },
+                    { action: 'Close slash command menu', shortcut: 'Escape' },
                     { action: 'Bold', shortcut: 'Ctrl+B / Cmd+B' },
                     { action: 'Italic', shortcut: 'Ctrl+I / Cmd+I' },
                     { action: 'Open link (in a linked block)', shortcut: 'Ctrl+click / Cmd+click' },

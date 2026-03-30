@@ -18,6 +18,22 @@ interface UserRecord {
   display_name: string | null;
   avatar_url: string | null;
   created_at: string;
+  collections_count: number;
+  pages_count: number;
+  last_active: string | null;
+}
+
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return 'Never';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
 }
 
 export default function Reports() {
@@ -108,6 +124,9 @@ export default function Reports() {
                   <tr className="border-b border-border bg-muted/50">
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">User</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Collections</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Pages</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Last Active</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Joined</th>
                   </tr>
                 </thead>
@@ -127,6 +146,9 @@ export default function Reports() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{u.email || '—'}</td>
+                      <td className="px-4 py-3 text-sm text-foreground font-medium">{u.collections_count}</td>
+                      <td className="px-4 py-3 text-sm text-foreground font-medium">{u.pages_count}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{timeAgo(u.last_active)}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {new Date(u.created_at).toLocaleDateString()}
                       </td>

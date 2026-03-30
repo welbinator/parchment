@@ -49,7 +49,27 @@ Deno.serve(async (req) => {
         .from('profiles')
         .select('user_id, email, display_name, avatar_url, created_at')
         .order('created_at', { ascending: false })
-      return new Response(JSON.stringify({ users: users ?? [] }), {
+
+      if (!users) return new Response(JSON.stringify({ users: [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+
+      // For each user, get collections count, pages count, and last active
+      const enriched = await Promise.all(users.map(async (u) => {
+        const [collectionsRes, pagesRes, lastActiveRes] = await Promise.all([
+          supabase.from('collections').select('id', { count: 'exact', head: true }).eq('user_id', u.user_id).is('deleted_at', null),
+          supabase.from('pages').select('id', { count: 'exact', head: true }).eq('user_id', u.user_id).is('deleted_at', null),
+          supabase.from('pages').select('updated_at').eq('user_id', u.user_id).order('updated_at', { ascending: false }).limit(1),
+        ])
+        return {
+          ...u,
+          collections_count: collectionsRes.count ?? 0,
+          pages_count: pagesRes.count ?? 0,
+          last_active: lastActiveRes.data?.[0]?.updated_at ?? null,
+        }
+      }))
+
+      return new Response(JSON.stringify({ users: enriched }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }

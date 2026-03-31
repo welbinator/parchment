@@ -24,7 +24,7 @@ const CHANGELOG: ChangelogEntry[] = [
       },
       {
         type: 'feature',
-        description: 'Ctrl+A (or Cmd+A) selects all blocks on the page at once, dropping you straight into selection mode.',
+        description: 'Ctrl+A (or Cmd+A) selects all blocks on the page at once. Press Ctrl+A again to deselect all, or hit Escape to exit selection mode.',
       },
       {
         type: 'feature',

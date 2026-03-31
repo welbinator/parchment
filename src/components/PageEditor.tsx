@@ -6,6 +6,7 @@ import GroupBlock from './GroupBlock';
 import UserMenu from './UserMenu';
 import ShareButton from './ShareButton';
 import SelectionActionBar from './SelectionActionBar';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 

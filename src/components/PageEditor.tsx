@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useBlockStore } from '@/store/useBlockStore';
+import { usePageStore } from '@/store/usePageStore';
 import { useSelectionStore } from '@/store/useSelectionStore';
 import BlockItem from './BlockItem';
 import GroupBlock from './GroupBlock';
@@ -13,8 +14,9 @@ import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 
 export default function PageEditor() {
-  const { pages, activePageId, updatePageTitle, updatePageSharing, sidebarOpen, setSidebarOpen } = useAppStore();
+  const { activePageId, sidebarOpen, setSidebarOpen } = useAppStore();
   const { blocks, addBlock, undoDeleteBlock, lastDeletedBlock } = useBlockStore();
+  const { pages, updatePageTitle, updatePageSharing } = usePageStore();
   const { exitSelectionMode } = useSelectionStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
+import { usePageStore } from '@/store/usePageStore';
 import EditableName from './EditableName';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +34,6 @@ interface AppSidebarProps {
 export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps) {
   const {
     collections,
-    pages,
     activePageId,
     activeCollectionId,
     sidebarOpen,
@@ -45,10 +45,10 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
     deleteCollection,
     deletePage,
     renameCollection,
-    updatePageTitle,
     trashedPages,
     trashedCollections,
   } = useAppStore();
+  const { pages, updatePageTitle } = usePageStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();

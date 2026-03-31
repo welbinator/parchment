@@ -2,7 +2,9 @@ import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import type { PageType } from '@/types';
 import { useBlockStore, markLocalMutation, isInLocalCooldown } from './useBlockStore';
+import { usePageStore } from './usePageStore';
 import type { DbBlock } from './useBlockStore';
+import type { DbPage } from './usePageStore';
 
 interface DbCollection {
   id: string;
@@ -14,24 +16,8 @@ interface DbCollection {
   deleted_at: string | null;
 }
 
-interface DbPage {
-  id: string;
-  title: string;
-  type: string;
-  collection_id: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  deleted_at: string | null;
-  share_enabled: boolean;
-  share_mode: 'public' | 'private';
-  share_token: string | null;
-  shared_with_emails: string[];
-}
-
 interface AppState {
   collections: DbCollection[];
-  pages: DbPage[];
   activePageId: string | null;
   activeCollectionId: string | null;
   sidebarOpen: boolean;
@@ -54,10 +40,8 @@ interface AppState {
   renameCollection: (id: string, name: string) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
 
-  // Pages
+  // Page shortcuts (delegate to usePageStore but manage activePageId)
   addPage: (collectionId: string, type?: PageType) => Promise<string>;
-  updatePageTitle: (id: string, title: string) => Promise<void>;
-  updatePageSharing: (id: string, updates: Partial<Pick<DbPage, 'share_enabled' | 'share_mode' | 'share_token' | 'shared_with_emails'>>) => void;
   deletePage: (id: string) => Promise<void>;
 
   // Trash
@@ -74,12 +58,8 @@ function uid() {
   return crypto.randomUUID();
 }
 
-// Debounce for page title
-let titleTimer: ReturnType<typeof setTimeout> | null = null;
-
 export const useAppStore = create<AppState>((set, get) => ({
   collections: [],
-  pages: [],
   activePageId: localStorage.getItem('activePageId') || null,
   activeCollectionId: localStorage.getItem('activeCollectionId') || null,
   sidebarOpen: true,
@@ -130,9 +110,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       localStorage.setItem('parchment_new_user', 'true');
 
       useBlockStore.getState().setBlocks(welcomeBlocks as DbBlock[]);
+      usePageStore.getState().setPages(page ? [page] : []);
       set({
         collections: col ? [col] : [],
-        pages: page ? [page] : [],
         activePageId: pageId,
         activeCollectionId: colId,
         loading: false,
@@ -147,9 +127,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (newActiveCollectionId) localStorage.setItem('activeCollectionId', newActiveCollectionId);
 
     useBlockStore.getState().setBlocks(blocks);
+    usePageStore.getState().setPages(pages);
     set({
       collections,
-      pages,
       activePageId: newActivePageId,
       activeCollectionId: newActiveCollectionId,
       loading: false,
@@ -171,9 +151,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
 
     useBlockStore.getState().setBlocks(blocks);
+    usePageStore.getState().setPages(pages);
     set((s) => ({
       collections,
-      pages,
       activePageId: s.activePageId && pages.some((p) => p.id === s.activePageId) ? s.activePageId : (pages[0]?.id ?? null),
       activeCollectionId: s.activeCollectionId && collections.some((c) => c.id === s.activeCollectionId) ? s.activeCollectionId : (collections[0]?.id ?? null),
     }));
@@ -205,9 +185,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   reset: () => {
     useBlockStore.getState().resetBlocks();
+    usePageStore.getState().resetPages();
     set({
       collections: [],
-      pages: [],
       activePageId: null,
       activeCollectionId: null,
       loading: false,
@@ -249,138 +229,101 @@ export const useAppStore = create<AppState>((set, get) => ({
     markLocalMutation();
     await supabase.from('collections').update({ deleted_at: now }).eq('id', id);
     await supabase.from('pages').update({ deleted_at: now }).match({ collection_id: id, deleted_at: null });
+
+    // Also update pages in page store
+    const pageStore = usePageStore.getState();
+    pageStore.setPages(pageStore.pages.map((p) => p.collection_id === id ? { ...p, deleted_at: now } : p));
+
     set((s) => ({
       collections: s.collections.map((c) => c.id === id ? { ...c, deleted_at: now } : c),
-      pages: s.pages.map((p) => p.collection_id === id ? { ...p, deleted_at: now } : p),
       activeCollectionId: s.activeCollectionId === id ? null : s.activeCollectionId,
-      activePageId: s.pages.find((p) => p.id === s.activePageId)?.collection_id === id ? null : s.activePageId,
+      activePageId: pageStore.pages.find((p) => p.id === s.activePageId)?.collection_id === id ? null : s.activePageId,
     }));
   },
 
   addPage: async (collectionId, type = 'blank') => {
     const { userId } = get();
     if (!userId) return '';
-    const id = uid();
-    const { data: page } = await supabase.from('pages').insert({ id, user_id: userId, collection_id: collectionId, title: 'Untitled', type }).select().single();
-
-    const defaultBlockId = uid();
-    const defaultBlock: DbBlock = {
-      id: defaultBlockId,
-      page_id: id,
-      type: type === 'checklist' ? 'todo' : 'text',
-      content: '',
-      position: 0,
-      checked: type === 'checklist' ? false : null,
-      list_start: null,
-      indent_level: 0,
-      created_at: new Date().toISOString(),
-      group_id: null,
-    };
-    await supabase.from('blocks').insert(defaultBlock);
-
-    if (page) {
-      // Add default block to block store
-      const blockStore = useBlockStore.getState();
-      blockStore.setBlocks([...blockStore.blocks, defaultBlock]);
-
-      set((s) => ({
-        pages: [...s.pages, page],
-        activePageId: id,
-        activeCollectionId: collectionId,
-      }));
+    const id = await usePageStore.getState().addPage(collectionId, userId, type);
+    if (id) {
+      set({ activePageId: id, activeCollectionId: collectionId });
+      localStorage.setItem('activePageId', id);
     }
     return id;
   },
 
-  updatePageTitle: async (id, title) => {
-    set((s) => ({ pages: s.pages.map((p) => (p.id === id ? { ...p, title } : p)) }));
-    if (titleTimer) clearTimeout(titleTimer);
-    titleTimer = setTimeout(async () => {
-      await supabase.from('pages').update({ title }).eq('id', id);
-    }, 500);
-  },
-
-  updatePageSharing: (id, updates) => {
-    set((s) => ({ pages: s.pages.map((p) => p.id === id ? { ...p, ...updates } : p) }));
-  },
-
   deletePage: async (id) => {
-    const now = new Date().toISOString();
-    markLocalMutation();
-    await supabase.from('pages').update({ deleted_at: now }).eq('id', id);
-    set((s) => {
-      const activePages = s.pages.filter((p) => p.id !== id && !p.deleted_at);
-      return {
-        pages: s.pages.map((p) => p.id === id ? { ...p, deleted_at: now } : p),
-        activePageId: s.activePageId === id ? (activePages[0]?.id ?? null) : s.activePageId,
-      };
-    });
+    const result = await usePageStore.getState().deletePage(id);
+    if (result) {
+      set((s) => ({
+        activePageId: s.activePageId === id ? result.newActivePageId : s.activePageId,
+      }));
+    }
   },
 
   // Trash methods
-  trashedPages: () => get().pages.filter((p) => p.deleted_at !== null),
+  trashedPages: () => usePageStore.getState().pages.filter((p) => p.deleted_at !== null),
   trashedCollections: () => get().collections.filter((c) => c.deleted_at !== null),
 
   restorePage: async (id) => {
     markLocalMutation();
     await supabase.from('pages').update({ deleted_at: null }).eq('id', id);
-    set((s) => ({
-      pages: s.pages.map((p) => p.id === id ? { ...p, deleted_at: null } : p),
-    }));
+    const pageStore = usePageStore.getState();
+    pageStore.setPages(pageStore.pages.map((p) => p.id === id ? { ...p, deleted_at: null } : p));
   },
 
   restoreCollection: async (id) => {
     markLocalMutation();
     await supabase.from('collections').update({ deleted_at: null }).eq('id', id);
     await supabase.from('pages').update({ deleted_at: null }).eq('collection_id', id);
+
+    const pageStore = usePageStore.getState();
+    pageStore.setPages(pageStore.pages.map((p) => p.collection_id === id ? { ...p, deleted_at: null } : p));
+
     set((s) => ({
       collections: s.collections.map((c) => c.id === id ? { ...c, deleted_at: null } : c),
-      pages: s.pages.map((p) => p.collection_id === id ? { ...p, deleted_at: null } : p),
     }));
   },
 
   permanentlyDeletePage: async (id) => {
     markLocalMutation();
     await supabase.from('pages').delete().eq('id', id);
-    // Also remove blocks for this page from block store
     const blockStore = useBlockStore.getState();
     blockStore.setBlocks(blockStore.blocks.filter((b) => b.page_id !== id));
-    set((s) => ({
-      pages: s.pages.filter((p) => p.id !== id),
-    }));
+    const pageStore = usePageStore.getState();
+    pageStore.setPages(pageStore.pages.filter((p) => p.id !== id));
   },
 
   permanentlyDeleteCollection: async (id) => {
     markLocalMutation();
-    const pageIds = get().pages.filter((p) => p.collection_id === id).map((p) => p.id);
+    const pageStore = usePageStore.getState();
+    const pageIds = pageStore.pages.filter((p) => p.collection_id === id).map((p) => p.id);
     await supabase.from('collections').delete().eq('id', id);
-    // Also remove blocks for deleted pages from block store
     const blockStore = useBlockStore.getState();
     blockStore.setBlocks(blockStore.blocks.filter((b) => !pageIds.includes(b.page_id)));
+    pageStore.setPages(pageStore.pages.filter((p) => p.collection_id !== id));
     set((s) => ({
       collections: s.collections.filter((c) => c.id !== id),
-      pages: s.pages.filter((p) => p.collection_id !== id),
     }));
   },
 
   emptyTrash: async () => {
-    const { trashedPages, trashedCollections } = get();
-    const deletedPages = trashedPages();
-    const deletedCollections = trashedCollections();
+    const trashedPagesList = get().trashedPages();
+    const trashedCollectionsList = get().trashedCollections();
     markLocalMutation();
-    for (const p of deletedPages) {
+    for (const p of trashedPagesList) {
       await supabase.from('pages').delete().eq('id', p.id);
     }
-    for (const c of deletedCollections) {
+    for (const c of trashedCollectionsList) {
       await supabase.from('collections').delete().eq('id', c.id);
     }
-    const deletedPageIds = deletedPages.map((p) => p.id);
-    const deletedColIds = deletedCollections.map((c) => c.id);
-    // Remove blocks for deleted pages from block store
+    const deletedPageIds = trashedPagesList.map((p) => p.id);
+    const deletedColIds = trashedCollectionsList.map((c) => c.id);
     const blockStore = useBlockStore.getState();
     blockStore.setBlocks(blockStore.blocks.filter((b) => !deletedPageIds.includes(b.page_id)));
+    const pageStore = usePageStore.getState();
+    pageStore.setPages(pageStore.pages.filter((p) => !deletedPageIds.includes(p.id)));
     set((s) => ({
-      pages: s.pages.filter((p) => !deletedPageIds.includes(p.id)),
       collections: s.collections.filter((c) => !deletedColIds.includes(c.id)),
     }));
   },

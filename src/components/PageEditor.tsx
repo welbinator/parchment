@@ -42,7 +42,16 @@ export default function PageEditor() {
           store.undoDeleteBlock();
         }
       }
-      // Ctrl+A — select all blocks on the page
+      // Escape — clear selection
+      if (e.key === 'Escape') {
+        const { isSelectionMode, clearSelection } = useSelectionStore.getState();
+        if (isSelectionMode) {
+          e.preventDefault();
+          clearSelection();
+        }
+      }
+
+      // Ctrl+A — toggle select/deselect all blocks on the page
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         // Don't intercept when the user is editing text in a contentEditable block
         const active = document.activeElement;
@@ -59,9 +68,14 @@ export default function PageEditor() {
           .map((b) => b.id);
         if (ids.length > 0) {
           e.preventDefault();
-          const { enterSelectionMode, selectAll } = useSelectionStore.getState();
-          enterSelectionMode();
-          selectAll(ids);
+          const { isSelectionMode, selectedIds, enterSelectionMode, selectAll, clearSelection } = useSelectionStore.getState();
+          // If all blocks are already selected, deselect all
+          if (isSelectionMode && selectedIds.size === ids.length && ids.every((id) => selectedIds.has(id))) {
+            clearSelection();
+          } else {
+            enterSelectionMode();
+            selectAll(ids);
+          }
         }
       }
     };

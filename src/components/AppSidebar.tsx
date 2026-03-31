@@ -105,7 +105,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
         <span className="font-display font-semibold text-sm tracking-wide text-gradient-primary">
           Parchment
         </span>
-        <span className="text-[10px] text-muted-foreground/50 font-mono ml-1.5 self-end mb-px">
+        <span className="text-[10px] text-muted-foreground/50 font-mono ml-1.5 mb-px">
           v{__APP_VERSION__}·{__APP_COMMIT__}
         </span>
         <button

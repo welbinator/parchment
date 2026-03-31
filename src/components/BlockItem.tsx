@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useMemo, KeyboardEvent } from 'react';
-import { useAppStore } from '@/store/useAppStore';
+import { useBlockStore } from '@/store/useBlockStore';
 import { useSelectionStore } from '@/store/useSelectionStore';
 import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
@@ -107,7 +107,7 @@ interface BlockItemProps {
 }
 
 export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock, groupId = null, groupBlocksEnabled = false, allPageBlockIds = [] }: BlockItemProps) {
-  const { updateBlock, deleteBlock, addBlock, changeBlockType, undoDeleteBlock } = useAppStore();
+  const { updateBlock, deleteBlock, addBlock, changeBlockType, undoDeleteBlock } = useBlockStore();
   const { selectionMode, selectedIds, shiftAnchorId, enterSelectionMode, toggleBlock } = useSelectionStore();
   const ref = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);

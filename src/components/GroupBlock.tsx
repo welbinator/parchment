@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useAppStore } from '@/store/useAppStore';
+import { useBlockStore } from '@/store/useBlockStore';
 import { toast } from 'sonner';
 import { GripVertical, Trash2, Plus, Group, Pencil } from 'lucide-react';
 import {
@@ -115,7 +115,7 @@ function ColorSwatch({
 }
 
 export default function GroupBlock({ block, pageId, childBlocks, groupBlocksEnabled }: GroupBlockProps) {
-  const { addBlock, deleteGroup, updateBlock } = useAppStore();
+  const { addBlock, deleteGroup, updateBlock } = useBlockStore();
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const [stylePopoverOpen, setStylePopoverOpen] = useState(false);
 

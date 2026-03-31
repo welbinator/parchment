@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { useBlockStore } from '@/store/useBlockStore';
 import { useSelectionStore } from '@/store/useSelectionStore';
 import BlockItem from './BlockItem';
 import GroupBlock from './GroupBlock';
@@ -12,7 +13,8 @@ import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 
 export default function PageEditor() {
-  const { pages, blocks, activePageId, updatePageTitle, updatePageSharing, addBlock, sidebarOpen, setSidebarOpen, undoDeleteBlock, lastDeletedBlock } = useAppStore();
+  const { pages, activePageId, updatePageTitle, updatePageSharing, sidebarOpen, setSidebarOpen } = useAppStore();
+  const { blocks, addBlock, undoDeleteBlock, lastDeletedBlock } = useBlockStore();
   const { exitSelectionMode } = useSelectionStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
@@ -36,10 +38,10 @@ export default function PageEditor() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        const store = useAppStore.getState();
-        if (store.lastDeletedBlock) {
+        const blockState = useBlockStore.getState();
+        if (blockState.lastDeletedBlock) {
           e.preventDefault();
-          store.undoDeleteBlock();
+          blockState.undoDeleteBlock();
         }
       }
       // Escape — clear selection
@@ -62,7 +64,7 @@ export default function PageEditor() {
         );
         if (isEditing) return;
 
-        const ids = useAppStore.getState().blocks
+        const ids = useBlockStore.getState().blocks
           .filter((b) => b.page_id === activePageId && !b.group_id)
           .sort((a, b) => a.position - b.position)
           .map((b) => b.id);

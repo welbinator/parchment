@@ -1,5 +1,5 @@
 import { useSelectionStore } from '@/store/useSelectionStore';
-import { useAppStore } from '@/store/useAppStore';
+import { useBlockStore } from '@/store/useBlockStore';
 import { Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -21,7 +21,7 @@ interface SelectionActionBarProps {
 
 export default function SelectionActionBar({ pageId, allBlockIds }: SelectionActionBarProps) {
   const { selectionMode, selectedIds, exitSelectionMode, selectAll, clearSelection } = useSelectionStore();
-  const { deleteBlock } = useAppStore();
+  const { deleteBlock } = useBlockStore();
 
   if (!selectionMode) return null;
 

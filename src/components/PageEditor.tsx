@@ -43,13 +43,22 @@ export default function PageEditor() {
       }
       // Ctrl+A — select all blocks (behind flag)
       if (selectAllEnabled && (e.ctrlKey || e.metaKey) && e.key === 'a') {
-        const { enterSelectionMode, selectAll } = useSelectionStore.getState();
+        // Don't intercept when the user is editing text in a contentEditable block
+        const active = document.activeElement;
+        const isEditing = active && (
+          (active as HTMLElement).isContentEditable ||
+          active.tagName === 'INPUT' ||
+          active.tagName === 'TEXTAREA'
+        );
+        if (isEditing) return;
+
         const ids = useAppStore.getState().blocks
           .filter((b) => b.page_id === activePageId && !b.group_id)
           .sort((a, b) => a.position - b.position)
           .map((b) => b.id);
         if (ids.length > 0) {
           e.preventDefault();
+          const { enterSelectionMode, selectAll } = useSelectionStore.getState();
           enterSelectionMode();
           selectAll(ids);
         }

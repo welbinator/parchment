@@ -30,7 +30,7 @@ export default function PageEditor() {
     const el = titleRef.current;
     if (!el) return;
     const resize = () => {
-      el.style.height = 'auto';
+      el.style.height = '0';
       const sh = el.scrollHeight;
       el.style.height = `${sh}px`;
       const cs = getComputedStyle(el);

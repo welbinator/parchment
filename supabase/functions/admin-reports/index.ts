@@ -56,16 +56,29 @@ Deno.serve(async (req) => {
 
       // For each user, get collections count, pages count, and last active
       const enriched = await Promise.all(users.map(async (u) => {
-        const [collectionsRes, pagesRes, lastActiveRes] = await Promise.all([
+        const [collectionsRes, pagesRes, lastPageRes, lastBlockRes] = await Promise.all([
           supabase.from('collections').select('id', { count: 'exact', head: true }).eq('user_id', u.user_id).is('deleted_at', null),
           supabase.from('pages').select('id', { count: 'exact', head: true }).eq('user_id', u.user_id).is('deleted_at', null),
           supabase.from('pages').select('updated_at').eq('user_id', u.user_id).order('updated_at', { ascending: false }).limit(1),
+          supabase.from('blocks').select('created_at, pages!inner(user_id)').eq('pages.user_id', u.user_id).order('created_at', { ascending: false }).limit(1),
         ])
+
+        const lastPage = lastPageRes.data?.[0]?.updated_at ?? null
+        const lastBlock = (lastBlockRes.data?.[0] as any)?.created_at ?? null
+
+        // Use whichever is most recent
+        let last_active: string | null = null
+        if (lastPage && lastBlock) {
+          last_active = lastPage > lastBlock ? lastPage : lastBlock
+        } else {
+          last_active = lastPage ?? lastBlock
+        }
+
         return {
           ...u,
           collections_count: collectionsRes.count ?? 0,
           pages_count: pagesRes.count ?? 0,
-          last_active: lastActiveRes.data?.[0]?.updated_at ?? null,
+          last_active,
         }
       }))
 

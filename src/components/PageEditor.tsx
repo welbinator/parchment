@@ -24,12 +24,17 @@ export default function PageEditor() {
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize the title textarea to fit its content
+  const [debugInfo, setDebugInfo] = useState('');
+
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
     const resize = () => {
       el.style.height = 'auto';
-      el.style.height = `${el.scrollHeight}px`;
+      const sh = el.scrollHeight;
+      el.style.height = `${sh}px`;
+      const cs = getComputedStyle(el);
+      setDebugInfo(`sh:${sh} lh:${cs.lineHeight} fs:${cs.fontSize} p:${cs.padding} h:${cs.height} mb:${cs.marginBottom}`);
     };
     resize();
     window.addEventListener('resize', resize);
@@ -160,6 +165,7 @@ export default function PageEditor() {
       {/* Editor area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-12">
+          {debugInfo && <div className="text-xs text-red-500 font-mono mb-2">{debugInfo}</div>}
           <textarea
             ref={titleRef}
             value={page.title}

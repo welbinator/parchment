@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -111,6 +131,7 @@ export type Database = {
           checked: boolean | null
           content: string
           created_at: string
+          group_id: string | null
           id: string
           indent_level: number
           list_start: boolean | null
@@ -122,6 +143,7 @@ export type Database = {
           checked?: boolean | null
           content?: string
           created_at?: string
+          group_id?: string | null
           id?: string
           indent_level?: number
           list_start?: boolean | null
@@ -133,6 +155,7 @@ export type Database = {
           checked?: boolean | null
           content?: string
           created_at?: string
+          group_id?: string | null
           id?: string
           indent_level?: number
           list_start?: boolean | null
@@ -141,6 +164,13 @@ export type Database = {
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "blocks_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "blocks_page_id_fkey"
             columns: ["page_id"]
@@ -180,12 +210,94 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled_for: string[]
+          flag: string
+          globally_enabled: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled_for?: string[]
+          flag: string
+          globally_enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled_for?: string[]
+          flag?: string
+          globally_enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      feedback: {
+        Row: {
+          contact_ok: boolean
+          created_at: string
+          email: string
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          contact_ok?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          contact_ok?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      feedback_blocked: {
+        Row: {
+          blocked_at: string
+          email: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_at?: string
+          email: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_at?: string
+          email?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       pages: {
         Row: {
           collection_id: string
           created_at: string
           deleted_at: string | null
           id: string
+          share_enabled: boolean
+          share_mode: string
+          share_token: string | null
+          shared_with_emails: string[]
           title: string
           type: string
           updated_at: string
@@ -196,6 +308,10 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          share_enabled?: boolean
+          share_mode?: string
+          share_token?: string | null
+          shared_with_emails?: string[]
           title?: string
           type?: string
           updated_at?: string
@@ -206,6 +322,10 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          share_enabled?: boolean
+          share_mode?: string
+          share_token?: string | null
+          shared_with_emails?: string[]
           title?: string
           type?: string
           updated_at?: string
@@ -224,6 +344,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          beta_tester: boolean
           created_at: string
           display_name: string | null
           email: string | null
@@ -234,6 +355,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          beta_tester?: boolean
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -244,6 +366,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          beta_tester?: boolean
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -267,6 +390,7 @@ export type Database = {
         }
         Returns: Json
       }
+      cleanup_old_trash: { Args: never; Returns: undefined }
       validate_api_key: { Args: { p_key: string }; Returns: Json }
     }
     Enums: {
@@ -396,7 +520,11 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
 } as const
+

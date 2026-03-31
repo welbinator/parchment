@@ -6,6 +6,7 @@ import GroupBlock from './GroupBlock';
 import UserMenu from './UserMenu';
 import ShareButton from './ShareButton';
 import SelectionActionBar from './SelectionActionBar';
+import EditorErrorBoundary from './EditorErrorBoundary';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
@@ -151,13 +152,14 @@ export default function PageEditor() {
               if (block.type === 'group' && groupBlocksEnabled) {
                 const childBlocks = allPageBlocks.filter((b) => b.group_id === block.id);
                 return (
-                  <GroupBlock
-                    key={block.id}
-                    block={block as any}
-                    pageId={page.id}
-                    childBlocks={childBlocks as any}
-                    groupBlocksEnabled={groupBlocksEnabled}
-                  />
+                  <EditorErrorBoundary key={block.id} label="group block">
+                    <GroupBlock
+                      block={block as any}
+                      pageId={page.id}
+                      childBlocks={childBlocks as any}
+                      groupBlocksEnabled={groupBlocksEnabled}
+                    />
+                  </EditorErrorBoundary>
                 );
               }
 
@@ -181,24 +183,25 @@ export default function PageEditor() {
               const allPageBlockIds = pageBlocks.map((b) => b.id);
 
               return (
-                <BlockItem
-                  key={block.id}
-                  block={{
-                    id: block.id,
-                    type: block.type as any,
-                    content: block.content,
-                    checked: block.checked ?? undefined,
-                    listStart: block.list_start ?? undefined,
-                    indentLevel: block.indent_level ?? 0,
-                  }}
-                  pageId={page.id}
-                  listIndex={listIndex}
-                  focusBlockId={focusBlockId}
-                  onFocusHandled={() => setFocusBlockId(null)}
-                  onNewBlock={(id) => setFocusBlockId(id)}
-                  groupBlocksEnabled={groupBlocksEnabled}
-                  allPageBlockIds={allPageBlockIds}
-                />
+                <EditorErrorBoundary key={block.id} label="block">
+                  <BlockItem
+                    block={{
+                      id: block.id,
+                      type: block.type as any,
+                      content: block.content,
+                      checked: block.checked ?? undefined,
+                      listStart: block.list_start ?? undefined,
+                      indentLevel: block.indent_level ?? 0,
+                    }}
+                    pageId={page.id}
+                    listIndex={listIndex}
+                    focusBlockId={focusBlockId}
+                    onFocusHandled={() => setFocusBlockId(null)}
+                    onNewBlock={(id) => setFocusBlockId(id)}
+                    groupBlocksEnabled={groupBlocksEnabled}
+                    allPageBlockIds={allPageBlockIds}
+                  />
+                </EditorErrorBoundary>
               );
             })}
           </div>

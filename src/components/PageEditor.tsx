@@ -27,8 +27,13 @@ export default function PageEditor() {
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
+    const resize = () => {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
   }, [page?.title]);
 
   // Exit selection mode when switching pages

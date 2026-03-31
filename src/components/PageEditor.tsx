@@ -1,17 +1,21 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { useSelectionStore } from '@/store/useSelectionStore';
 import BlockItem from './BlockItem';
 import GroupBlock from './GroupBlock';
 import UserMenu from './UserMenu';
 import ShareButton from './ShareButton';
+import SelectionActionBar from './SelectionActionBar';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 export default function PageEditor() {
   const { pages, blocks, activePageId, updatePageTitle, updatePageSharing, addBlock, sidebarOpen, setSidebarOpen, undoDeleteBlock, lastDeletedBlock } = useAppStore();
+  const { exitSelectionMode } = useSelectionStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const groupBlocksEnabled = useFeatureFlag('group-blocks');
+  const bulkSelectEnabled = useFeatureFlag('bulk-select');
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize the title textarea to fit its content
@@ -21,6 +25,11 @@ export default function PageEditor() {
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, [page?.title]);
+
+  // Exit selection mode when switching pages
+  useEffect(() => {
+    exitSelectionMode();
+  }, [activePageId, exitSelectionMode]);
 
   // Ctrl+Z to undo block deletion
   useEffect(() => {
@@ -146,6 +155,9 @@ export default function PageEditor() {
                   listIndex = index - start;
                 }
               }
+
+              const allPageBlockIds = pageBlocks.map((b) => b.id);
+
               return (
                 <BlockItem
                   key={block.id}
@@ -163,6 +175,8 @@ export default function PageEditor() {
                   onFocusHandled={() => setFocusBlockId(null)}
                   onNewBlock={(id) => setFocusBlockId(id)}
                   groupBlocksEnabled={groupBlocksEnabled}
+                  bulkSelectEnabled={bulkSelectEnabled}
+                  allPageBlockIds={allPageBlockIds}
                 />
               );
             })}
@@ -177,6 +191,14 @@ export default function PageEditor() {
           </button>
         </div>
       </div>
+
+      {/* Floating selection action bar */}
+      {bulkSelectEnabled && (
+        <SelectionActionBar
+          pageId={page.id}
+          allBlockIds={pageBlocks.map((b) => b.id)}
+        />
+      )}
     </div>
   );
 }

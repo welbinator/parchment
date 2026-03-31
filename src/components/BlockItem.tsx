@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback, useMemo, KeyboardEvent } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { useSelectionStore } from '@/store/useSelectionStore';
 import { toast } from 'sonner';
 import type { Block, BlockType } from '@/types';
 import FloatingToolbar from './FloatingToolbar';
@@ -102,10 +103,13 @@ interface BlockItemProps {
   onNewBlock: (newBlockId: string) => void;
   groupId?: string | null;
   groupBlocksEnabled?: boolean;
+  bulkSelectEnabled?: boolean;
+  allPageBlockIds?: string[];
 }
 
-export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock, groupId = null, groupBlocksEnabled = false }: BlockItemProps) {
+export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock, groupId = null, groupBlocksEnabled = false, bulkSelectEnabled = false, allPageBlockIds = [] }: BlockItemProps) {
   const { updateBlock, deleteBlock, addBlock, changeBlockType, undoDeleteBlock } = useAppStore();
+  const { selectionMode, selectedIds, shiftAnchorId, enterSelectionMode, toggleBlock } = useSelectionStore();
   const ref = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
@@ -113,6 +117,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   const [slashFilter, setSlashFilter] = useState('');
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
   const indentLevel = block.indentLevel ?? 0;
+  const isSelected = selectedIds.has(block.id);
   const handleDeleteBlock = useCallback(() => {
     deleteBlock(pageId, block.id);
     toast('Block deleted', {
@@ -371,9 +376,41 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   return (
     <div
       ref={wrapperRef}
-      className="group flex items-start gap-1 relative"
+      className={`group flex items-start gap-1 relative rounded-md transition-colors ${
+        bulkSelectEnabled && isSelected ? 'bg-primary/10 ring-1 ring-primary/30' : ''
+      }`}
       style={indentLevel > 0 ? { paddingLeft: `${indentLevel * 1.5}rem` } : undefined}
     >
+      {/* Selection checkbox (bulk-select mode only) */}
+      {bulkSelectEnabled && (
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
+            if (!selectionMode) enterSelectionMode();
+            toggleBlock(
+              block.id,
+              allPageBlockIds,
+              e.shiftKey ? shiftAnchorId : null
+            );
+          }}
+          aria-label={isSelected ? 'Deselect block' : 'Select block'}
+          className={`flex-shrink-0 mt-1 w-4 h-4 rounded border transition-all
+            ${selectionMode
+              ? 'opacity-100'
+              : 'opacity-0 group-hover:opacity-100'}
+            ${isSelected
+              ? 'bg-primary border-primary'
+              : 'border-muted-foreground hover:border-primary bg-background'
+            }`}
+        >
+          {isSelected && (
+            <svg viewBox="0 0 14 14" className="w-full h-full text-primary-foreground">
+              <path d="M3 7l3 3 5-5" stroke="currentColor" strokeWidth="2" fill="none" />
+            </svg>
+          )}
+        </button>
+      )}
+
       {/* Block handle */}
       <div className="flex items-center gap-0.5 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
         <button className="p-0.5 text-muted-foreground hover:text-foreground cursor-grab">
@@ -413,16 +450,27 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
       {/* Content */}
       <div
         ref={ref}
-        contentEditable
+        contentEditable={!selectionMode}
         suppressContentEditableWarning
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
-        onClick={handleClick}
+        onClick={(e) => {
+          if (selectionMode && bulkSelectEnabled) {
+            e.preventDefault();
+            toggleBlock(
+              block.id,
+              allPageBlockIds,
+              e.shiftKey ? shiftAnchorId : null
+            );
+            return;
+          }
+          handleClick(e);
+        }}
         data-placeholder={block.type === 'heading1' ? 'Heading 1' : block.type === 'heading2' ? 'Heading 2' : block.type === 'heading3' ? 'Heading 3' : "Type '/' for commands..."}
         className={`flex-1 outline-none min-h-[1.5em] empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/50 ${
           blockStyles[block.type] || blockStyles.text
-        } ${block.checked ? 'line-through text-muted-foreground' : ''}`}
+        } ${block.checked ? 'line-through text-muted-foreground' : ''} ${selectionMode ? 'cursor-pointer select-none' : ''}`}
       />
 
       {/* Floating toolbar */}

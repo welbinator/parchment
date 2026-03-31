@@ -15,6 +15,7 @@ export default function PageEditor() {
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const groupBlocksEnabled = useFeatureFlag('group-blocks');
+  const selectAllEnabled = useFeatureFlag('select-all');
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize the title textarea to fit its content
@@ -40,10 +41,23 @@ export default function PageEditor() {
           store.undoDeleteBlock();
         }
       }
+      // Ctrl+A — select all blocks (behind flag)
+      if (selectAllEnabled && (e.ctrlKey || e.metaKey) && e.key === 'a') {
+        const { enterSelectionMode, selectAll } = useSelectionStore.getState();
+        const ids = useAppStore.getState().blocks
+          .filter((b) => b.page_id === activePageId && !b.group_id)
+          .sort((a, b) => a.position - b.position)
+          .map((b) => b.id);
+        if (ids.length > 0) {
+          e.preventDefault();
+          enterSelectionMode();
+          selectAll(ids);
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [selectAllEnabled, activePageId]);
 
   const pageBlocks = useMemo(() => {
     if (!page) return [];

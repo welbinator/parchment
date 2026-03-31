@@ -6,8 +6,8 @@ import GroupBlock from './GroupBlock';
 import UserMenu from './UserMenu';
 import ShareButton from './ShareButton';
 import SelectionActionBar from './SelectionActionBar';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
+
 
 export default function PageEditor() {
   const { pages, blocks, activePageId, updatePageTitle, updatePageSharing, addBlock, sidebarOpen, setSidebarOpen, undoDeleteBlock, lastDeletedBlock } = useAppStore();
@@ -15,7 +15,6 @@ export default function PageEditor() {
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const groupBlocksEnabled = useFeatureFlag('group-blocks');
-  const bulkSelectEnabled = useFeatureFlag('bulk-select');
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize the title textarea to fit its content
@@ -175,7 +174,6 @@ export default function PageEditor() {
                   onFocusHandled={() => setFocusBlockId(null)}
                   onNewBlock={(id) => setFocusBlockId(id)}
                   groupBlocksEnabled={groupBlocksEnabled}
-                  bulkSelectEnabled={bulkSelectEnabled}
                   allPageBlockIds={allPageBlockIds}
                 />
               );
@@ -193,12 +191,10 @@ export default function PageEditor() {
       </div>
 
       {/* Floating selection action bar */}
-      {bulkSelectEnabled && (
-        <SelectionActionBar
-          pageId={page.id}
-          allBlockIds={pageBlocks.map((b) => b.id)}
-        />
-      )}
+      <SelectionActionBar
+        pageId={page.id}
+        allBlockIds={pageBlocks.map((b) => b.id)}
+      />
     </div>
   );
 }

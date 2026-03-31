@@ -103,11 +103,10 @@ interface BlockItemProps {
   onNewBlock: (newBlockId: string) => void;
   groupId?: string | null;
   groupBlocksEnabled?: boolean;
-  bulkSelectEnabled?: boolean;
   allPageBlockIds?: string[];
 }
 
-export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock, groupId = null, groupBlocksEnabled = false, bulkSelectEnabled = false, allPageBlockIds = [] }: BlockItemProps) {
+export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFocusHandled, onNewBlock, groupId = null, groupBlocksEnabled = false, allPageBlockIds = [] }: BlockItemProps) {
   const { updateBlock, deleteBlock, addBlock, changeBlockType, undoDeleteBlock } = useAppStore();
   const { selectionMode, selectedIds, shiftAnchorId, enterSelectionMode, toggleBlock } = useSelectionStore();
   const ref = useRef<HTMLDivElement>(null);
@@ -377,12 +376,12 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     <div
       ref={wrapperRef}
       className={`group flex items-start gap-1 relative rounded-md transition-colors ${
-        bulkSelectEnabled && isSelected ? 'bg-primary/10 ring-1 ring-primary/30' : ''
+        isSelected ? 'bg-primary/10 ring-1 ring-primary/30' : ''
       }`}
       style={indentLevel > 0 ? { paddingLeft: `${indentLevel * 1.5}rem` } : undefined}
     >
-      {/* Selection checkbox (bulk-select mode only) */}
-      {bulkSelectEnabled && (
+      {/* Selection checkbox */}
+      {(
         <button
           onMouseDown={(e) => {
             e.preventDefault();
@@ -456,7 +455,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         onClick={(e) => {
-          if (selectionMode && bulkSelectEnabled) {
+          if (selectionMode) {
             e.preventDefault();
             toggleBlock(
               block.id,

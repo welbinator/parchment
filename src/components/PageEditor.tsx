@@ -16,7 +16,6 @@ export default function PageEditor() {
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const groupBlocksEnabled = useFeatureFlag('group-blocks');
-  const selectAllEnabled = useFeatureFlag('select-all');
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize the title textarea to fit its content
@@ -42,8 +41,8 @@ export default function PageEditor() {
           store.undoDeleteBlock();
         }
       }
-      // Ctrl+A — select all blocks (behind flag)
-      if (selectAllEnabled && (e.ctrlKey || e.metaKey) && e.key === 'a') {
+      // Ctrl+A — select all blocks on the page
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         // Don't intercept when the user is editing text in a contentEditable block
         const active = document.activeElement;
         const isEditing = active && (
@@ -67,7 +66,7 @@ export default function PageEditor() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectAllEnabled, activePageId]);
+  }, [activePageId]);
 
   const pageBlocks = useMemo(() => {
     if (!page) return [];

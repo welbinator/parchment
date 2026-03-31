@@ -14,6 +14,25 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.5.1',
+    date: '2026-03-31',
+    title: 'Bulk Block Selection',
+    changes: [
+      {
+        type: 'feature',
+        description: 'Multi-select blocks — hover any block to reveal a checkbox, click to enter selection mode. Select multiple blocks and delete them all at once.',
+      },
+      {
+        type: 'feature',
+        description: 'Ctrl+A (or Cmd+A) selects all blocks on the page at once, dropping you straight into selection mode.',
+      },
+      {
+        type: 'feature',
+        description: 'Shift+click to select a range of blocks between two checkboxes. Select All / Deselect All buttons in the action bar for quick control.',
+      },
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2026-03-29',
     title: 'Nested Lists, Keyboard Navigation & Long Title Support',

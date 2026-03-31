@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import SharedPageView from "./pages/SharedPageView";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import FeedbackWidget from "./components/FeedbackWidget";
+import WhatsNewModal from "./components/WhatsNewModal";
 import { Loader2 } from 'lucide-react';
 import MigrationModal from '@/components/MigrationModal';
 import { supabase } from '@/integrations/supabase/client';
@@ -173,6 +174,7 @@ const App = () => (
         <Sonner />
         <PWAInstallPrompt />
         <FeedbackWidget />
+        <WhatsNewModal />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />

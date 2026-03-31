@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { useBlockStore } from '@/store/useBlockStore';
+import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 import { convertStyledJsonToHtml, autoLinkify } from '@/utils/blockContent';
 import type { Block, BlockType } from '@/types';
@@ -98,11 +99,9 @@ export function useBlockEditor({
 
   const handleDeleteBlock = useCallback(() => {
     deleteBlock(pageId, block.id);
-    import('sonner').then(({ toast }) => {
-      toast('Block deleted', {
-        action: { label: 'Undo', onClick: () => undoDeleteBlock() },
-        duration: 5000,
-      });
+    toast('Block deleted', {
+      action: { label: 'Undo', onClick: () => undoDeleteBlock() },
+      duration: 5000,
     });
   }, [deleteBlock, undoDeleteBlock, pageId, block.id]);
 

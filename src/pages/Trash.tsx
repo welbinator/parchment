@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store/useAppStore';
+import { useCollectionStore } from '@/store/useCollectionStore';
 import AppSidebar from '@/components/AppSidebar';
 import UserMenu from '@/components/UserMenu';
 import { RotateCcw, Trash2, Archive, PanelLeftOpen, AlertTriangle } from 'lucide-react';
@@ -13,10 +14,10 @@ export default function Trash() {
     permanentlyDeletePage,
     permanentlyDeleteCollection,
     emptyTrash,
-    collections,
     sidebarOpen,
     setSidebarOpen,
   } = useAppStore();
+  const { collections } = useCollectionStore();
 
   const deletedPages = trashedPages();
   const deletedCollections = trashedCollections();

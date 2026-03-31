@@ -44,10 +44,10 @@ export default function PageEditor() {
       }
       // Escape — clear selection
       if (e.key === 'Escape') {
-        const { isSelectionMode, clearSelection } = useSelectionStore.getState();
-        if (isSelectionMode) {
+        const { selectionMode, clearSelection, exitSelectionMode } = useSelectionStore.getState();
+        if (selectionMode) {
           e.preventDefault();
-          clearSelection();
+          exitSelectionMode();
         }
       }
 
@@ -68,10 +68,10 @@ export default function PageEditor() {
           .map((b) => b.id);
         if (ids.length > 0) {
           e.preventDefault();
-          const { isSelectionMode, selectedIds, enterSelectionMode, selectAll, clearSelection } = useSelectionStore.getState();
+          const { selectionMode, selectedIds, enterSelectionMode, selectAll, exitSelectionMode } = useSelectionStore.getState();
           // If all blocks are already selected, deselect all
-          if (isSelectionMode && selectedIds.size === ids.length && ids.every((id) => selectedIds.has(id))) {
-            clearSelection();
+          if (selectionMode && selectedIds.size === ids.length && ids.every((id) => selectedIds.has(id))) {
+            exitSelectionMode();
           } else {
             enterSelectionMode();
             selectAll(ids);

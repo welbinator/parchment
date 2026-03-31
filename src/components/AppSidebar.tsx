@@ -105,6 +105,9 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
         <span className="font-display font-semibold text-sm tracking-wide text-gradient-primary">
           Parchment
         </span>
+        <span className="text-[10px] text-muted-foreground/50 font-mono ml-1.5 self-end mb-px">
+          v{__APP_VERSION__}·{__APP_COMMIT__}
+        </span>
         <button
           onClick={() => setSidebarOpen(false)}
           className="p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground transition-colors"

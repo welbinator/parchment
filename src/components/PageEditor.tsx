@@ -21,25 +21,16 @@ export default function PageEditor() {
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const groupBlocksEnabled = useFeatureFlag('group-blocks');
-  const titleRef = useRef<HTMLTextAreaElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
 
-  // Auto-resize the title textarea to fit its content
-  const [debugInfo, setDebugInfo] = useState('');
-
+  // Keep contentEditable div in sync when page changes
   useEffect(() => {
     const el = titleRef.current;
     if (!el) return;
-    const resize = () => {
-      el.style.height = '0';
-      const sh = el.scrollHeight;
-      el.style.height = `${sh}px`;
-      const cs = getComputedStyle(el);
-      setDebugInfo(`sh:${sh} lh:${cs.lineHeight} fs:${cs.fontSize} p:${cs.padding} h:${cs.height} mb:${cs.marginBottom}`);
-    };
-    resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
-  }, [page?.title]);
+    if (el.textContent !== (page?.title ?? '')) {
+      el.textContent = page?.title ?? '';
+    }
+  }, [page?.title, activePageId]);
 
   // Exit selection mode when switching pages
   useEffect(() => {
@@ -165,14 +156,14 @@ export default function PageEditor() {
       {/* Editor area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-12">
-          {debugInfo && <div className="text-xs text-red-500 font-mono mb-2">{debugInfo}</div>}
-          <textarea
+          <div
             ref={titleRef}
-            value={page.title}
-            onChange={(e) => updatePageTitle(page.id, e.target.value)}
-            placeholder="Untitled"
-            rows={1}
-            className="w-full text-4xl font-bold font-display bg-transparent outline-none text-foreground placeholder:text-muted-foreground/40 mb-8 resize-none overflow-hidden leading-tight block p-0"
+            contentEditable
+            suppressContentEditableWarning
+            onInput={(e) => updatePageTitle(page.id, (e.target as HTMLDivElement).textContent ?? '')}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+            data-placeholder="Untitled"
+            className="w-full text-4xl font-bold font-display bg-transparent outline-none text-foreground mb-8 leading-tight empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40"
           />
 
           <div className="space-y-3">

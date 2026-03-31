@@ -166,7 +166,7 @@ export default function PageEditor() {
             onChange={(e) => updatePageTitle(page.id, e.target.value)}
             placeholder="Untitled"
             rows={1}
-            className="w-full text-4xl font-bold font-display bg-transparent outline-none text-foreground placeholder:text-muted-foreground/40 mb-8 resize-none overflow-hidden leading-tight"
+            className="w-full text-4xl font-bold font-display bg-transparent outline-none text-foreground placeholder:text-muted-foreground/40 mb-8 resize-none overflow-hidden leading-tight block p-0"
           />
 
           <div className="space-y-3">

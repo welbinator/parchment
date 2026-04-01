@@ -26,15 +26,22 @@ const WHATS_NEW: WhatsNewVersion[] = [
     changes: [
       {
         type: 'feature',
-        description: 'Multi-select blocks with checkboxes, Shift+click for range selection, and Ctrl+A to select all.',
+        description: 'Multi-select blocks — hover any block to reveal a checkbox, click to enter selection mode. Select multiple blocks and delete them all at once.',
       },
       {
         type: 'feature',
-        description: 'Bulk delete — select multiple blocks and delete them all at once with a floating action bar.',
+        description: 'Ctrl+A (or Cmd+A) selects all blocks on the page at once. Press again to deselect all, or hit Escape to exit selection mode.',
+      },
+      {
+        type: 'feature',
+        description: 'Shift+click to select a range of blocks between two checkboxes. Select All / Deselect All buttons in the action bar for quick control.',
       },
     ],
   },
 ];
+
+/** Max number of change items to show across all versions */
+const MAX_ITEMS = 6;
 
 /** The latest version string — must match package.json version */
 const LATEST_VERSION = __APP_VERSION__;
@@ -108,16 +115,16 @@ export default function WhatsNewModal() {
   if (loading || !visible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={dismiss}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4" onClick={dismiss}>
       <div
-        className="bg-background border border-border rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
+        className="bg-background border border-border rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 pb-2">
+        <div className="flex items-center justify-between p-5 pb-3">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">What's New</h2>
-            <p className="text-xs text-muted-foreground">v{LATEST_VERSION}</p>
+            <h2 className="text-xl font-semibold text-foreground">What's New</h2>
+            <p className="text-sm text-muted-foreground">v{LATEST_VERSION}</p>
           </div>
           <button
             onClick={dismiss}
@@ -128,29 +135,38 @@ export default function WhatsNewModal() {
         </div>
 
         {/* Content */}
-        <div className="px-4 pb-4 space-y-4">
-          {WHATS_NEW.map(release => (
-            <div key={release.version}>
-              <h3 className="text-sm font-medium text-foreground mb-2">{release.title}</h3>
-              <ul className="space-y-2">
-                {release.changes.map((change, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    {typeIcon(change.type)}
-                    <span>
-                      <span className="text-xs font-medium text-foreground/70 uppercase tracking-wide mr-1">
-                        {typeLabel(change.type)}
-                      </span>
-                      {change.description}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="px-5 pb-5 space-y-5">
+          {(() => {
+            let itemCount = 0;
+            return WHATS_NEW.map(release => {
+              if (itemCount >= MAX_ITEMS) return null;
+              const remaining = MAX_ITEMS - itemCount;
+              const visibleChanges = release.changes.slice(0, remaining);
+              itemCount += visibleChanges.length;
+              return (
+                <div key={release.version}>
+                  <h3 className="text-base font-medium text-foreground mb-3">{release.title}</h3>
+                  <ul className="space-y-3">
+                    {visibleChanges.map((change, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                        {typeIcon(change.type)}
+                        <span>
+                          <span className="text-xs font-medium text-foreground/70 uppercase tracking-wide mr-1.5">
+                            {typeLabel(change.type)}
+                          </span>
+                          {change.description}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            });
+          })()}
         </div>
 
         {/* Footer */}
-        <div className="px-4 pb-4 flex justify-between items-center">
+        <div className="px-5 pb-5 flex justify-between items-center">
           <a
             href="/changelog"
             onClick={dismiss}

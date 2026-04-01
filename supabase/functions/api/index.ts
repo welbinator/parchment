@@ -18,6 +18,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
 }
 
 const MAX_BLOCK_CONTENT_BYTES = 10 * 1024 // 10KB per block
+const APP_URL = Deno.env.get('APP_URL') ?? 'https://theparchment.app'
 const VALID_BLOCK_TYPES = new Set(['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo', 'quote', 'divider', 'code', 'group'])
 
 // Convert styled text JSON arrays to HTML
@@ -386,7 +387,7 @@ Deno.serve(async (req) => {
 
         if (Object.keys(updates).length === 0) {
           // Nothing to update — just return current state
-          const shareUrl = pg.share_token ? `https://theparchment.app/share/${pg.share_token}` : null
+          const shareUrl = pg.share_token ? `${APP_URL}/share/${pg.share_token}` : null
           return json({
             success: true,
             share_enabled: pg.share_enabled,
@@ -401,7 +402,7 @@ Deno.serve(async (req) => {
         if (error) return json({ error: error.message }, corsHeaders, 400)
 
         const finalToken = shareToken ?? pg.share_token
-        const shareUrl = finalToken ? `https://theparchment.app/share/${finalToken}` : null
+        const shareUrl = finalToken ? `${APP_URL}/share/${finalToken}` : null
 
         return json({
           success: true,

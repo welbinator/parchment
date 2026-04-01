@@ -17,7 +17,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
   }
 }
 
-const FEEDBACK_PAGE_ID = 'e817d8ca-8987-4547-8a81-845033c9f63e'
+const FEEDBACK_PAGE_ID = Deno.env.get('FEEDBACK_PAGE_ID') ?? 'e817d8ca-8987-4547-8a81-845033c9f63e'
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)

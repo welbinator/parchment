@@ -61,11 +61,12 @@ Deno.serve(async (req) => {
       contact_ok: contact_ok ?? false,
     })
 
-    // Get current max block position on the feedback page
+    // Get current max block position on the feedback page (top-level only)
     const { data: existingBlocks } = await supabase
       .from('blocks')
       .select('position')
       .eq('page_id', FEEDBACK_PAGE_ID)
+      .is('group_id', null)
       .order('position', { ascending: false })
       .limit(1)
 
@@ -73,12 +74,20 @@ Deno.serve(async (req) => {
     const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', dateStyle: 'medium', timeStyle: 'short' })
     const contactStr = contact_ok ? '✅ OK to contact' : '🚫 Do not contact'
 
-    // Append blocks to the feedback page
+    // Insert the group block first so we have its id
+    const { data: groupBlock, error: groupError } = await supabase
+      .from('blocks')
+      .insert({ page_id: FEEDBACK_PAGE_ID, type: 'group', content: '', position: nextPos })
+      .select('id')
+      .single()
+
+    if (groupError || !groupBlock) throw new Error('Failed to create group block')
+
+    // Insert child blocks inside the group
     await supabase.from('blocks').insert([
-      { page_id: FEEDBACK_PAGE_ID, type: 'heading2', content: `${user.email ?? email} — ${timestamp}`, position: nextPos },
-      { page_id: FEEDBACK_PAGE_ID, type: 'text', content: message.trim(), position: nextPos + 1 },
-      { page_id: FEEDBACK_PAGE_ID, type: 'text', content: contactStr, position: nextPos + 2 },
-      { page_id: FEEDBACK_PAGE_ID, type: 'divider', content: '', position: nextPos + 3 },
+      { page_id: FEEDBACK_PAGE_ID, type: 'heading2', content: `${user.email ?? email} — ${timestamp}`, position: 0, group_id: groupBlock.id },
+      { page_id: FEEDBACK_PAGE_ID, type: 'text', content: message.trim(), position: 1, group_id: groupBlock.id },
+      { page_id: FEEDBACK_PAGE_ID, type: 'text', content: contactStr, position: 2, group_id: groupBlock.id },
     ])
 
     return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders })

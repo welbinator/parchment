@@ -21,6 +21,7 @@ import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import FeedbackWidget from "./components/FeedbackWidget";
 import { Loader2 } from 'lucide-react';
 import MigrationModal from '@/components/MigrationModal';
+import WhatsNewModal from '@/components/WhatsNewModal';
 import { supabase } from '@/integrations/supabase/client';
 
 const queryClient = new QueryClient();
@@ -132,6 +133,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       {showMigration && (
         <MigrationModal onComplete={() => { setShowMigration(false); init(user.id); }} />
       )}
+      <WhatsNewModal />
       {children}
     </>
   );

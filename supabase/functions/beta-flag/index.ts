@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const ALLOWED_ORIGINS = new Set([
   'https://theparchment.app',
+  'https://staging.theparchment.app',
   'http://localhost:8080',
   'http://localhost:5173',
 ])

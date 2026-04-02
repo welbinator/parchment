@@ -83,8 +83,12 @@ export default function WhatsNewModal() {
         if (cancelled) return;
 
         const lastSeen = data?.last_seen_version;
-        // Show if they've never seen any version, or if their last seen is older
-        if (!lastSeen || lastSeen !== LATEST_VERSION) {
+        // Only show if:
+        // 1. The user hasn't seen this version yet, AND
+        // 2. There's actually a WHATS_NEW entry for the current version
+        //    (prevents popping up on version bumps where changelog hasn't been updated yet)
+        const hasEntryForCurrentVersion = WHATS_NEW.some(entry => entry.version === LATEST_VERSION);
+        if (hasEntryForCurrentVersion && (!lastSeen || lastSeen !== LATEST_VERSION)) {
           setVisible(true);
         }
       } catch {

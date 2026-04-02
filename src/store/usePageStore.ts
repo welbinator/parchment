@@ -37,6 +37,7 @@ interface PageState {
   addPage: (collectionId: string, userId: string, type?: PageType) => Promise<string>;
   updatePageTitle: (id: string, title: string) => Promise<void>;
   updatePageSharing: (id: string, updates: Partial<Pick<DbPage, 'share_enabled' | 'share_mode' | 'share_token' | 'shared_with_emails'>>) => void;
+  movePage: (pageId: string, targetCollectionId: string) => Promise<void>;
   deletePage: (id: string) => Promise<{ newActivePageId: string | null } | null>;
 }
 
@@ -86,6 +87,14 @@ export const usePageStore = create<PageState>((set, get) => ({
 
   updatePageSharing: (id, updates) => {
     set((s) => ({ pages: s.pages.map((p) => p.id === id ? { ...p, ...updates } : p) }));
+  },
+
+  movePage: async (pageId, targetCollectionId) => {
+    markLocalMutation();
+    set((s) => ({
+      pages: s.pages.map((p) => p.id === pageId ? { ...p, collection_id: targetCollectionId } : p),
+    }));
+    await supabase.from('pages').update({ collection_id: targetCollectionId }).eq('id', pageId);
   },
 
   deletePage: async (id) => {

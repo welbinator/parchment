@@ -323,6 +323,21 @@ Deno.serve(async (req) => {
         return json({ success: true }, corsHeaders)
       }
 
+      case 'move_page': {
+        if (!permissions.can_create_pages) return deny(corsHeaders)
+        const { page_id, collection_id: target_collection_id } = body
+        if (!page_id || !target_collection_id) return json({ error: 'page_id and collection_id are required' }, corsHeaders, 400)
+        // Verify page belongs to user
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+        // Verify target collection belongs to user
+        const { data: col } = await supabase.from('collections').select('id').eq('id', target_collection_id).eq('user_id', userId).single()
+        if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
+        const { error } = await supabase.from('pages').update({ collection_id: target_collection_id }).eq('id', page_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
+      }
+
       case 'rename_collection': {
         if (!permissions.can_create_collections) return deny(corsHeaders)
         const { collection_id, name } = body
@@ -417,7 +432,7 @@ Deno.serve(async (req) => {
       default:
         return json({ error: `Unknown action: ${action}`, available_actions: [
           'list_collections', 'create_collection', 'delete_collection', 'rename_collection',
-          'list_pages', 'create_page', 'delete_page', 'rename_page', 'get_page',
+          'list_pages', 'create_page', 'delete_page', 'rename_page', 'move_page', 'get_page',
           'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block', 'delete_group',
           'share_page',
         ]}, corsHeaders, 400)

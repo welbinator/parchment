@@ -174,6 +174,27 @@ export function useBlockEditor({
     }
   }, []);
 
+  // Show pointer cursor on links when Ctrl is held (Ctrl+click opens the link)
+  useEffect(() => {
+    const setLinkCursors = (pointer: boolean) => {
+      if (!ref.current) return;
+      ref.current.querySelectorAll('a').forEach((a) => {
+        a.style.cursor = pointer ? 'pointer' : 'text';
+      });
+    };
+    const onKeyDown = (e: Event) => { if ((e as globalThis.KeyboardEvent).key === 'Control') setLinkCursors(true); };
+    const onKeyUp = (e: Event) => { if ((e as globalThis.KeyboardEvent).key === 'Control') setLinkCursors(false); };
+    const onBlurWindow = () => setLinkCursors(false);
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlurWindow);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlurWindow);
+    };
+  }, []);
+
   return {
     handleInput,
     handleKeyDown,

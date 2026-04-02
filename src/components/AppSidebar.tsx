@@ -136,7 +136,7 @@ function DraggablePage({
             setMenuOpen((o) => !o);
             setMoveMenuOpen(false);
           }}
-          className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-sidebar-accent transition-all"
+          className="p-0.5 rounded hover:bg-sidebar-accent transition-all"
           title="Page options"
         >
           <MoreHorizontal size={13} />

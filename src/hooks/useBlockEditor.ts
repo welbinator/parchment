@@ -54,7 +54,14 @@ export function useBlockEditor({
   }, []);
 
   // Sync content when block type changes (slash command)
+  // Guard with initializedRef so this doesn't fire on the initial render
+  // and overwrite the linkified content set by the mount effect above.
+  const typeChangeRef = useRef(false);
   useEffect(() => {
+    if (!typeChangeRef.current) {
+      typeChangeRef.current = true;
+      return;
+    }
     if (ref.current) {
       ref.current.innerHTML = DOMPurify.sanitize(convertStyledJsonToHtml(block.content));
     }
@@ -165,6 +172,27 @@ export function useBlockEditor({
         if (href) window.open(href, '_blank', 'noopener,noreferrer');
       }
     }
+  }, []);
+
+  // Show pointer cursor on links when Ctrl is held (Ctrl+click opens the link)
+  useEffect(() => {
+    const setLinkCursors = (pointer: boolean) => {
+      if (!ref.current) return;
+      ref.current.querySelectorAll('a').forEach((a) => {
+        a.style.cursor = pointer ? 'pointer' : 'text';
+      });
+    };
+    const onKeyDown = (e: Event) => { if ((e as globalThis.KeyboardEvent).key === 'Control') setLinkCursors(true); };
+    const onKeyUp = (e: Event) => { if ((e as globalThis.KeyboardEvent).key === 'Control') setLinkCursors(false); };
+    const onBlurWindow = () => setLinkCursors(false);
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlurWindow);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlurWindow);
+    };
   }, []);
 
   return {

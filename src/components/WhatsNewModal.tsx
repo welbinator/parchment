@@ -21,21 +21,12 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
-    version: '1.5.1',
-    title: 'Bulk Block Selection',
+    version: '1.5.2',
+    title: 'Move Pages & Smarter Links',
     changes: [
-      {
-        type: 'feature',
-        description: 'Multi-select blocks — hover any block to reveal a checkbox, click to enter selection mode. Select multiple blocks and delete them all at once.',
-      },
-      {
-        type: 'feature',
-        description: 'Ctrl+A (or Cmd+A) selects all blocks on the page at once. Press again to deselect all, or hit Escape to exit selection mode.',
-      },
-      {
-        type: 'feature',
-        description: 'Shift+click to select a range of blocks between two checkboxes. Select All / Deselect All buttons in the action bar for quick control.',
-      },
+      { type: 'feature', description: 'Move pages between collections — drag and drop on desktop, or tap ⋮ on any page and choose "Move to…".' },
+      { type: 'feature', description: 'URLs in pages are now automatically clickable on load. Hold Ctrl and hover to see the pointer cursor, then Ctrl+click to open.' },
+      { type: 'feature', description: 'New API action: move_page — moves a page to a different collection.' },
     ],
   },
 ];

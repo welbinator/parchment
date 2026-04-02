@@ -41,7 +41,15 @@ export function useBlockEditor({
   // Set initial content only once on mount
   useEffect(() => {
     if (ref.current && !initializedRef.current) {
-      ref.current.innerHTML = DOMPurify.sanitize(convertStyledJsonToHtml(block.content));
+      const html = convertStyledJsonToHtml(block.content);
+      // Run autoLinkify on mount so API-inserted blocks with plain-text URLs
+      // render as clickable links immediately (not only after focus+blur).
+      const linkified = block.type !== 'code' ? autoLinkify(html) : html;
+      ref.current.innerHTML = DOMPurify.sanitize(linkified);
+      // If linkification changed the content, persist it back to the store
+      if (linkified !== html) {
+        updateBlock(pageId, block.id, { content: DOMPurify.sanitize(linkified) });
+      }
       initializedRef.current = true;
     }
   }, []);

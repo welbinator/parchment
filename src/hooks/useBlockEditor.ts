@@ -44,12 +44,11 @@ export function useBlockEditor({
       const html = convertStyledJsonToHtml(block.content);
       // Run autoLinkify on mount so API-inserted blocks with plain-text URLs
       // render as clickable links immediately (not only after focus+blur).
+      // We only update the DOM here — NOT the store — to avoid triggering a
+      // realtime write that would race with the Supabase realtime subscription
+      // and overwrite the DOM back to the un-linkified version.
       const linkified = block.type !== 'code' ? autoLinkify(html) : html;
       ref.current.innerHTML = DOMPurify.sanitize(linkified);
-      // If linkification changed the content, persist it back to the store
-      if (linkified !== html) {
-        updateBlock(pageId, block.id, { content: DOMPurify.sanitize(linkified) });
-      }
       initializedRef.current = true;
     }
   }, []);

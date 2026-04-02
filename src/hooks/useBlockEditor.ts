@@ -54,7 +54,14 @@ export function useBlockEditor({
   }, []);
 
   // Sync content when block type changes (slash command)
+  // Guard with initializedRef so this doesn't fire on the initial render
+  // and overwrite the linkified content set by the mount effect above.
+  const typeChangeRef = useRef(false);
   useEffect(() => {
+    if (!typeChangeRef.current) {
+      typeChangeRef.current = true;
+      return;
+    }
     if (ref.current) {
       ref.current.innerHTML = DOMPurify.sanitize(convertStyledJsonToHtml(block.content));
     }

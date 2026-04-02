@@ -14,6 +14,17 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.5.2',
+    date: '2026-04-02',
+    title: 'Move Pages & Smarter Links',
+    changes: [
+      { type: 'feature', description: 'Move pages between collections — drag and drop on desktop, or use the ⋮ menu on any page and choose "Move to…" on mobile.' },
+      { type: 'feature', description: 'URLs in API-inserted blocks are now automatically clickable on page load — no need to click in and out of the block first.' },
+      { type: 'feature', description: 'Hold Ctrl and hover a link to see the pointer cursor, indicating it\'s clickable. Ctrl+click opens the link.' },
+      { type: 'feature', description: 'New API action: move_page — moves a page to a different collection by page_id and target collection_id.' },
+    ],
+  },
+  {
     version: '1.5.1',
     date: '2026-03-31',
     title: 'Bulk Block Selection',

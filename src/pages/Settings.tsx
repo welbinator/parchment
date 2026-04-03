@@ -703,17 +703,17 @@ export default function Settings() {
           <div className="rounded-lg border border-border bg-card p-4 flex gap-4 items-start">
             <img
               src="/pwa-192x192.png"
-              alt="Parchment Clipper icon"
+              alt="Parchment extension icon"
               className="w-14 h-14 rounded-xl shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground mb-0.5">Parchment Clipper</p>
+              <p className="text-sm font-semibold text-foreground mb-0.5">Parchment for Chrome</p>
               <p className="text-xs text-muted-foreground mb-3">
                 Clip recipes from any website. Ingredients become a checklist, instructions become numbered steps — all saved to your Recipes collection automatically.
               </p>
               <div className="flex flex-wrap gap-2">
                 <a
-                  href="https://github.com/welbinator/parchment-clipper/releases/latest"
+                  href="https://github.com/welbinator/parchment-chrome-extension/releases/latest"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -722,7 +722,7 @@ export default function Settings() {
                   Download Extension
                 </a>
                 <a
-                  href="https://github.com/welbinator/parchment-clipper"
+                  href="https://github.com/welbinator/parchment-chrome-extension"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-background hover:bg-accent/40 transition-colors text-foreground"

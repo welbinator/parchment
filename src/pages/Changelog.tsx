@@ -14,6 +14,19 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.6.0',
+    date: '2026-04-04',
+    title: 'Parchment Chrome Extension',
+    changes: [
+      { type: 'feature', description: 'Parchment Chrome Extension is here! Save recipes, YouTube videos (with transcripts), and articles to Parchment in one click from any page.' },
+      { type: 'feature', description: 'YouTube videos: fetch the full transcript via TranscriptAPI and optionally generate an AI summary before saving to your YouTube Videos collection.' },
+      { type: 'feature', description: 'AI-powered page detection — the extension automatically recognizes recipes, YouTube videos, and general articles, routing each to the right collection.' },
+      { type: 'feature', description: 'AI summaries supported via OpenAI, Anthropic Claude, or Google Gemini (free tier available). Add your API key in extension Settings.' },
+      { type: 'feature', description: 'After saving, "Open Parchment" deep-links directly to the newly created page — no hunting through the sidebar.' },
+      { type: 'improvement', description: 'Extension is available now on GitHub while awaiting official Chrome Web Store approval. Install instructions at theparchment.app.' },
+    ],
+  },
+  {
     version: '1.5.2',
     date: '2026-04-02',
     title: 'Move Pages & Smarter Links',

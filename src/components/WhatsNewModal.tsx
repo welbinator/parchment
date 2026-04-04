@@ -15,18 +15,18 @@ interface WhatsNewVersion {
 }
 
 /**
- * What's New content — update this array when shipping a new version.
+ * What's New content - update this array when shipping a new version.
  * Only the entries here will show in the modal. Keep it to the latest
  * 1-2 versions so the modal stays concise.
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
-    version: '1.5.2',
-    title: 'Move Pages & Smarter Links',
+    version: '1.6.0',
+    title: 'Parchment Chrome Extension',
     changes: [
-      { type: 'feature', description: 'Move pages between collections — drag and drop on desktop, or tap ⋮ on any page and choose "Move to…".' },
-      { type: 'feature', description: 'URLs in pages are now automatically clickable on load. Hold Ctrl and hover to see the pointer cursor, then Ctrl+click to open.' },
-      { type: 'feature', description: 'New API action: move_page — moves a page to a different collection.' },
+      { type: 'feature', description: 'Save recipes, YouTube videos, and articles to Parchment in one click with the new Chrome Extension.' },
+      { type: 'feature', description: 'AI summaries for YouTube transcripts and web pages via OpenAI, Anthropic, or Google Gemini (free tier available).' },
+      { type: 'feature', description: 'After saving, "Open Parchment" takes you directly to the new page. Available on GitHub now — Chrome Web Store approval pending.' },
     ],
   },
 ];
@@ -34,7 +34,7 @@ const WHATS_NEW: WhatsNewVersion[] = [
 /** Max number of change items to show across all versions */
 const MAX_ITEMS = 6;
 
-/** The latest version string — must match package.json version */
+/** The latest version string - must match package.json version */
 const LATEST_VERSION = __APP_VERSION__;
 
 const typeIcon = (type: WhatsNewEntry['type']) => {
@@ -83,7 +83,7 @@ export default function WhatsNewModal() {
           setVisible(true);
         }
       } catch {
-        // Don't show modal on error — fail silently
+        // Don't show modal on error - fail silently
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -103,7 +103,7 @@ export default function WhatsNewModal() {
         .update({ last_seen_version: LATEST_VERSION })
         .eq('user_id', user.id);
     } catch {
-      // Non-critical — worst case they see it again next time
+      // Non-critical - worst case they see it again next time
     }
   };
 

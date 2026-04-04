@@ -709,13 +709,11 @@ export default function Settings() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground mb-0.5">Parchment for Chrome</p>
               <p className="text-xs text-muted-foreground mb-3">
-                Clip recipes from any website. Ingredients become a checklist, instructions become numbered steps — all saved to your Recipes collection automatically.
+                Clip recipes from any website. Ingredients become a checklist, instructions become numbered steps — all saved to your Recipes collection automatically. <span className="text-yellow-600 dark:text-yellow-400">Pending Chrome Web Store approval — install manually for now.</span>
               </p>
               <div className="flex flex-wrap gap-2">
                 <a
-                  href="https://github.com/welbinator/parchment-chrome-extension/releases/latest"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="https://github.com/welbinator/parchment-chrome-extension/releases/latest/download/parchment-chrome-extension.zip"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                   <Download size={12} />
@@ -731,7 +729,7 @@ export default function Settings() {
                 </a>
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                💡 After installing, open the extension settings and paste an API key from above.
+                💡 After downloading, unzip the file, go to <strong>chrome://extensions</strong>, enable <strong>Developer mode</strong>, click <strong>Load unpacked</strong>, and select the unzipped folder. Then open the extension and paste an API key from above.
               </p>
             </div>
           </div>

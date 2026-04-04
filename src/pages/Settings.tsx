@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ApiKey {
@@ -688,6 +688,53 @@ export default function Settings() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* Chrome Extension */}
+        <section className="mt-12 pt-8 border-t border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <Puzzle size={18} className="text-primary" />
+            <h2 className="text-lg font-semibold font-display text-foreground">Chrome Extension</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Save recipes and web content directly to Parchment with one click.
+          </p>
+
+          <div className="rounded-lg border border-border bg-card p-4 flex gap-4 items-start">
+            <img
+              src="/pwa-192x192.png"
+              alt="Parchment extension icon"
+              className="w-14 h-14 rounded-xl shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground mb-0.5">Parchment for Chrome</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Clip recipes from any website. Ingredients become a checklist, instructions become numbered steps — all saved to your Recipes collection automatically.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href="https://github.com/welbinator/parchment-chrome-extension/releases/latest"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Download size={12} />
+                  Download Extension
+                </a>
+                <a
+                  href="https://github.com/welbinator/parchment-chrome-extension"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-background hover:bg-accent/40 transition-colors text-foreground"
+                >
+                  View on GitHub
+                </a>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                💡 After installing, open the extension settings and paste an API key from above.
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* Beta Tester — visible to all users */}

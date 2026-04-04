@@ -99,8 +99,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const currentState = get();
-    const newActivePageId = currentState.activePageId && pages.some((p) => p.id === currentState.activePageId && !p.deleted_at) ? currentState.activePageId : (pages.filter(p => !p.deleted_at)[0]?.id ?? null);
-    const newActiveCollectionId = currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at) ? currentState.activeCollectionId : (collections.filter(c => !c.deleted_at)[0]?.id ?? null);
+
+    // Check for ?page=<id> URL param — lets external tools (e.g. Chrome extension) deep-link to a page
+    const urlPageId = new URLSearchParams(window.location.search).get('page');
+    const urlPageValid = urlPageId && pages.some((p) => p.id === urlPageId && !p.deleted_at);
+    if (urlPageValid) {
+      // Clean the param from the URL without triggering a reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('page');
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    const newActivePageId = urlPageValid
+      ? urlPageId
+      : (currentState.activePageId && pages.some((p) => p.id === currentState.activePageId && !p.deleted_at) ? currentState.activePageId : (pages.filter(p => !p.deleted_at)[0]?.id ?? null));
+    const newActiveCollectionId = (() => {
+      if (urlPageValid) {
+        const col = pages.find(p => p.id === urlPageId)?.collection_id;
+        return col || (currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at) ? currentState.activeCollectionId : (collections.filter(c => !c.deleted_at)[0]?.id ?? null));
+      }
+      return currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at) ? currentState.activeCollectionId : (collections.filter(c => !c.deleted_at)[0]?.id ?? null);
+    })();
     if (newActivePageId) localStorage.setItem('activePageId', newActivePageId);
     if (newActiveCollectionId) localStorage.setItem('activeCollectionId', newActiveCollectionId);
 

@@ -37,6 +37,15 @@ function uid() {
   return crypto.randomUUID();
 }
 
+// Capture ?page= param at module load time, before anything cleans the URL
+const _urlPageId = new URLSearchParams(window.location.search).get('page');
+if (_urlPageId) {
+  // Clean it immediately so it doesn't persist in history
+  const _url = new URL(window.location.href);
+  _url.searchParams.delete('page');
+  window.history.replaceState({}, '', _url.toString());
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   activePageId: localStorage.getItem('activePageId') || null,
   activeCollectionId: localStorage.getItem('activeCollectionId') || null,
@@ -100,22 +109,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const currentState = get();
 
-    // Check for ?page=<id> URL param — lets external tools (e.g. Chrome extension) deep-link to a page
-    const urlPageId = new URLSearchParams(window.location.search).get('page');
-    const urlPageValid = urlPageId && pages.some((p) => p.id === urlPageId && !p.deleted_at);
-    if (urlPageValid) {
-      // Clean the param from the URL without triggering a reload
-      const url = new URL(window.location.href);
-      url.searchParams.delete('page');
-      window.history.replaceState({}, '', url.toString());
-    }
+    // Use page ID captured from URL at module load time
+    const urlPageValid = _urlPageId && pages.some((p) => p.id === _urlPageId && !p.deleted_at);
 
     const newActivePageId = urlPageValid
-      ? urlPageId
+      ? _urlPageId
       : (currentState.activePageId && pages.some((p) => p.id === currentState.activePageId && !p.deleted_at) ? currentState.activePageId : (pages.filter(p => !p.deleted_at)[0]?.id ?? null));
     const newActiveCollectionId = (() => {
       if (urlPageValid) {
-        const col = pages.find(p => p.id === urlPageId)?.collection_id;
+        const col = pages.find(p => p.id === _urlPageId)?.collection_id;
         return col || (currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at) ? currentState.activeCollectionId : (collections.filter(c => !c.deleted_at)[0]?.id ?? null));
       }
       return currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at) ? currentState.activeCollectionId : (collections.filter(c => !c.deleted_at)[0]?.id ?? null);

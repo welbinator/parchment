@@ -712,13 +712,23 @@ export default function Settings() {
                 Clip recipes from any website. Ingredients become a checklist, instructions become numbered steps — all saved to your Recipes collection automatically. <span className="text-yellow-600 dark:text-yellow-400">Pending Chrome Web Store approval — install manually for now.</span>
               </p>
               <div className="flex flex-wrap gap-2">
-                <a
-                  href="https://github.com/welbinator/parchment-chrome-extension/releases/latest/download/parchment-chrome-extension.zip"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                <button
+                  onClick={async () => {
+                    const res = await fetch('https://api.github.com/repos/welbinator/parchment-chrome-extension/releases/latest');
+                    const data = await res.json();
+                    const asset = data.assets?.find((a: { name: string }) => a.name.endsWith('.zip'));
+                    if (asset) {
+                      const a = document.createElement('a');
+                      a.href = asset.browser_download_url;
+                      a.download = asset.name;
+                      a.click();
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
                 >
                   <Download size={12} />
                   Download Extension
-                </a>
+                </button>
                 <a
                   href="https://github.com/welbinator/parchment-chrome-extension"
                   target="_blank"

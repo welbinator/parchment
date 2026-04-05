@@ -37,8 +37,14 @@ export default function KanbanView() {
   const deletedPages = trashedPages();
   const trashCount = deletedPages.length + trashedCollections().length;
 
+  const boardRef = useRef<HTMLDivElement>(null);
+
   const handleAddCollection = async () => {
     await addCollection('New Collection');
+    // Scroll to end so the new column is visible
+    setTimeout(() => {
+      boardRef.current?.scrollTo({ left: boardRef.current.scrollWidth, behavior: 'smooth' });
+    }, 50);
   };
 
   useEffect(() => {
@@ -83,7 +89,7 @@ export default function KanbanView() {
   return (
     <>
       {/* Trello-style horizontal scroll board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden bg-background">
+      <div ref={boardRef} className="flex-1 overflow-x-auto overflow-y-hidden bg-background">
         <div className="flex flex-row gap-4 p-6 pb-20 h-full items-start" style={{ minWidth: 'max-content' }}>
           {activeCollections.map((collection) => {
             const collectionPages = activePages.filter((p) => p.collection_id === collection.id);
@@ -93,7 +99,7 @@ export default function KanbanView() {
               <div key={collection.id} className="w-72 shrink-0">
                 <div className="bg-sidebar rounded-xl border border-sidebar-border shadow-sm flex flex-col">
                   {/* Header */}
-                  <div className="group/header flex items-center gap-1.5 px-3 py-2.5 border-b border-sidebar-border">
+                  <div className="flex items-center gap-1.5 px-3 py-2.5 border-b border-sidebar-border">
                     {isRenaming ? (
                       <input
                         ref={renameInputRef}
@@ -117,7 +123,7 @@ export default function KanbanView() {
                     </span>
                     <button
                       onClick={() => deleteCollection(collection.id)}
-                      className="opacity-0 group-hover/header:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground shrink-0"
+                      className="transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground shrink-0"
                       title="Delete collection"
                     >
                       <Trash2 size={13} />

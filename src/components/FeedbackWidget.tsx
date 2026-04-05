@@ -109,10 +109,10 @@ export default function FeedbackWidget({ className }: { className?: string } = {
       {/* Trigger button */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 text-sm font-medium"
+        className="flex items-center gap-2 px-4 py-2.5 sm:px-4 sm:py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 text-sm font-medium w-11 h-11 sm:w-auto sm:h-auto justify-center"
       >
         <MessageSquare size={15} />
-        Feedback
+        <span className="hidden sm:inline">Feedback</span>
       </button>
     </div>
   );

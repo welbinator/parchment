@@ -211,7 +211,7 @@ export default function KanbanView() {
         className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-sidebar border border-sidebar-border text-sm text-muted-foreground shadow-md hover:text-foreground hover:bg-sidebar-accent transition-colors"
       >
         <Trash2 size={14} />
-        Manage Trash
+        <span className="hidden sm:inline">Manage </span>Trash
         {trashCount > 0 && (
           <span className="ml-0.5 bg-muted text-muted-foreground text-xs px-1.5 py-0.5 rounded-full">
             {trashCount}

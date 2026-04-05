@@ -31,7 +31,7 @@ const Index = () => {
           }`}
         >
           <LayoutList size={14} />
-          List
+          <span className="hidden sm:inline">List</span>
         </button>
         <button
           onClick={() => setViewMode('kanban')}
@@ -42,7 +42,7 @@ const Index = () => {
           }`}
         >
           <LayoutDashboard size={14} />
-          Board
+          <span className="hidden sm:inline">Board</span>
         </button>
       </div>
     </div>

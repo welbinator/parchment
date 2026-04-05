@@ -21,6 +21,15 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '1.7.0',
+    title: 'Board View',
+    changes: [
+      { type: 'feature', description: 'New Board view — Trello-style columns for all your collections. Toggle between List and Board at the bottom of the screen.' },
+      { type: 'feature', description: 'Floating + button to add collections, Trash button to manage deleted items — all without leaving the board.' },
+      { type: 'improvement', description: 'Footer controls adapt on mobile: icon-only feedback button, shorter labels, no more overlapping buttons.' },
+    ],
+  },
+  {
     version: '1.6.0',
     title: 'Parchment Chrome Extension',
     changes: [

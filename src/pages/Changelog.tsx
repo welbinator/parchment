@@ -14,6 +14,19 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.7.0',
+    date: '2026-04-05',
+    title: 'Board View',
+    changes: [
+      { type: 'feature', description: 'New Board view — a Trello-style horizontal layout showing all your collections as columns. Toggle between List and Board views with the pill at the bottom of the screen.' },
+      { type: 'feature', description: 'Add new collections from anywhere with the floating + button in the bottom-right corner.' },
+      { type: 'feature', description: 'Manage your trash directly from the Board view with the Trash button in the bottom-left.' },
+      { type: 'feature', description: 'Delete collections directly from their card header in Board view.' },
+      { type: 'improvement', description: 'Adding a new collection auto-scrolls the board so the new column is always in view.' },
+      { type: 'improvement', description: 'Footer controls (Feedback, toggle, Trash) adapt to icon-only or shorter labels on mobile to prevent overlap.' },
+    ],
+  },
+  {
     version: '1.6.0',
     date: '2026-04-04',
     title: 'Parchment Chrome Extension',

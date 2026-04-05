@@ -13,7 +13,7 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
 
 
-export default function PageEditor() {
+export default function PageEditor({ hideChrome = false }: { hideChrome?: boolean }) {
   const { activePageId, sidebarOpen, setSidebarOpen } = useAppStore();
   const { blocks, addBlock, undoDeleteBlock, lastDeletedBlock } = useBlockStore();
   const { pages, updatePageTitle, updatePageSharing } = usePageStore();
@@ -125,6 +125,7 @@ export default function PageEditor() {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* Top bar */}
+      {!hideChrome && (
       <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
         {!sidebarOpen && (
           <button
@@ -152,6 +153,7 @@ export default function PageEditor() {
         />
         <UserMenu />
       </div>
+      )}
 
       {/* Editor area */}
       <div className="flex-1 overflow-y-auto">

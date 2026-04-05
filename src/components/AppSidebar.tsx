@@ -446,6 +446,13 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
         {/* Footer */}
         <div className="p-2 border-t border-sidebar-border space-y-1">
           <button
+            onClick={handleAddCollection}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            <Plus size={14} />
+            New Collection
+          </button>
+          <button
             onClick={() => navigate('/app/trash')}
             className={`flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm transition-colors ${
               location.pathname === '/app/trash'
@@ -460,13 +467,6 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
                 {trashCount}
               </span>
             )}
-          </button>
-          <button
-            onClick={handleAddCollection}
-            className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          >
-            <Plus size={14} />
-            New Collection
           </button>
         </div>
       </aside>

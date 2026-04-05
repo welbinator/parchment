@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import SharedPageView from "./pages/SharedPageView";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import FeedbackWidget from "./components/FeedbackWidget";
+import { useViewStore } from '@/store/useViewStore';
 import { Loader2 } from 'lucide-react';
 import MigrationModal from '@/components/MigrationModal';
 import WhatsNewModal from '@/components/WhatsNewModal';
@@ -168,6 +169,12 @@ function LandingOrApp() {
   return <Landing />;
 }
 
+function FeedbackWidgetPositioned() {
+  const { viewMode } = useViewStore();
+  // In board view, shift left of the FAB (right-6 = 24px, w-14 = 56px, gap ~12px → right-24)
+  return <FeedbackWidget className={viewMode === 'kanban' ? 'fixed bottom-6 right-24 z-50' : 'fixed bottom-6 right-6 z-50'} />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -175,7 +182,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <PWAInstallPrompt />
-        <FeedbackWidget />
+        <FeedbackWidgetPositioned />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />

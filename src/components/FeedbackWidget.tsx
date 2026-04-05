@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export default function FeedbackWidget() {
+export default function FeedbackWidget({ className }: { className?: string } = {}) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -49,7 +49,7 @@ export default function FeedbackWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className={className ?? "fixed bottom-6 right-6 z-50"}>
       {/* Modal */}
       {open && (
         <>
@@ -109,10 +109,10 @@ export default function FeedbackWidget() {
       {/* Trigger button */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 text-sm font-medium"
+        className="flex items-center gap-2 px-4 py-2.5 sm:px-4 sm:py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 text-sm font-medium w-11 h-11 sm:w-auto sm:h-auto justify-center"
       >
         <MessageSquare size={15} />
-        Feedback
+        <span className="hidden sm:inline">Feedback</span>
       </button>
     </div>
   );

@@ -31,10 +31,7 @@ import {
   Users,
   MoreHorizontal,
   MoveRight,
-  LayoutList,
-  LayoutDashboard,
 } from 'lucide-react';
-import { useViewStore } from '@/store/useViewStore';
 import type { PageType } from '@/types';
 
 const pageTypeIcons: Record<string, React.ReactNode> = {
@@ -216,7 +213,6 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
   const { pages, updatePageTitle, movePage } = usePageStore();
   const { collections, renameCollection } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
-  const { viewMode, setViewMode } = useViewStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -472,33 +468,6 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
               </span>
             )}
           </button>
-          {/* View toggle */}
-          <div className="flex gap-1 pt-1">
-            <button
-              onClick={() => setViewMode('list')}
-              title="List view"
-              className={`flex items-center justify-center gap-1.5 flex-1 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-sidebar-accent'
-              }`}
-            >
-              <LayoutList size={13} />
-              List
-            </button>
-            <button
-              onClick={() => setViewMode('kanban')}
-              title="Board view"
-              className={`flex items-center justify-center gap-1.5 flex-1 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                viewMode === 'kanban'
-                  ? 'bg-primary/10 text-primary font-medium'
-                  : 'text-muted-foreground hover:bg-sidebar-accent'
-              }`}
-            >
-              <LayoutDashboard size={13} />
-              Board
-            </button>
-          </div>
         </div>
       </aside>
 

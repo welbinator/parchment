@@ -3,22 +3,48 @@ import PageEditor from '@/components/PageEditor';
 import KanbanView from '@/components/KanbanView';
 import ResizableSidebarWrapper from '@/components/ResizableSidebarWrapper';
 import { useViewStore } from '@/store/useViewStore';
-import { useAppStore } from '@/store/useAppStore';
+import { LayoutList, LayoutDashboard } from 'lucide-react';
 
 const Index = () => {
-  const { viewMode } = useViewStore();
-  const { sidebarOpen } = useAppStore();
+  const { viewMode, setViewMode } = useViewStore();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <ResizableSidebarWrapper enabled={true}>
-        <AppSidebar resizableSidebar={true} />
-      </ResizableSidebarWrapper>
-      {viewMode === 'kanban' ? (
-        <KanbanView />
-      ) : (
-        <PageEditor />
+    <div className="flex h-screen overflow-hidden bg-background relative">
+      {/* Sidebar — hidden in board view */}
+      {viewMode === 'list' && (
+        <ResizableSidebarWrapper enabled={true}>
+          <AppSidebar resizableSidebar={true} />
+        </ResizableSidebarWrapper>
       )}
+
+      {/* Main content */}
+      {viewMode === 'kanban' ? <KanbanView /> : <PageEditor />}
+
+      {/* Floating view toggle pill */}
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 bg-popover border border-border rounded-full shadow-lg px-1.5 py-1.5">
+        <button
+          onClick={() => setViewMode('list')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            viewMode === 'list'
+              ? 'bg-primary text-white shadow-sm'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+          }`}
+        >
+          <LayoutList size={14} />
+          List
+        </button>
+        <button
+          onClick={() => setViewMode('kanban')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            viewMode === 'kanban'
+              ? 'bg-primary text-white shadow-sm'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+          }`}
+        >
+          <LayoutDashboard size={14} />
+          Board
+        </button>
+      </div>
     </div>
   );
 };

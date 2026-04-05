@@ -28,6 +28,7 @@ interface CollectionState {
   addCollection: (name: string, userId: string) => Promise<string>;
   renameCollection: (id: string, name: string) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
+  reorderCollections: (orderedIds: string[]) => Promise<void>;
 }
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
@@ -51,6 +52,26 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   renameCollection: async (id, name) => {
     await supabase.from('collections').update({ name }).eq('id', id);
     set((s) => ({ collections: s.collections.map((c) => (c.id === id ? { ...c, name } : c)) }));
+  },
+
+  reorderCollections: async (orderedIds) => {
+    // Optimistic update
+    const { collections } = get();
+    const reordered = orderedIds
+      .map((id, index) => {
+        const col = collections.find((c) => c.id === id);
+        return col ? { ...col, position: index } : null;
+      })
+      .filter(Boolean) as typeof collections;
+    // Keep any collections not in orderedIds (e.g. deleted) at the end
+    const rest = collections.filter((c) => !orderedIds.includes(c.id));
+    set({ collections: [...reordered, ...rest] });
+    // Persist to Supabase
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase.from('collections').update({ position: index }).eq('id', id)
+      )
+    );
   },
 
   deleteCollection: async (id) => {

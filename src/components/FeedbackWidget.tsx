@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export default function FeedbackWidget() {
+export default function FeedbackWidget({ className }: { className?: string } = {}) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -49,7 +49,7 @@ export default function FeedbackWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className={className ?? "fixed bottom-6 right-6 z-50"}>
       {/* Modal */}
       {open && (
         <>

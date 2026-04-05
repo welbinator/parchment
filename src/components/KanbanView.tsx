@@ -19,7 +19,7 @@ const pageTypeIcons: Record<string, React.ReactNode> = {
 export default function KanbanView() {
   const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
   const { pages, movePage } = usePageStore();
-  const { collections, renameCollection } = useCollectionStore();
+  const { collections, renameCollection, deleteCollection } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
 
   const [pageModalOpen, setPageModalOpen] = useState(false);
@@ -93,7 +93,7 @@ export default function KanbanView() {
               <div key={collection.id} className="w-72 shrink-0">
                 <div className="bg-sidebar rounded-xl border border-sidebar-border shadow-sm flex flex-col">
                   {/* Header */}
-                  <div className="flex items-center gap-1.5 px-3 py-2.5 border-b border-sidebar-border">
+                  <div className="group/header flex items-center gap-1.5 px-3 py-2.5 border-b border-sidebar-border">
                     {isRenaming ? (
                       <input
                         ref={renameInputRef}
@@ -115,6 +115,13 @@ export default function KanbanView() {
                     <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
                       {collectionPages.length}
                     </span>
+                    <button
+                      onClick={() => deleteCollection(collection.id)}
+                      className="opacity-0 group-hover/header:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground shrink-0"
+                      title="Delete collection"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
 
                   {/* Pages */}

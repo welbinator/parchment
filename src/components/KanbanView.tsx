@@ -93,7 +93,7 @@ function CollectionColumn({
     <div
       ref={setNodeRef}
       style={isDragOverlay ? {} : style}
-      className={`flex flex-col w-64 shrink-0 bg-sidebar rounded-xl border border-sidebar-border shadow-sm self-start ${isDragOverlay ? 'shadow-xl rotate-1 opacity-95' : ''}`}
+      className={`flex flex-col w-72 shrink-0 bg-sidebar rounded-xl border border-sidebar-border shadow-sm self-start ${isDragOverlay ? 'shadow-xl rotate-1 opacity-95' : ''}`}
     >
       {/* Column header */}
       <div className="flex items-center gap-1.5 px-2 py-2.5 border-b border-sidebar-border">
@@ -132,7 +132,7 @@ function CollectionColumn({
       </div>
 
       {/* Pages */}
-      <div className="overflow-y-auto p-2 space-y-1.5 max-h-[calc(100vh-220px)]">
+      <div className="overflow-y-auto p-2 space-y-1.5">
         {collectionPages.map((page) => (
           <div
             key={page.id}
@@ -307,8 +307,8 @@ export default function KanbanView() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 overflow-x-auto overflow-y-hidden bg-background">
-          <div className="flex gap-4 p-6 h-full items-start min-w-max pb-24">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto bg-background">
+          <div className="flex flex-wrap gap-4 p-6 pb-24 items-start content-start">
             <SortableContext
               items={activeCollections.map((c) => c.id)}
               strategy={horizontalListSortingStrategy}
@@ -323,7 +323,7 @@ export default function KanbanView() {
             </SortableContext>
 
             {/* Trash card */}
-            <div className="flex flex-col w-64 shrink-0 self-start bg-sidebar rounded-xl border border-sidebar-border shadow-sm opacity-70 hover:opacity-100 transition-opacity">
+            <div className="flex flex-col w-72 shrink-0 self-start bg-sidebar rounded-xl border border-sidebar-border shadow-sm opacity-70 hover:opacity-100 transition-opacity">
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-sidebar-border">
                 <span className="flex items-center gap-1.5 font-semibold text-sm text-muted-foreground">
                   <Trash2 size={13} />
@@ -366,7 +366,7 @@ export default function KanbanView() {
             {/* Add collection card */}
             <button
               onClick={handleAddCollection}
-              className="flex items-center gap-2 w-64 shrink-0 px-4 py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors text-sm font-medium"
+              className="flex items-center gap-2 w-72 shrink-0 px-4 py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors text-sm font-medium"
             >
               <Plus size={15} />
               Add collection

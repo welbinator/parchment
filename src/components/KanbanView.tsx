@@ -93,7 +93,7 @@ function CollectionColumn({
     <div
       ref={setNodeRef}
       style={isDragOverlay ? {} : style}
-      className={`flex flex-col w-64 shrink-0 bg-sidebar rounded-xl border border-sidebar-border shadow-sm ${isDragOverlay ? 'shadow-xl rotate-1 opacity-95' : ''}`}
+      className={`flex flex-col w-64 shrink-0 bg-sidebar rounded-xl border border-sidebar-border shadow-sm self-start ${isDragOverlay ? 'shadow-xl rotate-1 opacity-95' : ''}`}
     >
       {/* Column header */}
       <div className="flex items-center gap-1.5 px-2 py-2.5 border-b border-sidebar-border">
@@ -132,7 +132,7 @@ function CollectionColumn({
       </div>
 
       {/* Pages */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1.5 max-h-[calc(100vh-220px)]">
+      <div className="overflow-y-auto p-2 space-y-1.5 max-h-[calc(100vh-220px)]">
         {collectionPages.map((page) => (
           <div
             key={page.id}
@@ -323,7 +323,7 @@ export default function KanbanView() {
             </SortableContext>
 
             {/* Trash card */}
-            <div className="flex flex-col w-64 shrink-0 bg-sidebar rounded-xl border border-sidebar-border shadow-sm opacity-70 hover:opacity-100 transition-opacity">
+            <div className="flex flex-col w-64 shrink-0 self-start bg-sidebar rounded-xl border border-sidebar-border shadow-sm opacity-70 hover:opacity-100 transition-opacity">
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-sidebar-border">
                 <span className="flex items-center gap-1.5 font-semibold text-sm text-muted-foreground">
                   <Trash2 size={13} />
@@ -337,7 +337,7 @@ export default function KanbanView() {
               </div>
 
               {/* Trashed pages list */}
-              <div className="flex-1 overflow-y-auto p-2 space-y-1.5 max-h-48">
+              <div className="overflow-y-auto p-2 space-y-1.5 max-h-48">
                 {deletedPages.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic px-2 py-1">Empty</p>
                 ) : (

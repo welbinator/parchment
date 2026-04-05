@@ -22,6 +22,7 @@ import { useCollectionStore } from '@/store/useCollectionStore';
 import { useTrashStore } from '@/store/useTrashStore';
 import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
+import PageContextMenu from '@/components/PageContextMenu';
 import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical } from 'lucide-react';
 import type { DbCollection } from '@/store/useCollectionStore';
 import type { PageType } from '@/types';
@@ -37,9 +38,12 @@ const pageTypeIcons: Record<string, React.ReactNode> = {
 interface ColumnProps {
   collection: DbCollection;
   pages: ReturnType<typeof usePageStore.getState>['pages'];
+  allCollections: DbCollection[];
   activePageId: string | null;
   onOpenPage: (id: string) => void;
   onAddPage: (collectionId: string, type: PageType) => void;
+  onDeletePage: (pageId: string) => void;
+  onMovePage: (pageId: string, targetCollectionId: string) => void;
   showNewPageMenu: string | null;
   setShowNewPageMenu: (id: string | null) => void;
   renamingId: string | null;
@@ -55,9 +59,12 @@ interface ColumnProps {
 function CollectionColumn({
   collection,
   pages,
+  allCollections,
   activePageId,
   onOpenPage,
   onAddPage,
+  onDeletePage,
+  onMovePage,
   showNewPageMenu,
   setShowNewPageMenu,
   renamingId,
@@ -127,20 +134,33 @@ function CollectionColumn({
       {/* Pages */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1.5 max-h-[calc(100vh-220px)]">
         {collectionPages.map((page) => (
-          <button
+          <div
             key={page.id}
-            onClick={() => onOpenPage(page.id)}
-            className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors border ${
+            className={`group flex items-center gap-1 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors border ${
               activePageId === page.id
                 ? 'bg-primary/10 border-primary/30 text-primary'
                 : 'bg-background border-border hover:border-primary/30 hover:bg-primary/5 text-foreground'
             }`}
           >
-            <span className="text-muted-foreground shrink-0">
-              {pageTypeIcons[page.type] || pageTypeIcons.blank}
+            <button
+              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+              onClick={() => onOpenPage(page.id)}
+            >
+              <span className="text-muted-foreground shrink-0">
+                {pageTypeIcons[page.type] || pageTypeIcons.blank}
+              </span>
+              <span className="truncate">{page.title || 'Untitled'}</span>
+            </button>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <PageContextMenu
+                collections={allCollections.filter((c) => !c.deleted_at)}
+                currentCollectionId={collection.id}
+                onMove={(targetId) => onMovePage(page.id, targetId)}
+                onDelete={() => onDeletePage(page.id)}
+                align="left"
+              />
             </span>
-            <span className="truncate">{page.title || 'Untitled'}</span>
-          </button>
+          </div>
         ))}
         {collectionPages.length === 0 && (
           <p className="text-xs text-muted-foreground italic px-2 py-1">No pages yet</p>
@@ -177,8 +197,8 @@ function CollectionColumn({
 
 // ── Main KanbanView ────────────────────────────────────────────────────────────
 export default function KanbanView() {
-  const { activePageId, setActivePage, addPage, addCollection } = useAppStore();
-  const { pages } = usePageStore();
+  const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
+  const { pages, movePage } = usePageStore();
   const { collections, renameCollection, reorderCollections } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
 
@@ -263,9 +283,12 @@ export default function KanbanView() {
 
   const columnProps = {
     pages,
+    allCollections: activeCollections,
     activePageId,
     onOpenPage: openPage,
     onAddPage: handleAddPage,
+    onDeletePage: (pageId: string) => deletePage(pageId),
+    onMovePage: (pageId: string, targetCollectionId: string) => movePage(pageId, targetCollectionId),
     showNewPageMenu,
     setShowNewPageMenu,
     renamingId,

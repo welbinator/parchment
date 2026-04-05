@@ -6,8 +6,7 @@ import { useTrashStore } from '@/store/useTrashStore';
 import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
 import PageContextMenu from '@/components/PageContextMenu';
-import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical } from 'lucide-react';
-import type { DbCollection } from '@/store/useCollectionStore';
+import { Plus, X, File, FileText, Map, CheckSquare, Trash2 } from 'lucide-react';
 import type { PageType } from '@/types';
 
 const pageTypeIcons: Record<string, React.ReactNode> = {
@@ -37,6 +36,10 @@ export default function KanbanView() {
   const activePages = pages.filter((p) => !p.deleted_at);
   const deletedPages = trashedPages();
   const trashCount = deletedPages.length + trashedCollections().length;
+
+  const handleAddCollection = async () => {
+    await addCollection('New Collection');
+  };
 
   useEffect(() => {
     if (renamingId && renameInputRef.current) {
@@ -77,90 +80,18 @@ export default function KanbanView() {
     (c) => c.id === pages.find((p) => p.id === activePageId)?.collection_id
   );
 
-  // All cards = collections + trash + add-collection button
-  const allCards = [
-    ...activeCollections.map((c) => ({ type: 'collection' as const, data: c })),
-    { type: 'trash' as const },
-    { type: 'add' as const },
-  ];
-
   return (
     <>
-      {/* Masonry board using CSS columns */}
-      <div className="flex-1 overflow-y-auto bg-background">
-        <div
-          className="p-6 pb-24"
-          style={{
-            columnWidth: '280px',
-            columnGap: '16px',
-          }}
-        >
-          {allCards.map((card, i) => {
-            if (card.type === 'add') {
-              return (
-                <div key="add" style={{ breakInside: 'avoid', marginBottom: 16 }}>
-                  <button
-                    onClick={() => addCollection('New Collection')}
-                    className="flex items-center gap-2 w-full px-4 py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors text-sm font-medium"
-                  >
-                    <Plus size={15} />
-                    Add collection
-                  </button>
-                </div>
-              );
-            }
-
-            if (card.type === 'trash') {
-              return (
-                <div key="trash" style={{ breakInside: 'avoid', marginBottom: 16 }}>
-                  <div className="bg-sidebar rounded-xl border border-sidebar-border shadow-sm opacity-70 hover:opacity-100 transition-opacity">
-                    <div className="flex items-center justify-between px-3 py-2.5 border-b border-sidebar-border">
-                      <span className="flex items-center gap-1.5 font-semibold text-sm text-muted-foreground">
-                        <Trash2 size={13} />
-                        Trash
-                      </span>
-                      {trashCount > 0 && (
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                          {trashCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-2 space-y-1.5">
-                      {deletedPages.length === 0 ? (
-                        <p className="text-xs text-muted-foreground italic px-2 py-1">Empty</p>
-                      ) : (
-                        deletedPages.map((page) => (
-                          <div
-                            key={page.id}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm border border-border bg-background text-muted-foreground"
-                          >
-                            <File size={12} className="shrink-0" />
-                            <span className="truncate">{page.title || 'Untitled'}</span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="p-2 border-t border-sidebar-border">
-                      <button
-                        onClick={() => setTrashModalOpen(true)}
-                        className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
-                      >
-                        Manage trash →
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            // Collection card
-            const collection = card.data;
+      {/* Trello-style horizontal scroll board */}
+      <div className="flex-1 overflow-x-auto overflow-y-hidden bg-background">
+        <div className="flex flex-row gap-4 p-6 pb-20 h-full items-start" style={{ minWidth: 'max-content' }}>
+          {activeCollections.map((collection) => {
             const collectionPages = activePages.filter((p) => p.collection_id === collection.id);
             const isRenaming = renamingId === collection.id;
 
             return (
-              <div key={collection.id} style={{ breakInside: 'avoid', marginBottom: 16 }}>
-                <div className="bg-sidebar rounded-xl border border-sidebar-border shadow-sm">
+              <div key={collection.id} className="w-72 shrink-0">
+                <div className="bg-sidebar rounded-xl border border-sidebar-border shadow-sm flex flex-col">
                   {/* Header */}
                   <div className="flex items-center gap-1.5 px-3 py-2.5 border-b border-sidebar-border">
                     {isRenaming ? (
@@ -251,6 +182,29 @@ export default function KanbanView() {
           })}
         </div>
       </div>
+
+      {/* FAB — Add collection (bottom-right) */}
+      <button
+        onClick={handleAddCollection}
+        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+        title="Add collection"
+      >
+        <Plus size={24} />
+      </button>
+
+      {/* Manage Trash button (bottom-left) */}
+      <button
+        onClick={() => setTrashModalOpen(true)}
+        className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-sidebar border border-sidebar-border text-sm text-muted-foreground shadow-md hover:text-foreground hover:bg-sidebar-accent transition-colors"
+      >
+        <Trash2 size={14} />
+        Manage Trash
+        {trashCount > 0 && (
+          <span className="ml-0.5 bg-muted text-muted-foreground text-xs px-1.5 py-0.5 rounded-full">
+            {trashCount}
+          </span>
+        )}
+      </button>
 
       {/* Page modal */}
       {pageModalOpen && activePageId && (

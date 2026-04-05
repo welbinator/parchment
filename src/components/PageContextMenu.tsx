@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreHorizontal, MoveRight, ChevronRight, FolderOpen, Trash2 } from 'lucide-react';
 
 interface Collection {
@@ -11,8 +12,6 @@ interface PageContextMenuProps {
   currentCollectionId?: string;
   onMove: (targetCollectionId: string) => void;
   onDelete: () => void;
-  /** Position the dropdown: 'right' (default, opens left-aligned from button) or 'left' */
-  align?: 'right' | 'left';
 }
 
 export default function PageContextMenu({
@@ -20,16 +19,31 @@ export default function PageContextMenu({
   currentCollectionId,
   onMove,
   onDelete,
-  align = 'right',
 }: PageContextMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [moveMenuOpen, setMoveMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Position the portal menu relative to the trigger button
+  const openMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 4, left: rect.right - 160 });
+    setMenuOpen(true);
+    setMoveMenuOpen(false);
+  };
+
+  // Close on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current && !buttonRef.current.contains(e.target as Node)
+      ) {
         setMenuOpen(false);
         setMoveMenuOpen(false);
       }
@@ -38,27 +52,32 @@ export default function PageContextMenu({
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
+  // Close on scroll (reposition would be complex — just close)
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = () => { setMenuOpen(false); setMoveMenuOpen(false); };
+    window.addEventListener('scroll', handler, true);
+    return () => window.removeEventListener('scroll', handler, true);
+  }, [menuOpen]);
+
   const otherCollections = collections.filter((c) => c.id !== currentCollectionId);
 
   return (
-    <div className="relative shrink-0" ref={menuRef}>
+    <>
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setMenuOpen((o) => !o);
-          setMoveMenuOpen(false);
-        }}
+        ref={buttonRef}
+        onClick={openMenu}
         className="p-0.5 rounded hover:bg-sidebar-accent transition-all text-muted-foreground hover:text-foreground"
         title="Page options"
       >
         <MoreHorizontal size={13} />
       </button>
 
-      {menuOpen && (
+      {menuOpen && menuPos && createPortal(
         <div
-          className={`absolute top-6 z-50 w-40 bg-popover border border-border rounded-md shadow-lg py-1 text-sm animate-fade-in ${
-            align === 'left' ? 'left-0' : 'right-0'
-          }`}
+          ref={menuRef}
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, zIndex: 9999, width: 160 }}
+          className="bg-popover border border-border rounded-md shadow-lg py-1 text-sm animate-fade-in"
         >
           {/* Move to → */}
           <button
@@ -109,8 +128,9 @@ export default function PageContextMenu({
             <Trash2 size={13} />
             Delete
           </button>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }

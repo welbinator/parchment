@@ -157,7 +157,6 @@ function CollectionColumn({
                 currentCollectionId={collection.id}
                 onMove={(targetId) => onMovePage(page.id, targetId)}
                 onDelete={() => onDeletePage(page.id)}
-                align="left"
               />
             </span>
           </div>

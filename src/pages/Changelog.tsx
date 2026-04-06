@@ -14,6 +14,15 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.7.2',
+    date: '2026-04-05',
+    title: 'Security Improvements',
+    changes: [
+      { type: 'improvement', description: 'Added Socket.dev supply chain security monitoring — every dependency change is scanned for malicious packages, typosquatting, and compromised maintainers.' },
+      { type: 'improvement', description: 'Upgraded react-router-dom to 6.30.3, resolving 3 high severity vulnerabilities (XSS and Open Redirect).' },
+    ],
+  },
+  {
     version: '1.7.1',
     date: '2026-04-05',
     title: 'Security Improvements',

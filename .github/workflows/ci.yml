@@ -30,6 +30,8 @@ jobs:
     permissions:
       security-events: write
       contents: read
+      checks: write
+      actions: read
     steps:
       - uses: actions/checkout@v4
 

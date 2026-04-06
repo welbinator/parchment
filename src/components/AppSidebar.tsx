@@ -56,7 +56,7 @@ interface AppSidebarProps {
 
 // ── Grip handle for sortable collections ───────────────────────────────────
 function CollectionGripHandle({ id }: { id: string }) {
-  const { attributes, listeners } = useSortable({ id });
+  const { attributes, listeners } = useSortable({ id, data: { type: 'collection' } });
   return (
     <span
       {...listeners}
@@ -72,7 +72,7 @@ function CollectionGripHandle({ id }: { id: string }) {
 
 // ── Sortable + droppable collection row ─────────────────────────────────────
 function SortableCollection({ id, isOver, children }: { id: string; isOver: boolean; children: React.ReactNode }) {
-  const { setNodeRef: setSortableRef, transform, transition, isDragging } = useSortable({ id });
+  const { setNodeRef: setSortableRef, transform, transition, isDragging } = useSortable({ id, data: { type: 'collection' } });
   const { setNodeRef: setDropRef } = useDroppable({ id });
 
   const style = {
@@ -113,7 +113,7 @@ function DraggablePage({
   onMove: (targetCollectionId: string) => void;
   onRename: (title: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: page.id });
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: page.id, data: { type: 'page' } });
   const [menuOpen, setMenuOpen] = useState(false);
   const [moveMenuOpen, setMoveMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -279,15 +279,10 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
   const [draggingCollectionId, setDraggingCollectionId] = useState<string | null>(null);
   const [overCollectionId, setOverCollectionId] = useState<string | null>(null);
 
-  // Separate sensors: collections use a longer distance to avoid accidental reorder
-  const pageSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
-  const collectionSensors = useSensors(
+  const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  // Keep sorted collections in local state for optimistic updates
   const sortedCollections = [...activeCollections].sort((a, b) => a.position - b.position);
 
   const toggleExpanded = (id: string) => {
@@ -309,7 +304,12 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    setDraggingPageId(event.active.id as string);
+    const type = event.active.data.current?.type;
+    if (type === 'collection') {
+      setDraggingCollectionId(event.active.id as string);
+    } else {
+      setDraggingPageId(event.active.id as string);
+    }
   };
 
   const handleDragOver = (event: { over: { id: string } | null }) => {
@@ -318,33 +318,28 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    setDraggingPageId(null);
-    setOverCollectionId(null);
-    if (!over) return;
-    const pageId = active.id as string;
-    const targetCollectionId = over.id as string;
-    // Only move if dropping onto a collection (not the same one)
-    const page = activePages.find((p) => p.id === pageId);
-    if (!page || page.collection_id === targetCollectionId) return;
-    if (!activeCollections.find((c) => c.id === targetCollectionId)) return;
-    movePage(pageId, targetCollectionId);
-    // Expand destination collection
-    setExpandedCollections((prev) => new Set(prev).add(targetCollectionId));
-  };
+    const type = active.data.current?.type;
 
-  const handleCollectionDragStart = (event: DragStartEvent) => {
-    setDraggingCollectionId(event.active.id as string);
-  };
-
-  const handleCollectionDragEnd = (event: DragEndEvent) => {
-    setDraggingCollectionId(null);
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = sortedCollections.findIndex((c) => c.id === active.id);
-    const newIndex = sortedCollections.findIndex((c) => c.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(sortedCollections, oldIndex, newIndex);
-    reorderCollections(reordered.map((c) => c.id));
+    if (type === 'collection') {
+      setDraggingCollectionId(null);
+      if (!over || active.id === over.id) return;
+      const oldIndex = sortedCollections.findIndex((c) => c.id === active.id);
+      const newIndex = sortedCollections.findIndex((c) => c.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+      const reordered = arrayMove(sortedCollections, oldIndex, newIndex);
+      reorderCollections(reordered.map((c) => c.id));
+    } else {
+      setDraggingPageId(null);
+      setOverCollectionId(null);
+      if (!over) return;
+      const pageId = active.id as string;
+      const targetCollectionId = over.id as string;
+      const page = activePages.find((p) => p.id === pageId);
+      if (!page || page.collection_id === targetCollectionId) return;
+      if (!activeCollections.find((c) => c.id === targetCollectionId)) return;
+      movePage(pageId, targetCollectionId);
+      setExpandedCollections((prev) => new Set(prev).add(targetCollectionId));
+    }
   };
 
   const draggingPage = draggingPageId ? activePages.find((p) => p.id === draggingPageId) : null;
@@ -354,13 +349,8 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
 
   return (
     <DndContext
-      sensors={collectionSensors}
+      sensors={sensors}
       collisionDetection={closestCenter}
-      onDragStart={handleCollectionDragStart}
-      onDragEnd={handleCollectionDragEnd}
-    >
-    <DndContext
-      sensors={pageSensors}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -549,7 +539,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
         </div>
       </aside>
 
-      {/* Drag overlay — ghost of the page being dragged */}
+      {/* Drag overlay */}
       <DragOverlay>
         {draggingPage && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-popover border border-border shadow-lg text-sm text-foreground opacity-90 w-52">
@@ -557,11 +547,6 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
             <span className="truncate">{draggingPage.title || 'Untitled'}</span>
           </div>
         )}
-      </DragOverlay>
-    </DndContext>
-
-      {/* Drag overlay — ghost of the collection being reordered */}
-      <DragOverlay>
         {draggingCollection && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-popover border border-border shadow-lg text-sm text-foreground opacity-90 w-52">
             <GripVertical size={13} className="text-muted-foreground shrink-0" />

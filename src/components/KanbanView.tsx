@@ -1,4 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+  closestCenter,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '@/store/useAppStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
@@ -6,7 +23,8 @@ import { useTrashStore } from '@/store/useTrashStore';
 import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
 import PageContextMenu from '@/components/PageContextMenu';
-import { Plus, X, File, FileText, Map, CheckSquare, Trash2 } from 'lucide-react';
+import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical } from 'lucide-react';
+import type { DbCollection } from '@/store/useCollectionStore';
 import type { PageType } from '@/types';
 
 const pageTypeIcons: Record<string, React.ReactNode> = {
@@ -16,10 +34,180 @@ const pageTypeIcons: Record<string, React.ReactNode> = {
   checklist: <CheckSquare size={13} />,
 };
 
+// ── Sortable collection column ────────────────────────────────────────────────
+interface ColumnProps {
+  collection: DbCollection;
+  pages: ReturnType<typeof usePageStore.getState>['pages'];
+  activePageId: string | null;
+  activeCollections: DbCollection[];
+  onOpenPage: (id: string) => void;
+  onAddPage: (collectionId: string, type: PageType) => void;
+  onMovePage: (pageId: string, targetCollectionId: string) => void;
+  onDeletePage: (pageId: string) => void;
+  onDeleteCollection: (id: string) => void;
+  showNewPageMenu: string | null;
+  setShowNewPageMenu: (id: string | null) => void;
+  renamingId: string | null;
+  renameValue: string;
+  renameInputRef: React.RefObject<HTMLInputElement | null>;
+  onStartRename: (id: string, name: string) => void;
+  onCommitRename: () => void;
+  onRenameKey: (e: React.KeyboardEvent) => void;
+  setRenameValue: (v: string) => void;
+  isDragOverlay?: boolean;
+}
+
+function CollectionColumn({
+  collection,
+  pages,
+  activePageId,
+  activeCollections,
+  onOpenPage,
+  onAddPage,
+  onMovePage,
+  onDeletePage,
+  onDeleteCollection,
+  showNewPageMenu,
+  setShowNewPageMenu,
+  renamingId,
+  renameValue,
+  renameInputRef,
+  onStartRename,
+  onCommitRename,
+  onRenameKey,
+  setRenameValue,
+  isDragOverlay = false,
+}: ColumnProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: collection.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  const collectionPages = pages.filter((p) => p.collection_id === collection.id && !p.deleted_at);
+  const isRenaming = renamingId === collection.id;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={isDragOverlay ? {} : style}
+      className={`flex flex-col w-72 shrink-0 bg-sidebar rounded-xl border border-sidebar-border shadow-sm ${isDragOverlay ? 'shadow-xl rotate-1 opacity-95' : ''}`}
+    >
+      {/* Column header */}
+      <div className="flex items-center gap-1.5 px-2 py-2.5 border-b border-sidebar-border">
+        {/* Drag handle */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing p-0.5 shrink-0 touch-none"
+          tabIndex={-1}
+        >
+          <GripVertical size={14} />
+        </button>
+
+        {isRenaming ? (
+          <input
+            ref={renameInputRef}
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={onCommitRename}
+            onKeyDown={onRenameKey}
+            className="flex-1 text-sm font-semibold bg-background border border-primary/50 rounded px-1.5 py-0.5 outline-none text-sidebar-foreground"
+          />
+        ) : (
+          <button
+            className="flex-1 text-left font-semibold text-sm text-sidebar-foreground truncate hover:text-primary transition-colors"
+            onDoubleClick={() => onStartRename(collection.id, collection.name)}
+            title="Double-click to rename"
+          >
+            {collection.name}
+          </button>
+        )}
+
+        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
+          {collectionPages.length}
+        </span>
+        <button
+          onClick={() => onDeleteCollection(collection.id)}
+          className="transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground shrink-0"
+          title="Delete collection"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+
+      {/* Pages */}
+      <div className="p-2 space-y-1.5">
+        {collectionPages.map((page) => (
+          <div
+            key={page.id}
+            className={`group flex items-center gap-1 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors border ${
+              activePageId === page.id
+                ? 'bg-primary/10 border-primary/30 text-primary'
+                : 'bg-background border-border hover:border-primary/30 hover:bg-primary/5 text-foreground'
+            }`}
+          >
+            <button
+              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+              onClick={() => onOpenPage(page.id)}
+            >
+              <span className="text-muted-foreground shrink-0">
+                {pageTypeIcons[page.type] || pageTypeIcons.blank}
+              </span>
+              <span className="truncate">{page.title || 'Untitled'}</span>
+            </button>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <PageContextMenu
+                collections={activeCollections}
+                currentCollectionId={collection.id}
+                onMove={(targetId) => onMovePage(page.id, targetId)}
+                onDelete={() => onDeletePage(page.id)}
+              />
+            </span>
+          </div>
+        ))}
+        {collectionPages.length === 0 && (
+          <p className="text-xs text-muted-foreground italic px-2 py-1">No pages yet</p>
+        )}
+      </div>
+
+      {/* Add page */}
+      <div className="p-2 border-t border-sidebar-border relative">
+        <button
+          onClick={() => setShowNewPageMenu(showNewPageMenu === collection.id ? null : collection.id)}
+          className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+        >
+          <Plus size={13} />
+          Add page
+        </button>
+        {showNewPageMenu === collection.id && (
+          <div className="absolute bottom-full left-2 mb-1 z-50 w-40 bg-popover border border-border rounded-md shadow-lg py-1">
+            {(['blank', 'notes', 'checklist', 'roadmap'] as PageType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => onAddPage(collection.id, type)}
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-sm rounded hover:bg-accent text-popover-foreground capitalize transition-colors"
+              >
+                {pageTypeIcons[type]}
+                {type === 'blank' ? 'Blank Page' : type}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main KanbanView ────────────────────────────────────────────────────────────
 export default function KanbanView() {
   const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
   const { pages, movePage } = usePageStore();
-  const { collections, renameCollection, deleteCollection } = useCollectionStore();
+  const { collections, renameCollection, deleteCollection, reorderCollections } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
 
   const [pageModalOpen, setPageModalOpen] = useState(false);
@@ -27,7 +215,13 @@ export default function KanbanView() {
   const [showNewPageMenu, setShowNewPageMenu] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+  );
 
   const activeCollections = collections
     .filter((c) => !c.deleted_at)
@@ -37,11 +231,8 @@ export default function KanbanView() {
   const deletedPages = trashedPages();
   const trashCount = deletedPages.length + trashedCollections().length;
 
-  const boardRef = useRef<HTMLDivElement>(null);
-
   const handleAddCollection = async () => {
     await addCollection('New Collection');
-    // Scroll to end so the new column is visible
     setTimeout(() => {
       boardRef.current?.scrollTo({ left: boardRef.current.scrollWidth, behavior: 'smooth' });
     }, 50);
@@ -82,119 +273,84 @@ export default function KanbanView() {
     if (e.key === 'Escape') setRenamingId(null);
   };
 
+  const handleDragStart = (e: DragStartEvent) => {
+    setDraggingId(e.active.id as string);
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    setDraggingId(null);
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = activeCollections.findIndex((c) => c.id === active.id);
+    const newIndex = activeCollections.findIndex((c) => c.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(activeCollections, oldIndex, newIndex);
+    reorderCollections(reordered.map((c) => c.id));
+  };
+
+  const draggingCollection = draggingId ? activeCollections.find((c) => c.id === draggingId) : null;
+
   const activePageCollection = collections.find(
     (c) => c.id === pages.find((p) => p.id === activePageId)?.collection_id
   );
 
+  const columnProps = {
+    pages: activePages,
+    activePageId,
+    activeCollections,
+    onOpenPage: openPage,
+    onAddPage: handleAddPage,
+    onMovePage: movePage,
+    onDeletePage: deletePage,
+    onDeleteCollection: deleteCollection,
+    showNewPageMenu,
+    setShowNewPageMenu,
+    renamingId,
+    renameValue,
+    renameInputRef,
+    onStartRename: startRename,
+    onCommitRename: commitRename,
+    onRenameKey: handleRenameKey,
+    setRenameValue,
+  };
+
   return (
     <>
-      {/* Trello-style horizontal scroll board */}
-      <div ref={boardRef} className="flex-1 overflow-x-auto overflow-y-hidden bg-background">
-        <div className="flex flex-row gap-4 p-6 pb-20 h-full items-start" style={{ minWidth: 'max-content' }}>
-          {activeCollections.map((collection) => {
-            const collectionPages = activePages.filter((p) => p.collection_id === collection.id);
-            const isRenaming = renamingId === collection.id;
-
-            return (
-              <div key={collection.id} className="w-72 shrink-0">
-                <div className="bg-sidebar rounded-xl border border-sidebar-border shadow-sm flex flex-col">
-                  {/* Header */}
-                  <div className="flex items-center gap-1.5 px-3 py-2.5 border-b border-sidebar-border">
-                    {isRenaming ? (
-                      <input
-                        ref={renameInputRef}
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onBlur={commitRename}
-                        onKeyDown={handleRenameKey}
-                        className="flex-1 text-sm font-semibold bg-background border border-primary/50 rounded px-1.5 py-0.5 outline-none text-sidebar-foreground"
-                      />
-                    ) : (
-                      <button
-                        className="flex-1 text-left font-semibold text-sm text-sidebar-foreground truncate hover:text-primary transition-colors"
-                        onDoubleClick={() => startRename(collection.id, collection.name)}
-                        title="Double-click to rename"
-                      >
-                        {collection.name}
-                      </button>
-                    )}
-                    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
-                      {collectionPages.length}
-                    </span>
-                    <button
-                      onClick={() => deleteCollection(collection.id)}
-                      className="transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground shrink-0"
-                      title="Delete collection"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-
-                  {/* Pages */}
-                  <div className="p-2 space-y-1.5">
-                    {collectionPages.map((page) => (
-                      <div
-                        key={page.id}
-                        className={`group flex items-center gap-1 w-full text-left px-3 py-2 rounded-lg text-sm transition-colors border ${
-                          activePageId === page.id
-                            ? 'bg-primary/10 border-primary/30 text-primary'
-                            : 'bg-background border-border hover:border-primary/30 hover:bg-primary/5 text-foreground'
-                        }`}
-                      >
-                        <button
-                          className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                          onClick={() => openPage(page.id)}
-                        >
-                          <span className="text-muted-foreground shrink-0">
-                            {pageTypeIcons[page.type] || pageTypeIcons.blank}
-                          </span>
-                          <span className="truncate">{page.title || 'Untitled'}</span>
-                        </button>
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                          <PageContextMenu
-                            collections={activeCollections}
-                            currentCollectionId={collection.id}
-                            onMove={(targetId) => movePage(page.id, targetId)}
-                            onDelete={() => deletePage(page.id)}
-                          />
-                        </span>
-                      </div>
-                    ))}
-                    {collectionPages.length === 0 && (
-                      <p className="text-xs text-muted-foreground italic px-2 py-1">No pages yet</p>
-                    )}
-                  </div>
-
-                  {/* Add page */}
-                  <div className="p-2 border-t border-sidebar-border relative">
-                    <button
-                      onClick={() => setShowNewPageMenu(showNewPageMenu === collection.id ? null : collection.id)}
-                      className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
-                    >
-                      <Plus size={13} />
-                      Add page
-                    </button>
-                    {showNewPageMenu === collection.id && (
-                      <div className="absolute bottom-full left-2 mb-1 z-50 w-40 bg-popover border border-border rounded-md shadow-lg py-1">
-                        {(['blank', 'notes', 'checklist', 'roadmap'] as PageType[]).map((type) => (
-                          <button
-                            key={type}
-                            onClick={() => handleAddPage(collection.id, type)}
-                            className="flex items-center gap-2 w-full px-3 py-1.5 text-sm rounded hover:bg-accent text-popover-foreground capitalize transition-colors"
-                          >
-                            {pageTypeIcons[type]}
-                            {type === 'blank' ? 'Blank Page' : type}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        {/* Trello-style horizontal scroll board */}
+        <div ref={boardRef} className="flex-1 overflow-x-auto overflow-y-hidden bg-background">
+          <div className="flex flex-row gap-4 p-6 pb-20 h-full items-start" style={{ minWidth: 'max-content' }}>
+            <SortableContext
+              items={activeCollections.map((c) => c.id)}
+              strategy={horizontalListSortingStrategy}
+            >
+              {activeCollections.map((collection) => (
+                <CollectionColumn
+                  key={collection.id}
+                  collection={collection}
+                  {...columnProps}
+                />
+              ))}
+            </SortableContext>
+          </div>
         </div>
-      </div>
+
+        {/* Drag overlay */}
+        <DragOverlay>
+          {draggingCollection && (
+            <CollectionColumn
+              collection={draggingCollection}
+              {...columnProps}
+              isDragOverlay
+            />
+          )}
+        </DragOverlay>
+      </DndContext>
 
       {/* FAB — Add collection (bottom-right) */}
       <button

@@ -6,13 +6,20 @@ import PublicNav from '@/components/PublicNav';
 
 const API_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
 
-// These curl examples use \\ to render a literal backslash line continuation.
-// String.raw cannot be used here because the strings contain ${API_BASE} interpolation.
-const CURL_REORDER_COLLECTIONS = // NOSONAR
-  `curl -X POST ${API_BASE} \\\n  -H "Content-Type: application/json" \\\n  -H "x-api-key: pmt_your_key" \\\n  -d '{\n    "action": "reorder_collections",\n    "collection_ids": ["<id_first>", "<id_second>", "<id_third>"]\n  }'`;
+const CURL_REORDER_COLLECTIONS =
+  `curl -X POST ${API_BASE} \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{
+    "action": "reorder_collections",
+    "collection_ids": ["<id_first>", "<id_second>", "<id_third>"]
+  }'`;
 
-const CURL_MOVE_PAGE = // NOSONAR
-  `curl -X POST ${API_BASE} \\\n  -H "Content-Type: application/json" \\\n  -H "x-api-key: pmt_your_key" \\\n  -d '{"action":"move_page","page_id":"<page_id>","collection_id":"<target_collection_id>"}'`;
+const CURL_MOVE_PAGE =
+  `curl -X POST ${API_BASE} \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"move_page","page_id":"<page_id>","collection_id":"<target_collection_id>"}'`;
 
 function CodeBlock({ children }: { children: string }) {
   return (

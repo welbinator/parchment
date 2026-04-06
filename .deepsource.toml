@@ -42,3 +42,18 @@ file_patterns = [
   "src/hooks/useBlockEditor.ts",
   "src/components/ui/chart.tsx",
 ]
+
+[[issues]]
+# Unescaped apostrophes in JSX text content — cosmetic style preference, not a bug.
+# React renders these correctly. Fixing requires &apos; throughout all copy text.
+issue_code = "JS-0454"
+
+[[issues]]
+# require() in tailwind.config.ts — CommonJS interop, not a real issue in config files.
+issue_code = "JS-0359"
+file_patterns = ["tailwind.config.ts", "*.config.*"]
+
+[[issues]]
+# Unnecessary fragment in ResizableSidebarWrapper — may be needed for conditional rendering logic.
+issue_code = "JS-0424"
+file_patterns = ["src/components/ResizableSidebarWrapper.tsx"]

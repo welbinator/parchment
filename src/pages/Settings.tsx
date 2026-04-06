@@ -316,13 +316,10 @@ export default function Settings() {
     enabled_for: string[];
   }
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
-  const [flagsLoading, setFlagsLoading] = useState(false);
 
   const fetchFlags = async () => {
-    setFlagsLoading(true);
     const { data } = await supabase.from('feature_flags').select('*').order('created_at', { ascending: true });
     setFlags((data as FeatureFlag[]) ?? []);
-    setFlagsLoading(false);
   };
 
   useEffect(() => {

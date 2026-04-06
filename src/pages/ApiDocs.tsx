@@ -162,6 +162,7 @@ export default function ApiDocs() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold font-display mb-3">reorder_collections</h2>
           <p className="text-muted-foreground mb-2">Set the display order of collections by passing an ordered array of IDs. Requires <code className="bg-muted px-1 py-0.5 rounded">can_create_collections</code> permission.</p>
+          {/* NOSONAR: \\ is intentional — renders literal \ in curl output; String.raw breaks ${API_BASE} interpolation */}
           <CodeBlock>{`curl -X POST ${API_BASE} \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: pmt_your_key" \\
@@ -175,6 +176,7 @@ export default function ApiDocs() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold font-display mb-3">move_page</h2>
           <p className="text-muted-foreground mb-2">Move a page to a different collection. Requires <code className="bg-muted px-1 py-0.5 rounded">can_create_pages</code> permission.</p>
+          {/* NOSONAR: \\ is intentional — renders literal \ in curl output; String.raw breaks ${API_BASE} interpolation */}
           <CodeBlock>{`curl -X POST ${API_BASE} \\
   -H "Content-Type: application/json" \\
   -H "x-api-key: pmt_your_key" \\

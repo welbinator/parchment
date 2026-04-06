@@ -13,10 +13,12 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDraggable,
+  useDroppable,
+  closestCenter,
   type DragStartEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
-import { useDraggable, useDroppable } from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -24,7 +26,6 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { closestCenter } from '@dnd-kit/core';
 import {
   Plus,
   ChevronRight,
@@ -55,23 +56,25 @@ interface AppSidebarProps {
 }
 
 // ── Grip handle for sortable collections ───────────────────────────────────
-function CollectionGripHandle({ id }: { id: string }) {
+function CollectionGripHandle({ id }: Readonly<{ id: string }>) {
   const { attributes, listeners } = useSortable({ id, data: { type: 'collection' } });
   return (
-    <span
+    <button
+      type="button"
       {...listeners}
       {...attributes}
-      className="cursor-grab active:cursor-grabbing shrink-0 text-muted-foreground/30 hover:text-muted-foreground touch-none p-0.5"
+      className="cursor-grab active:cursor-grabbing shrink-0 text-muted-foreground/30 hover:text-muted-foreground touch-none p-0.5 bg-transparent border-0"
       title="Drag to reorder"
       onClick={(e) => { e.stopPropagation(); }}
+      onKeyDown={(e) => { e.stopPropagation(); }}
     >
       <GripVertical size={13} />
-    </span>
+    </button>
   );
 }
 
 // ── Sortable + droppable collection row ─────────────────────────────────────
-function SortableCollection({ id, isOver, children }: { id: string; isOver: boolean; children: React.ReactNode }) {
+function SortableCollection({ id, isOver, children }: Readonly<{ id: string; isOver: boolean; children: React.ReactNode }>) {
   const { setNodeRef: setSortableRef, transform, transition, isDragging } = useSortable({ id, data: { type: 'collection' } });
   const { setNodeRef: setDropRef } = useDroppable({ id });
 

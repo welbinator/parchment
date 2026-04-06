@@ -121,7 +121,7 @@ function CollectionColumn({
         ) : (
           <button
             className="flex-1 text-left font-semibold text-sm text-sidebar-foreground truncate hover:text-primary transition-colors"
-            onDoubleClick={() => onStartRename(collection.id, collection.name)}
+            onDoubleClick={() => { onStartRename(collection.id, collection.name); }}
             title="Double-click to rename"
           >
             {collection.name}
@@ -153,7 +153,7 @@ function CollectionColumn({
           >
             <button
               className="flex items-center gap-2 flex-1 min-w-0 text-left"
-              onClick={() => onOpenPage(page.id)}
+              onClick={() => { onOpenPage(page.id); }}
             >
               <span className="text-muted-foreground shrink-0">
                 {pageTypeIcons[page.type] || pageTypeIcons.blank}
@@ -164,8 +164,8 @@ function CollectionColumn({
               <PageContextMenu
                 collections={activeCollections}
                 currentCollectionId={collection.id}
-                onMove={(targetId) => onMovePage(page.id, targetId)}
-                onDelete={() => onDeletePage(page.id)}
+                onMove={(targetId) => { onMovePage(page.id, targetId); }}
+                onDelete={() => { onDeletePage(page.id); }}
               />
             </span>
           </div>
@@ -189,7 +189,7 @@ function CollectionColumn({
             {(['blank', 'notes', 'checklist', 'roadmap'] as PageType[]).map((type) => (
               <button
                 key={type}
-                onClick={() => onAddPage(collection.id, type)}
+                onClick={() => { onAddPage(collection.id, type); }}
                 className="flex items-center gap-2 w-full px-3 py-1.5 text-sm rounded hover:bg-accent text-popover-foreground capitalize transition-colors"
               >
                 {pageTypeIcons[type]}

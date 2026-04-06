@@ -35,7 +35,7 @@ const pageTypeIcons: Record<string, React.ReactNode> = {
 };
 
 // ── Sortable collection column ────────────────────────────────────────────────
-interface ColumnProps {
+type ColumnProps = Readonly<{
   collection: DbCollection;
   pages: ReturnType<typeof usePageStore.getState>['pages'];
   activePageId: string | null;
@@ -55,7 +55,7 @@ interface ColumnProps {
   onRenameKey: (e: React.KeyboardEvent) => void;
   setRenameValue: (v: string) => void;
   isDragOverlay?: boolean;
-}
+}>;
 
 function CollectionColumn({
   collection,

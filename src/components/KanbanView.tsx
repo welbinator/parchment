@@ -23,6 +23,7 @@ import { useTrashStore } from '@/store/useTrashStore';
 import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
 import PageContextMenu from '@/components/PageContextMenu';
+import ShareButton from '@/components/ShareButton';
 import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical } from 'lucide-react';
 import type { DbCollection } from '@/store/useCollectionStore';
 import type { PageType } from '@/types';
@@ -206,7 +207,7 @@ function CollectionColumn({
 // ── Main KanbanView ────────────────────────────────────────────────────────────
 export default function KanbanView() {
   const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
-  const { pages, movePage } = usePageStore();
+  const { pages, movePage, updatePageSharing } = usePageStore();
   const { collections, renameCollection, deleteCollection, reorderCollections } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
 
@@ -386,12 +387,29 @@ export default function KanbanView() {
               <span className="text-sm font-medium text-muted-foreground">
                 {activePageCollection?.name}
               </span>
-              <button
-                onClick={() => setPageModalOpen(false)}
-                className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const activePage = pages.find(p => p.id === activePageId);
+                  return activePage ? (
+                    <ShareButton
+                      pageId={activePage.id}
+                      shareSettings={{
+                        share_enabled: activePage.share_enabled ?? false,
+                        share_mode: activePage.share_mode ?? 'public',
+                        share_token: activePage.share_token ?? null,
+                        shared_with_emails: activePage.shared_with_emails ?? [],
+                      }}
+                      onUpdate={(updates) => updatePageSharing(activePage.id, updates)}
+                    />
+                  ) : null;
+                })()}
+                <button
+                  onClick={() => setPageModalOpen(false)}
+                  className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto">
               <PageEditor hideChrome />

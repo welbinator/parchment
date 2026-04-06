@@ -34,7 +34,34 @@ file_patterns = [
 ]
 
 [[issues]]
-# dangerouslySetInnerHTML in SharedPageView — content is from our own DB, not user-injected HTML.
+# "Syntax error" false positives in ESM config files — DeepSource doesn't understand ESM module format.
+issue_code = "JS-0833"
+file_patterns = ["postcss.config.js", "eslint.config.js", "*.config.*"]
+
+[[issues]]
+# Wildcard imports in shadcn/ui generated components — not our code to change.
+issue_code = "JS-C1003"
+file_patterns = ["src/components/ui/**", "src/hooks/use-toast.ts", "src/hooks/use-mobile.tsx"]
+
+[[issues]]
+# Global scope vars in Deno edge functions — Deno module pattern, not browser globals.
+issue_code = "JS-0067"
+file_patterns = ["supabase/functions/**"]
+
+[[issues]]
+# Empty functions in test setup files — intentional mocks.
+issue_code = "JS-0321"
+file_patterns = ["src/test/**"]
+
+[[issues]]
+# delete operator with computed key in GroupBlock — intentional pattern for removing optional style keys.
+issue_code = "JS-0320"
+file_patterns = ["src/components/GroupBlock.tsx"]
+
+[[issues]]
+# Empty interfaces in shadcn/ui components — intentional extension points.
+issue_code = "JS-0322"
+file_patterns = ["src/components/ui/**"]
 # chart.tsx is a shadcn generated component.
 issue_code = "JS-0440"
 file_patterns = [

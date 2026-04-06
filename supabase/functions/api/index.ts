@@ -22,13 +22,25 @@ const APP_URL = Deno.env.get('APP_URL') ?? 'https://theparchment.app'
 const VALID_BLOCK_TYPES = new Set(['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo', 'quote', 'divider', 'code', 'group'])
 
 // Convert styled text JSON arrays to HTML
+interface StyledJsonItem {
+  text?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+  code?: boolean;
+  color?: string;
+  link?: string;
+  href?: string;
+}
+
 // Bots sometimes send [{"text":"hello","bold":true}] instead of "<b>hello</b>"
 function convertStyledJsonToHtml(content: string): string {
   if (!content || !content.trim().startsWith('[')) return content
   try {
     const parsed = JSON.parse(content)
     if (!Array.isArray(parsed)) return content
-    return parsed.map((item: any) => {
+    return parsed.map((item: StyledJsonItem | string) => {
       if (typeof item === 'string') return item
       if (typeof item !== 'object' || !item.text) return ''
       let html = item.text as string
@@ -217,7 +229,7 @@ Deno.serve(async (req) => {
           .limit(1)
         const startPosition = (existingBlocks?.[0]?.position ?? -1) + 1
 
-        const insertedBlocks: any[] = []
+        const insertedBlocks: Record<string, unknown>[] = []
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i]
           const content = convertStyledJsonToHtml(block.content || '')
@@ -265,7 +277,7 @@ Deno.serve(async (req) => {
         await supabase.from('blocks').delete().eq('page_id', page_id)
 
         // Insert new blocks with sequential positions based on array order
-        const insertedBlocks: any[] = []
+        const insertedBlocks: Record<string, unknown>[] = []
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i]
           const content = convertStyledJsonToHtml(block.content || '')
@@ -450,7 +462,7 @@ async function hashKeyServer(key: string): Promise<string> {
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-function json(data: any, headers: Record<string, string>, status = 200) {
+function json(data: unknown, headers: Record<string, string>, status = 200) {
   return new Response(JSON.stringify(data), {
     status, headers: { ...headers, 'Content-Type': 'application/json' },
   })

@@ -535,8 +535,8 @@ export default function Settings() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Database exported successfully');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
     } finally {
       setExporting(false);
     }

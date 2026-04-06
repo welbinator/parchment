@@ -43,7 +43,7 @@ function convertStyledJsonToHtml(content: string): string {
     return parsed.map((item: StyledJsonItem | string) => {
       if (typeof item === 'string') return item
       if (typeof item !== 'object' || !item.text) return ''
-      let html = item.text as string
+      let html = item.text ?? ''
       if (item.bold) html = `<b>${html}</b>`
       if (item.italic) html = `<i>${html}</i>`
       if (item.underline) html = `<u>${html}</u>`

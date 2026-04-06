@@ -1,0 +1,11 @@
+---
+engines:
+  tsqllint:
+    enabled: false  # SQL Server linter, not relevant for PostgreSQL migrations
+
+exclude_paths:
+  - ".env"           # Supabase anon key is intentionally public-facing
+  - ".env.*"
+  - "dist/"
+  - "node_modules/"
+  - "src/components/ui/"  # shadcn generated components — not our code to fix

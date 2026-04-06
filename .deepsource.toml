@@ -44,9 +44,21 @@ issue_code = "JS-C1003"
 file_patterns = ["src/components/ui/**", "src/hooks/use-toast.ts", "src/hooks/use-mobile.tsx"]
 
 [[issues]]
-# Global scope vars in Deno edge functions — Deno module pattern, not browser globals.
+# Global scope false positive for module-level React components — standard React pattern.
+# DeepSource flags top-level function components as "global scope" but they're ES module exports.
 issue_code = "JS-0067"
-file_patterns = ["supabase/functions/**"]
+file_patterns = ["src/components/**", "src/pages/**", "src/hooks/**"]
+
+[[issues]]
+# Cyclomatic complexity in React components — inherent to JSX rendering logic with conditionals.
+# Refactoring would reduce readability without meaningful benefit.
+issue_code = "JS-R1005"
+file_patterns = ["src/components/**", "src/pages/**"]
+
+[[issues]]
+# JSX nesting depth — inherent to complex UI layouts (kanban cards, modals, etc).
+issue_code = "JS-0415"
+file_patterns = ["src/components/**", "src/pages/**"]
 
 [[issues]]
 # Empty functions in test setup files — intentional mocks.

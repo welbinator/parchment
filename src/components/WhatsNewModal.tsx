@@ -21,6 +21,15 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '1.8.0',
+    title: 'Collection Reordering & API',
+    changes: [
+      { type: 'feature', description: 'Drag collections to reorder them in both List view (sidebar) and Board view.' },
+      { type: 'feature', description: 'New API actions: reorder_collections and move_page — everything you can do in the UI is now available via API.' },
+      { type: 'improvement', description: 'API docs and downloadable SKILL.md updated with full examples for move_page, rename_collection, and reorder_collections.' },
+    ],
+  },
+  {
     version: '1.7.3',
     title: 'Bug Fixes & Polish',
     changes: [

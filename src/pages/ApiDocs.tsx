@@ -6,6 +6,21 @@ import PublicNav from '@/components/PublicNav';
 
 const API_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
 
+const CURL_REORDER_COLLECTIONS =
+  `curl -X POST ${API_BASE} \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{
+    "action": "reorder_collections",
+    "collection_ids": ["<id_first>", "<id_second>", "<id_third>"]
+  }'`;
+
+const CURL_MOVE_PAGE =
+  `curl -X POST ${API_BASE} \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: pmt_your_key" \
+  -d '{"action":"move_page","page_id":"<page_id>","collection_id":"<target_collection_id>"}'`;
+
 function CodeBlock({ children }: { children: string }) {
   return (
     <pre className="bg-muted border border-border rounded-lg p-3 text-sm overflow-x-auto"><code>{children}</code></pre>
@@ -71,10 +86,12 @@ export default function ApiDocs() {
               'create_collection',
               'delete_collection',
               'rename_collection',
+              'reorder_collections',
               'list_pages',
               'create_page',
               'delete_page',
               'rename_page',
+              'move_page',
               'get_page',
               'append_blocks',
               'replace_blocks',
@@ -155,6 +172,19 @@ export default function ApiDocs() {
   -H "Content-Type: application/json" \\
   -H "x-api-key: pmt_your_key" \\
   -d '{"action":"rename_collection","collection_id":"<collection_id>","name":"My Collection"}'`}</CodeBlock>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">reorder_collections</h2>
+          <p className="text-muted-foreground mb-2">Set the display order of collections by passing an ordered array of IDs. Requires <code className="bg-muted px-1 py-0.5 rounded">can_create_collections</code> permission.</p>
+          <CodeBlock>{CURL_REORDER_COLLECTIONS}</CodeBlock>
+          <p className="text-muted-foreground mt-2 text-sm">Collections are assigned positions 0, 1, 2... in the order you provide.</p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">move_page</h2>
+          <p className="text-muted-foreground mb-2">Move a page to a different collection. Requires <code className="bg-muted px-1 py-0.5 rounded">can_create_pages</code> permission.</p>
+          <CodeBlock>{CURL_MOVE_PAGE}</CodeBlock>
         </section>
 
         <section className="mb-8">

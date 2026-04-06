@@ -78,6 +78,35 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
   -d '{"action": "create_collection", "name": "My Collection"}'
 \`\`\`
 
+### Rename a collection
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "rename_collection", "collection_id": "COLLECTION_ID", "name": "New Name"}'
+\`\`\`
+
+### Reorder collections
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "reorder_collections",
+    "collection_ids": ["FIRST_ID", "SECOND_ID", "THIRD_ID"]
+  }'
+\`\`\`
+
+Pass all collection IDs in the order you want them displayed.
+
+### Move a page to a different collection
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "Authorization: Bearer YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "move_page", "page_id": "PAGE_ID", "collection_id": "TARGET_COLLECTION_ID"}'
+\`\`\`
+
 ### List pages in a collection
 \`\`\`bash
 curl -X POST https://theparchment.app/functions/v1/api \\\\
@@ -288,6 +317,8 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 - Always \`list_collections\` first to get IDs before creating pages
 - Use \`replace_blocks\` when you want to fully overwrite a page
 - Use \`append_blocks\` when you want to add to existing content
+- Use \`move_page\` to reorganize pages between collections
+- Use \`reorder_collections\` to set the display order of collections
 - IDs are UUIDs — store them if you need to reference the same page later
 - The API is append-friendly: create a collection once, add pages over time
 `;

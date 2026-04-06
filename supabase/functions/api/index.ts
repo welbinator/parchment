@@ -361,6 +361,34 @@ Deno.serve(async (req) => {
         return json({ success: true }, corsHeaders)
       }
 
+      // reorder_collections: set the display order of collections.
+      // Pass an ordered array of collection IDs — they will be assigned positions 0, 1, 2...
+      // Any collections omitted from the list keep their current position.
+      case 'reorder_collections': {
+        if (!permissions.can_create_collections) return deny(corsHeaders)
+        const { collection_ids } = body
+        if (!Array.isArray(collection_ids) || collection_ids.length === 0) {
+          return json({ error: 'collection_ids must be a non-empty array' }, corsHeaders, 400)
+        }
+        // Verify all collections belong to this user
+        const { data: userCollections } = await supabase
+          .from('collections')
+          .select('id')
+          .eq('user_id', userId)
+          .in('id', collection_ids)
+        const validIds = new Set((userCollections ?? []).map((c: { id: string }) => c.id))
+        const invalidIds = collection_ids.filter((id: string) => !validIds.has(id))
+        if (invalidIds.length > 0) {
+          return json({ error: 'Some collection_ids not found or not owned by you', invalid: invalidIds }, corsHeaders, 404)
+        }
+        // Update positions in order
+        const updates = collection_ids.map((id: string, index: number) =>
+          supabase.from('collections').update({ position: index }).eq('id', id).eq('user_id', userId)
+        )
+        await Promise.all(updates)
+        return json({ success: true, reordered: collection_ids.length }, corsHeaders)
+      }
+
       // share_page: control sharing for a page on behalf of the user.
       // Can enable/disable sharing, set mode (public/private), and manage the email invite list.
       // All fields are optional — only the ones you pass are changed.
@@ -443,7 +471,7 @@ Deno.serve(async (req) => {
 
       default:
         return json({ error: `Unknown action: ${action}`, available_actions: [
-          'list_collections', 'create_collection', 'delete_collection', 'rename_collection',
+          'list_collections', 'create_collection', 'delete_collection', 'rename_collection', 'reorder_collections',
           'list_pages', 'create_page', 'delete_page', 'rename_page', 'move_page', 'get_page',
           'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block', 'delete_group',
           'share_page',

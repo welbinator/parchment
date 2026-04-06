@@ -18,6 +18,14 @@ import {
 } from '@dnd-kit/core';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { closestCenter } from '@dnd-kit/core';
+import {
   Plus,
   ChevronRight,
   Trash2,
@@ -31,6 +39,7 @@ import {
   Users,
   MoreHorizontal,
   MoveRight,
+  GripVertical,
 } from 'lucide-react';
 import type { PageType } from '@/types';
 
@@ -45,12 +54,40 @@ interface AppSidebarProps {
   resizableSidebar?: boolean;
 }
 
-// ── Droppable collection drop zone ──────────────────────────────────────────
-function DroppableCollection({ id, isOver, children }: { id: string; isOver: boolean; children: React.ReactNode }) {
-  const { setNodeRef } = useDroppable({ id });
+// ── Grip handle for sortable collections ───────────────────────────────────
+function CollectionGripHandle({ id }: { id: string }) {
+  const { attributes, listeners } = useSortable({ id });
+  return (
+    <span
+      {...listeners}
+      {...attributes}
+      className="cursor-grab active:cursor-grabbing shrink-0 text-muted-foreground/30 hover:text-muted-foreground touch-none p-0.5"
+      title="Drag to reorder"
+      onClick={(e) => { e.stopPropagation(); }}
+    >
+      <GripVertical size={13} />
+    </span>
+  );
+}
+
+// ── Sortable + droppable collection row ─────────────────────────────────────
+function SortableCollection({ id, isOver, children }: { id: string; isOver: boolean; children: React.ReactNode }) {
+  const { setNodeRef: setSortableRef, transform, transition, isDragging } = useSortable({ id });
+  const { setNodeRef: setDropRef } = useDroppable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
   return (
     <div
-      ref={setNodeRef}
+      ref={(el) => {
+        setSortableRef(el);
+        setDropRef(el);
+      }}
+      style={style}
       className={`rounded-md transition-colors ${isOver ? 'ring-2 ring-primary/60 bg-primary/5' : ''}`}
     >
       {children}
@@ -211,7 +248,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
     deletePage,
   } = useAppStore();
   const { pages, updatePageTitle, movePage } = usePageStore();
-  const { collections, renameCollection } = useCollectionStore();
+  const { collections, renameCollection, reorderCollections } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -239,11 +276,19 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [showNewPageMenu, setShowNewPageMenu] = useState<string | null>(null);
   const [draggingPageId, setDraggingPageId] = useState<string | null>(null);
+  const [draggingCollectionId, setDraggingCollectionId] = useState<string | null>(null);
   const [overCollectionId, setOverCollectionId] = useState<string | null>(null);
 
-  const sensors = useSensors(
+  // Separate sensors: collections use a longer distance to avoid accidental reorder
+  const pageSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
+  const collectionSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  // Keep sorted collections in local state for optimistic updates
+  const sortedCollections = [...activeCollections].sort((a, b) => a.position - b.position);
 
   const toggleExpanded = (id: string) => {
     setExpandedCollections((prev) => {
@@ -287,13 +332,35 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
     setExpandedCollections((prev) => new Set(prev).add(targetCollectionId));
   };
 
+  const handleCollectionDragStart = (event: DragStartEvent) => {
+    setDraggingCollectionId(event.active.id as string);
+  };
+
+  const handleCollectionDragEnd = (event: DragEndEvent) => {
+    setDraggingCollectionId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = sortedCollections.findIndex((c) => c.id === active.id);
+    const newIndex = sortedCollections.findIndex((c) => c.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(sortedCollections, oldIndex, newIndex);
+    reorderCollections(reordered.map((c) => c.id));
+  };
+
   const draggingPage = draggingPageId ? activePages.find((p) => p.id === draggingPageId) : null;
+  const draggingCollection = draggingCollectionId ? sortedCollections.find((c) => c.id === draggingCollectionId) : null;
 
   if (!sidebarOpen) return null;
 
   return (
     <DndContext
-      sensors={sensors}
+      sensors={collectionSensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleCollectionDragStart}
+      onDragEnd={handleCollectionDragEnd}
+    >
+    <DndContext
+      sensors={pageSensors}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
@@ -317,35 +384,45 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
 
         {/* Collections */}
         <div className="flex-1 overflow-y-auto py-2">
-          {activeCollections.map((collection) => {
+          <SortableContext
+            items={sortedCollections.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+          {sortedCollections.map((collection) => {
             const isExpanded = expandedCollections.has(collection.id);
             const collectionPages = activePages.filter((p) => p.collection_id === collection.id);
             const isOver = overCollectionId === collection.id;
 
             return (
-              <DroppableCollection key={collection.id} id={collection.id} isOver={isOver}>
+              <SortableCollection key={collection.id} id={collection.id} isOver={isOver}>
                 <div className="animate-fade-in">
                   <div
-                    className={`group flex items-center gap-1 px-3 py-1.5 mx-1 rounded-md cursor-pointer transition-colors ${
+                    className={`group flex items-center gap-1 px-2 py-1.5 mx-1 rounded-md cursor-pointer transition-colors ${
                       activeCollectionId === collection.id
                         ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                         : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
                     }`}
-                    onClick={() => {
-                      setActiveCollection(collection.id);
-                      toggleExpanded(collection.id);
-                    }}
                   >
-                    <ChevronRight
-                      size={14}
-                      className={`transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
-                    />
-                    <FolderOpen size={14} className="shrink-0 text-primary/70" />
-                    <EditableName
-                      value={collection.name}
-                      onSave={(name) => renameCollection(collection.id, name)}
-                      className="text-sm"
-                    />
+                    {/* Collection drag handle */}
+                    <CollectionGripHandle id={collection.id} />
+                    <div
+                      className="flex items-center gap-1 flex-1 min-w-0"
+                      onClick={() => {
+                        setActiveCollection(collection.id);
+                        toggleExpanded(collection.id);
+                      }}
+                    >
+                      <ChevronRight
+                        size={14}
+                        className={`transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+                      />
+                      <FolderOpen size={14} className="shrink-0 text-primary/70" />
+                      <EditableName
+                        value={collection.name}
+                        onSave={(name) => { renameCollection(collection.id, name); }}
+                        className="text-sm"
+                      />
+                    </div>
                     <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={(e) => {
@@ -409,9 +486,10 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
                     </div>
                   )}
                 </div>
-              </DroppableCollection>
+              </SortableCollection>
             );
           })}
+          </SortableContext>
         </div>
 
         {/* Shared with me */}
@@ -477,6 +555,18 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-popover border border-border shadow-lg text-sm text-foreground opacity-90 w-52">
             {pageTypeIcons[draggingPage.type] || pageTypeIcons.blank}
             <span className="truncate">{draggingPage.title || 'Untitled'}</span>
+          </div>
+        )}
+      </DragOverlay>
+    </DndContext>
+
+      {/* Drag overlay — ghost of the collection being reordered */}
+      <DragOverlay>
+        {draggingCollection && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-popover border border-border shadow-lg text-sm text-foreground opacity-90 w-52">
+            <GripVertical size={13} className="text-muted-foreground shrink-0" />
+            <FolderOpen size={14} className="shrink-0 text-primary/70" />
+            <span className="truncate font-medium">{draggingCollection.name}</span>
           </div>
         )}
       </DragOverlay>

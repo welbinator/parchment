@@ -14,6 +14,16 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.7.3',
+    date: '2026-04-06',
+    title: 'Bug Fixes & Polish',
+    changes: [
+      { type: 'fix', description: 'Fixed trash modal in board view not being scrollable when many items were present.' },
+      { type: 'fix', description: 'Fixed trash page in list view stretching full width — now constrained to the standard page container.' },
+      { type: 'improvement', description: 'Added List/Board view toggle to the trash page in list view.' },
+    ],
+  },
+  {
     version: '1.7.2',
     date: '2026-04-05',
     title: 'Security Improvements',
@@ -374,7 +384,7 @@ export default function Changelog() {
                   {entry.changes.map((change, i) => {
                     const config = typeConfig[change.type];
                     return (
-                      <li key={i} className="flex gap-3 items-start">
+                      <li key={`${entry.version}-${i}-${change.type}`} className="flex gap-3 items-start">
                         <div className="shrink-0 min-w-[5.5rem]">
                           <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium mt-0.5 ${config.className}`}>
                             <config.icon size={10} />

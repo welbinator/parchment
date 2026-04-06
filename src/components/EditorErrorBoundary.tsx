@@ -39,7 +39,7 @@ export default class EditorErrorBoundary extends Component<Props, State> {
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-destructive/30 bg-destructive/5 text-sm">
           <AlertTriangle size={16} className="text-destructive shrink-0" />
           <span className="text-destructive/80 flex-1">
-            This {label} ran into an error and couldn't render.
+            This {label} ran into an error and couldn&apos;t render.
           </span>
           <button
             onClick={this.handleRetry}

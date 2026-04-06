@@ -253,7 +253,7 @@ export default function SharedPageView() {
         <div className="text-center">
           <Lock size={32} className="mx-auto mb-3 text-muted-foreground" />
           <p className="text-lg font-semibold text-foreground mb-2">Access restricted</p>
-          <p className="text-sm text-muted-foreground">You don't have permission to view this page.</p>
+          <p className="text-sm text-muted-foreground">You don&apos;t have permission to view this page.</p>
           <p className="text-xs text-muted-foreground mt-1">Signed in as {user?.email}</p>
         </div>
       </div>

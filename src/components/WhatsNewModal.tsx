@@ -15,11 +15,19 @@ interface WhatsNewVersion {
 }
 
 /**
- * What's New content - update this array when shipping a new version.
+ * What&apos;s New content - update this array when shipping a new version.
  * Only the entries here will show in the modal. Keep it to the latest
  * 1-2 versions so the modal stays concise.
  */
 const WHATS_NEW: WhatsNewVersion[] = [
+  {
+    version: '1.7.3',
+    title: 'Bug Fixes & Polish',
+    changes: [
+      { type: 'fix', description: 'Trash modal in board view is now scrollable when you have many deleted items.' },
+      { type: 'fix', description: 'Trash page in list view is now constrained to the standard page width and has the view toggle.' },
+    ],
+  },
   {
     version: '1.7.0',
     title: 'Board View',
@@ -127,7 +135,7 @@ export default function WhatsNewModal() {
         {/* Header */}
         <div className="flex items-center justify-between p-5 pb-3">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">What's New</h2>
+            <h2 className="text-xl font-semibold text-foreground">What&apos;s New</h2>
             <p className="text-sm text-muted-foreground">v{LATEST_VERSION}</p>
           </div>
           <button
@@ -152,7 +160,7 @@ export default function WhatsNewModal() {
                   <h3 className="text-base font-medium text-foreground mb-3">{release.title}</h3>
                   <ul className="space-y-3">
                     {visibleChanges.map((change, i) => (
-                      <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                      <li key={`${release.version}-${i}`} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                         {typeIcon(change.type)}
                         <span>
                           <span className="text-xs font-medium text-foreground/70 uppercase tracking-wide mr-1.5">

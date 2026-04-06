@@ -65,12 +65,12 @@ export default function MigrationModal({ onComplete }: MigrationModalProps) {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-foreground">Your API keys are back!</h2>
-                <p className="text-xs text-muted-foreground">Save these — they won't be shown again.</p>
+                <p className="text-xs text-muted-foreground">Save these — they won&apos;t be shown again.</p>
               </div>
             </div>
             <div className="space-y-2">
               {newApiKeys.map((key, i) => (
-                <div key={i} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
+                <div key={key} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
                   <code className="flex-1 text-xs font-mono text-foreground truncate">{key}</code>
                   <button
                     onClick={() => copyKey(key)}
@@ -104,7 +104,7 @@ export default function MigrationModal({ onComplete }: MigrationModalProps) {
             <PackageOpen className="w-8 h-8 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground mb-2">We've moved!</h2>
+            <h2 className="text-xl font-bold text-foreground mb-2">We&apos;ve moved!</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Parchment has a new home. We found your existing data from the old app —
               click below to migrate it to your account.
@@ -125,7 +125,7 @@ export default function MigrationModal({ onComplete }: MigrationModalProps) {
                 >
                   @jameswelbes
                 </a>
-                {' '}and he'll get your data sorted out manually.
+                {' '}and he&apos;ll get your data sorted out manually.
               </p>
             </div>
           )}

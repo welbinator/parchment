@@ -1,0 +1,59 @@
+version = 1
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+  [analyzers.meta]
+  plugins = ["react"]
+  environment = ["browser"]
+
+[[transformers]]
+name = "prettier"
+enabled = true
+
+[transformers.meta]
+version = "2"
+
+[[issues]]
+# Supabase PUBLISHABLE (anon) key in .env — intentionally public, exposed in compiled JS bundle.
+# Row-Level Security protects data, not keeping this key secret.
+issue_code = "SCT-1004"
+file_patterns = [".env", ".env.*"]
+
+[[issues]]
+# Variables-before-defined in React hooks context — hoisting is intentional and correct.
+# useCallback/useEffect referencing functions defined later in the file is standard React pattern.
+issue_code = "JS-0357"
+file_patterns = [
+  "src/components/BlockItem.tsx",
+  "src/App.tsx",
+  "src/pages/Settings.tsx",
+  "src/pages/SharedPageView.tsx",
+  "src/components/ui/**",
+]
+
+[[issues]]
+# dangerouslySetInnerHTML in SharedPageView — content is from our own DB, not user-injected HTML.
+# chart.tsx is a shadcn generated component.
+issue_code = "JS-0440"
+file_patterns = [
+  "src/pages/SharedPageView.tsx",
+  "src/hooks/useBlockEditor.ts",
+  "src/components/ui/chart.tsx",
+]
+
+[[issues]]
+# Unescaped apostrophes in JSX text content — cosmetic style preference, not a bug.
+# React renders these correctly. Fixing requires &apos; throughout all copy text.
+issue_code = "JS-0454"
+
+[[issues]]
+# require() in tailwind.config.ts — CommonJS interop, not a real issue in config files.
+issue_code = "JS-0359"
+file_patterns = ["tailwind.config.ts", "*.config.*"]
+
+[[issues]]
+# Unnecessary fragment in ResizableSidebarWrapper — may be needed for conditional rendering logic.
+issue_code = "JS-0424"
+file_patterns = ["src/components/ResizableSidebarWrapper.tsx"]

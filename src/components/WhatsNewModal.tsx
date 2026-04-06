@@ -21,6 +21,13 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '1.8.1',
+    title: 'Share from Board View',
+    changes: [
+      { type: 'feature', description: 'Pages in Board view now have a Share button in the modal header — same full sharing controls as List view.' },
+    ],
+  },
+  {
     version: '1.8.0',
     title: 'Collection Reordering & API',
     changes: [

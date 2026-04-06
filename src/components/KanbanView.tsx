@@ -229,6 +229,7 @@ export default function KanbanView() {
     .sort((a, b) => a.position - b.position);
 
   const activePages = pages.filter((p) => !p.deleted_at);
+  const activePage = pages.find(p => p.id === activePageId) ?? null;
   const deletedPages = trashedPages();
   const trashCount = deletedPages.length + trashedCollections().length;
 
@@ -388,21 +389,18 @@ export default function KanbanView() {
                 {activePageCollection?.name}
               </span>
               <div className="flex items-center gap-2">
-                {(() => {
-                  const activePage = pages.find(p => p.id === activePageId);
-                  return activePage ? (
-                    <ShareButton
-                      pageId={activePage.id}
-                      shareSettings={{
-                        share_enabled: activePage.share_enabled ?? false,
-                        share_mode: activePage.share_mode ?? 'public',
-                        share_token: activePage.share_token ?? null,
-                        shared_with_emails: activePage.shared_with_emails ?? [],
-                      }}
-                      onUpdate={(updates) => updatePageSharing(activePage.id, updates)}
-                    />
-                  ) : null;
-                })()}
+                {activePage && (
+                  <ShareButton
+                    pageId={activePage.id}
+                    shareSettings={{
+                      share_enabled: activePage.share_enabled ?? false,
+                      share_mode: activePage.share_mode ?? 'public',
+                      share_token: activePage.share_token ?? null,
+                      shared_with_emails: activePage.shared_with_emails ?? [],
+                    }}
+                    onUpdate={(updates) => updatePageSharing(activePage.id, updates)}
+                  />
+                )}
                 <button
                   onClick={() => setPageModalOpen(false)}
                   className="p-1 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"

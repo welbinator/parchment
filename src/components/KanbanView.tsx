@@ -263,7 +263,7 @@ export default function KanbanView() {
                 <X size={16} />
               </button>
             </div>
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <TrashContent />
             </div>
           </div>

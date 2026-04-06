@@ -12,7 +12,7 @@ SSH_KEY="/home/james/.openclaw/workspace/parchment-hetzner"
 SERVER="root@168.119.121.111"
 DB_PASS="${SUPABASE_DB_PASSWORD:-BXfEJe5sYzr4WyOSSxSUVSjXXk}"
 
-if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+if [[ -z "$SUPABASE_DB_PASSWORD" ]]; then
   echo "⚠️  SUPABASE_DB_PASSWORD not set — using fallback. Set it in your environment to suppress this warning."
 fi
 

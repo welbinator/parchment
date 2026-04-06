@@ -14,6 +14,18 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8.0',
+    date: '2026-04-06',
+    title: 'Collection Reordering & API Improvements',
+    changes: [
+      { type: 'feature', description: 'Collections can now be dragged to reorder in both List view (sidebar) and Board view.' },
+      { type: 'feature', description: 'New API action: reorder_collections — set the display order of your collections programmatically.' },
+      { type: 'feature', description: 'New API action: move_page — move a page to a different collection via API.' },
+      { type: 'improvement', description: 'API docs and downloadable SKILL.md now include move_page, rename_collection, and reorder_collections with full examples.' },
+      { type: 'improvement', description: 'Board view drag/drop column reordering restored after being lost in a previous refactor.' },
+    ],
+  },
+  {
     version: '1.7.3',
     date: '2026-04-06',
     title: 'Bug Fixes & Polish',

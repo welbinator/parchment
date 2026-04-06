@@ -45,7 +45,7 @@ export default function TrashContent() {
     collections.find((c) => c.id === collectionId)?.name ?? 'Unknown';
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-0 flex-1">
       {/* Warning banner */}
       <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs shrink-0">
         <AlertTriangle size={13} className="shrink-0" />

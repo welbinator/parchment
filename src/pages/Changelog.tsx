@@ -14,6 +14,16 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.7.3',
+    date: '2026-04-06',
+    title: 'Bug Fixes & Polish',
+    changes: [
+      { type: 'fix', description: 'Fixed trash modal in board view not being scrollable when many items were present.' },
+      { type: 'fix', description: 'Fixed trash page in list view stretching full width — now constrained to the standard page container.' },
+      { type: 'improvement', description: 'Added List/Board view toggle to the trash page in list view.' },
+    ],
+  },
+  {
     version: '1.7.2',
     date: '2026-04-05',
     title: 'Security Improvements',

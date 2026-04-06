@@ -21,6 +21,14 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '1.7.3',
+    title: 'Bug Fixes & Polish',
+    changes: [
+      { type: 'fix', description: 'Trash modal in board view is now scrollable when you have many deleted items.' },
+      { type: 'fix', description: 'Trash page in list view is now constrained to the standard page width and has the view toggle.' },
+    ],
+  },
+  {
     version: '1.7.0',
     title: 'Board View',
     changes: [

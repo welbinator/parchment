@@ -14,6 +14,14 @@ interface ChangelogEntry {
 
 const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.7.1',
+    date: '2026-04-05',
+    title: 'Security Improvements',
+    changes: [
+      { type: 'improvement', description: 'Added Snyk security scanning to our CI pipeline for continuous dependency and code vulnerability monitoring.' },
+    ],
+  },
+  {
     version: '1.7.0',
     date: '2026-04-05',
     title: 'Board View',

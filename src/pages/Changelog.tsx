@@ -384,7 +384,7 @@ export default function Changelog() {
                   {entry.changes.map((change, i) => {
                     const config = typeConfig[change.type];
                     return (
-                      <li key={i} className="flex gap-3 items-start">
+                      <li key={`${entry.version}-${i}-${change.type}`} className="flex gap-3 items-start">
                         <div className="shrink-0 min-w-[5.5rem]">
                           <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium mt-0.5 ${config.className}`}>
                             <config.icon size={10} />

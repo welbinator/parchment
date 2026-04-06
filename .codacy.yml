@@ -1,0 +1,12 @@
+---
+engines:
+  tsqllint:
+    enabled: false
+
+exclude_paths:
+  - ".env"
+  - ".env.*"
+  - "dist/**"
+  - "node_modules/**"
+  - "src/components/ui/**"
+  - "supabase/migrations/**"

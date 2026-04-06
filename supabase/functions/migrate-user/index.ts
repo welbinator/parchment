@@ -19,8 +19,9 @@ function getCorsHeaders(req: Request): Record<string, string> {
 
 function generateKey(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const randomValues = crypto.getRandomValues(new Uint8Array(40))
   let key = 'pmt_'
-  for (let i = 0; i < 40; i++) key += chars.charAt(Math.floor(Math.random() * chars.length))
+  for (let i = 0; i < 40; i++) key += chars.charAt(randomValues[i] % chars.length)
   return key
 }
 

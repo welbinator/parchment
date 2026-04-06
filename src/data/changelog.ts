@@ -13,6 +13,14 @@ interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8.1',
+    date: '2026-04-06',
+    title: 'Share from Board View',
+    changes: [
+      { type: 'feature', description: 'Pages opened in Board view now have a Share button in the modal header — toggle sharing, set public or private access, and copy the link without leaving the board.' },
+    ],
+  },
+  {
     version: '1.8.0',
     date: '2026-04-06',
     title: 'Collection Reordering & API Improvements',

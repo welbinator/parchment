@@ -12,8 +12,8 @@ const Index = () => {
     <div className="flex h-screen overflow-hidden bg-background relative">
       {/* Sidebar — hidden in board view */}
       {viewMode === 'list' && (
-        <ResizableSidebarWrapper enabled={true}>
-          <AppSidebar resizableSidebar={true} />
+        <ResizableSidebarWrapper enabled>
+          <AppSidebar resizableSidebar />
         </ResizableSidebarWrapper>
       )}
 

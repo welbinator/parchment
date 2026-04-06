@@ -59,6 +59,7 @@ const typeIcon = (type: WhatsNewEntry['type']) => {
     case 'feature': return <Sparkles size={14} className="text-blue-400 mt-0.5 shrink-0" />;
     case 'fix': return <Bug size={14} className="text-amber-400 mt-0.5 shrink-0" />;
     case 'improvement': return <Tag size={14} className="text-emerald-400 mt-0.5 shrink-0" />;
+    default: return null;
   }
 };
 
@@ -67,6 +68,7 @@ const typeLabel = (type: WhatsNewEntry['type']) => {
     case 'feature': return 'New';
     case 'fix': return 'Fix';
     case 'improvement': return 'Improved';
+    default: return '';
   }
 };
 

@@ -1,5 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+function requireEnv(key: string): string {
+  const val = Deno.env.get(key)
+  if (!val) throw new Error(`Missing required environment variable: ${key}`)
+  return val
+}
+
 const ALLOWED_ORIGINS = new Set([
   'https://theparchment.app',
   'https://staging.theparchment.app',
@@ -36,8 +42,8 @@ Deno.serve(async (req) => {
     }
 
     const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_ANON_KEY'),
       { global: { headers: { Authorization: authHeader } } }
     )
 
@@ -51,8 +57,8 @@ Deno.serve(async (req) => {
 
     // Use service role to read all data across all users
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      requireEnv('SUPABASE_URL'),
+      requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
     )
 
     // Export all tables in parallel

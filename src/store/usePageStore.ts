@@ -35,7 +35,7 @@ interface PageState {
 
   // Page CRUD
   addPage: (collectionId: string, userId: string, type?: PageType) => Promise<string>;
-  updatePageTitle: (id: string, title: string) => Promise<void>;
+  updatePageTitle: (id: string, title: string) => void;
   updatePageSharing: (id: string, updates: Partial<Pick<DbPage, 'share_enabled' | 'share_mode' | 'share_token' | 'shared_with_emails'>>) => void;
   movePage: (pageId: string, targetCollectionId: string) => Promise<void>;
   deletePage: (id: string) => Promise<{ newActivePageId: string | null } | null>;
@@ -77,7 +77,7 @@ export const usePageStore = create<PageState>((set, get) => ({
     return id;
   },
 
-  updatePageTitle: async (id, title) => {
+  updatePageTitle: (id, title) => {
     set((s) => ({ pages: s.pages.map((p) => (p.id === id ? { ...p, title } : p)) }));
     if (titleTimer) clearTimeout(titleTimer);
     titleTimer = setTimeout(async () => {

@@ -233,8 +233,13 @@ export default function KanbanView() {
 
   const activePages = pages.filter((p) => !p.deleted_at);
   const activePage = pages.find(p => p.id === activePageId) ?? null;
-  const deletedPages = trashedPages();
-  const trashCount = deletedPages.length + trashedCollections().length;
+  const wsCollectionIds = new Set(collections.map((c) => c.id));
+  const deletedPages = trashedPages().filter((p) =>
+    wsCollectionIds.has(p.collection_id) &&
+    collections.find((c) => c.id === p.collection_id)?.workspace_id === activeWorkspaceId
+  );
+  const trashCount = deletedPages.length +
+    trashedCollections().filter((c) => c.workspace_id === activeWorkspaceId).length;
 
   const handleAddCollection = async () => {
     await addCollection('New Collection');

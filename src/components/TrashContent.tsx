@@ -1,10 +1,12 @@
 import { useCollectionStore } from '@/store/useCollectionStore';
 import { useTrashStore } from '@/store/useTrashStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { RotateCcw, Trash2, Archive, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function TrashContent() {
   const { collections } = useCollectionStore();
+  const { activeWorkspaceId } = useWorkspaceStore();
   const {
     trashedPages,
     trashedCollections,
@@ -12,11 +14,24 @@ export default function TrashContent() {
     restoreCollection,
     permanentlyDeletePage,
     permanentlyDeleteCollection,
-    emptyTrash,
+    emptyWorkspaceTrash,
   } = useTrashStore();
 
-  const deletedPages = trashedPages();
-  const deletedCollections = trashedCollections();
+  // Scope trash to active workspace:
+  // - Collections: filter by workspace_id directly
+  // - Pages: filter by their parent collection's workspace_id
+  //   (includes pages whose collection is also trashed — workspace_id is still set)
+  const allTrashedCollections = trashedCollections();
+  const allTrashedPages = trashedPages();
+
+  // All collection ids in this workspace (active + trashed)
+  const wsCollectionIds = new Set(
+    collections.filter((c) => c.workspace_id === activeWorkspaceId).map((c) => c.id)
+  );
+
+  const deletedCollections = allTrashedCollections.filter((c) => c.workspace_id === activeWorkspaceId);
+  const deletedPages = allTrashedPages.filter((p) => wsCollectionIds.has(p.collection_id));
+
   const isEmpty = deletedPages.length === 0 && deletedCollections.length === 0;
 
   const getDaysRemaining = (deletedAt: string) => {
@@ -37,7 +52,8 @@ export default function TrashContent() {
   };
 
   const handleEmptyTrash = async () => {
-    await emptyTrash();
+    if (!activeWorkspaceId) return;
+    await emptyWorkspaceTrash(activeWorkspaceId);
     toast.success('Trash emptied');
   };
 

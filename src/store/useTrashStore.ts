@@ -14,6 +14,7 @@ interface TrashState {
   permanentlyDeletePage: (id: string) => Promise<void>;
   permanentlyDeleteCollection: (id: string) => Promise<void>;
   emptyTrash: () => Promise<void>;
+  emptyWorkspaceTrash: (workspaceId: string) => Promise<void>;
 }
 
 export const useTrashStore = create<TrashState>(() => ({
@@ -62,6 +63,28 @@ export const useTrashStore = create<TrashState>(() => ({
   emptyTrash: async () => {
     const trashedPagesList = usePageStore.getState().pages.filter((p) => p.deleted_at !== null);
     const trashedCollectionsList = useCollectionStore.getState().collections.filter((c) => c.deleted_at !== null);
+    markLocalMutation();
+    for (const p of trashedPagesList) {
+      await supabase.from('pages').delete().eq('id', p.id);
+    }
+    for (const c of trashedCollectionsList) {
+      await supabase.from('collections').delete().eq('id', c.id);
+    }
+    const deletedPageIds = trashedPagesList.map((p) => p.id);
+    const deletedColIds = trashedCollectionsList.map((c) => c.id);
+    const blockStore = useBlockStore.getState();
+    blockStore.setBlocks(blockStore.blocks.filter((b) => !deletedPageIds.includes(b.page_id)));
+    const pageStore = usePageStore.getState();
+    pageStore.setPages(pageStore.pages.filter((p) => !deletedPageIds.includes(p.id)));
+    const collectionStore = useCollectionStore.getState();
+    collectionStore.setCollections(collectionStore.collections.filter((c) => !deletedColIds.includes(c.id)));
+  },
+
+  emptyWorkspaceTrash: async (workspaceId) => {
+    const allCollections = useCollectionStore.getState().collections;
+    const wsCollectionIds = new Set(allCollections.filter((c) => c.workspace_id === workspaceId).map((c) => c.id));
+    const trashedCollectionsList = allCollections.filter((c) => c.deleted_at !== null && c.workspace_id === workspaceId);
+    const trashedPagesList = usePageStore.getState().pages.filter((p) => p.deleted_at !== null && wsCollectionIds.has(p.collection_id));
     markLocalMutation();
     for (const p of trashedPagesList) {
       await supabase.from('pages').delete().eq('id', p.id);

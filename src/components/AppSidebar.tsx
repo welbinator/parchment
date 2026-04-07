@@ -358,7 +358,12 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
 
   const activeCollections = collections.filter((c) => !c.deleted_at && c.workspace_id === activeWorkspaceId);
   const activePages = pages.filter((p) => !p.deleted_at);
-  const trashCount = trashedPages().length + trashedCollections().length;
+  const allWsCollectionIds = new Set(collections.map((c) => c.id));
+  const trashCount =
+    trashedCollections().filter((c) => c.workspace_id === activeWorkspaceId).length +
+    trashedPages().filter((p) => allWsCollectionIds.has(p.collection_id) &&
+      collections.find((c) => c.id === p.collection_id)?.workspace_id === activeWorkspaceId
+    ).length;
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [showNewPageMenu, setShowNewPageMenu] = useState<string | null>(null);

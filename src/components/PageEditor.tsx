@@ -3,44 +3,23 @@ import { useAppStore } from '@/store/useAppStore';
 import { useBlockStore } from '@/store/useBlockStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useSelectionStore } from '@/store/useSelectionStore';
-import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import BlockItem from './BlockItem';
 import GroupBlock from './GroupBlock';
-import UserMenu from './UserMenu';
-import ShareButton from './ShareButton';
 import SelectionActionBar from './SelectionActionBar';
 import EditorErrorBoundary from './EditorErrorBoundary';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { Plus, PanelLeftOpen, Clock, FileText, ChevronDown } from 'lucide-react';
+import { Plus, Clock, FileText } from 'lucide-react';
 
 
 export default function PageEditor({ hideChrome = false }: { hideChrome?: boolean }) {
-  const { activePageId, sidebarOpen, setSidebarOpen } = useAppStore();
-  const { workspaces, activeWorkspaceId } = useWorkspaceStore();
-  const { switchWorkspace } = useAppStore();
-  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId && !w.deleted_at) ?? null;
-  const activeWorkspaces = workspaces.filter((w) => !w.deleted_at).sort((a, b) => a.position - b.position);
-  const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
-  const workspaceDropdownRef = useRef<HTMLDivElement>(null);
+  const { activePageId } = useAppStore();
   const { blocks, addBlock, undoDeleteBlock, lastDeletedBlock } = useBlockStore();
-  const { pages, updatePageTitle, updatePageSharing } = usePageStore();
+  const { pages, updatePageTitle } = usePageStore();
   const { exitSelectionMode } = useSelectionStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
   const groupBlocksEnabled = useFeatureFlag('group-blocks');
   const titleRef = useRef<HTMLDivElement>(null);
-
-  // Close workspace dropdown on outside click
-  useEffect(() => {
-    if (!workspaceDropdownOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (workspaceDropdownRef.current && !workspaceDropdownRef.current.contains(e.target as Node)) {
-        setWorkspaceDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [workspaceDropdownOpen]);
 
   // Keep contentEditable div in sync when page changes
   useEffect(() => {
@@ -143,61 +122,6 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      {/* Top bar */}
-      {!hideChrome && (
-      <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
-        {!sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
-          >
-            <PanelLeftOpen size={16} />
-          </button>
-        )}
-        {/* Workspace name — desktop only */}
-        {activeWorkspace && (
-          <div className="relative hidden sm:block" ref={workspaceDropdownRef}>
-            <button
-              onClick={() => setWorkspaceDropdownOpen((v) => !v)}
-              className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors"
-            >
-              {activeWorkspace.name}
-              {activeWorkspaces.length > 1 && <ChevronDown size={12} className="text-muted-foreground" />}
-            </button>
-            {workspaceDropdownOpen && activeWorkspaces.length > 1 && (
-              <div className="absolute left-0 top-7 w-44 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
-                {activeWorkspaces.map((ws) => (
-                  <button
-                    key={ws.id}
-                    onClick={() => { switchWorkspace(ws.id); setWorkspaceDropdownOpen(false); }}
-                    className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors hover:bg-accent ${
-                      ws.id === activeWorkspaceId ? 'text-primary font-medium' : 'text-foreground'
-                    }`}
-                  >
-                    {ws.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        <div className="flex-1" />
-        {page.type !== 'blank' && (
-          <span className="text-xs text-muted-foreground font-mono capitalize">{page.type}</span>
-        )}
-        <ShareButton
-          pageId={page.id}
-          shareSettings={{
-            share_enabled: page.share_enabled ?? false,
-            share_mode: page.share_mode ?? 'public',
-            share_token: page.share_token ?? null,
-            shared_with_emails: page.shared_with_emails ?? [],
-          }}
-          onUpdate={(updates) => updatePageSharing(page.id, updates)}
-        />
-        <UserMenu />
-      </div>
-      )}
 
       {/* Editor area */}
       <div className="flex-1 overflow-y-auto">

@@ -1,4 +1,5 @@
 import AppSidebar from '@/components/AppSidebar';
+import AppTopBar from '@/components/AppTopBar';
 import PageEditor from '@/components/PageEditor';
 import KanbanView from '@/components/KanbanView';
 import ResizableSidebarWrapper from '@/components/ResizableSidebarWrapper';
@@ -17,8 +18,14 @@ const Index = () => {
         </ResizableSidebarWrapper>
       )}
 
-      {/* Main content */}
-      {viewMode === 'kanban' ? <KanbanView /> : <PageEditor />}
+      {/* Main content column */}
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+        {/* Top bar — always visible */}
+        <AppTopBar />
+
+        {/* Page/board area */}
+        {viewMode === 'kanban' ? <KanbanView /> : <PageEditor />}
+      </div>
 
       {/* Floating view toggle pill */}
       <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 bg-popover border border-border rounded-full shadow-lg px-1.5 py-1.5">

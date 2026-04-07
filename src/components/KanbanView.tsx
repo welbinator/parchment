@@ -320,7 +320,8 @@ export default function KanbanView() {
   return (
     <>
       {/* Board top bar */}
-      <div className="flex items-center justify-end px-4 h-14 border-b border-border shrink-0">
+      <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
+        <div className="flex-1" />
         <UserMenu />
       </div>
 

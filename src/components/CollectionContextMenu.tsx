@@ -40,6 +40,7 @@ export default function CollectionContextMenu({
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler); // skipcq: JS-0045
+  }, [menuOpen]);
 
   return (
     <div className="relative" ref={menuRef}>

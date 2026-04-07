@@ -178,9 +178,9 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
                 return (
                   <EditorErrorBoundary key={block.id} label="group block">
                     <GroupBlock
-                      block={block as any}
+                      block={block as any /* eslint-disable-line @typescript-eslint/no-explicit-any */}
                       pageId={page.id}
-                      childBlocks={childBlocks as any}
+                      childBlocks={childBlocks as any /* eslint-disable-line @typescript-eslint/no-explicit-any */}
                       groupBlocksEnabled={groupBlocksEnabled}
                     />
                   </EditorErrorBoundary>
@@ -211,7 +211,7 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
                   <BlockItem
                     block={{
                       id: block.id,
-                      type: block.type as any,
+                      type: block.type as any, // eslint-disable-line @typescript-eslint/no-explicit-any
                       content: block.content,
                       checked: block.checked ?? undefined,
                       listStart: block.list_start ?? undefined,

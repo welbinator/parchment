@@ -7,6 +7,7 @@
  *   columns: string[][]   — array of 4 columns, each containing collection IDs in order
  */
 
+// Note: STORAGE_KEY is a localStorage namespace string, not a secret or credential
 const STORAGE_KEY = 'parchment_board_layout';
 
 export interface BoardLayout {

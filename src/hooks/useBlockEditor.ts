@@ -48,7 +48,8 @@ export function useBlockEditor({
       // realtime write that would race with the Supabase realtime subscription
       // and overwrite the DOM back to the un-linkified version.
       const linkified = block.type !== 'code' ? autoLinkify(html) : html;
-      ref.current.innerHTML = DOMPurify.sanitize(linkified);
+      // eslint-disable-next-line react/no-danger
+      ref.current.innerHTML = DOMPurify.sanitize(linkified); // Content sanitized by DOMPurify before assignment
       initializedRef.current = true;
     }
   }, []);
@@ -63,6 +64,7 @@ export function useBlockEditor({
       return;
     }
     if (ref.current) {
+      // eslint-disable-next-line react/no-danger
       ref.current.innerHTML = DOMPurify.sanitize(convertStyledJsonToHtml(block.content));
     }
   }, [block.type]);

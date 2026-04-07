@@ -7,6 +7,8 @@ enabled = true
   [analyzers.meta]
   plugins = ["react"]
   environment = ["browser"]
+  # Disable documentation coverage threshold — we don't write JSDoc for React components
+  thresholds = { documentation_coverage = 0 }
 
 [[transformers]]
 name = "prettier"

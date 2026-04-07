@@ -1,4 +1,3 @@
-import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useAppStore } from '@/store/useAppStore';
@@ -10,7 +9,6 @@ interface Props {
 }
 
 export default function DeleteWorkspaceModal({ workspace, onClose }: Props) {
-  const { deleteWorkspace } = useWorkspaceStore();
   const { deleteWorkspace: deleteWorkspaceApp } = useAppStore();
   const { collections } = useCollectionStore();
   const { pages } = usePageStore();

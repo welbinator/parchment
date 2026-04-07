@@ -29,48 +29,6 @@ const WHATS_NEW: WhatsNewVersion[] = [
       { type: 'improvement', description: 'Page type badge hidden for blank pages — only shows for notes, checklist, and roadmap.' },
     ],
   },
-  {
-    version: '1.8.1',
-    title: 'Share from Board View',
-    changes: [
-      { type: 'feature', description: 'Pages in Board view now have a Share button in the modal header — same full sharing controls as List view.' },
-    ],
-  },
-  {
-    version: '1.8.0',
-    title: 'Collection Reordering & API',
-    changes: [
-      { type: 'feature', description: 'Drag collections to reorder them in both List view (sidebar) and Board view.' },
-      { type: 'feature', description: 'New API actions: reorder_collections and move_page — everything you can do in the UI is now available via API.' },
-      { type: 'improvement', description: 'API docs and downloadable SKILL.md updated with full examples for move_page, rename_collection, and reorder_collections.' },
-    ],
-  },
-  {
-    version: '1.7.3',
-    title: 'Bug Fixes & Polish',
-    changes: [
-      { type: 'fix', description: 'Trash modal in board view is now scrollable when you have many deleted items.' },
-      { type: 'fix', description: 'Trash page in list view is now constrained to the standard page width and has the view toggle.' },
-    ],
-  },
-  {
-    version: '1.7.0',
-    title: 'Board View',
-    changes: [
-      { type: 'feature', description: 'New Board view — Trello-style columns for all your collections. Toggle between List and Board at the bottom of the screen.' },
-      { type: 'feature', description: 'Floating + button to add collections, Trash button to manage deleted items — all without leaving the board.' },
-      { type: 'improvement', description: 'Footer controls adapt on mobile: icon-only feedback button, shorter labels, no more overlapping buttons.' },
-    ],
-  },
-  {
-    version: '1.6.0',
-    title: 'Parchment Chrome Extension',
-    changes: [
-      { type: 'feature', description: 'Save recipes, YouTube videos, and articles to Parchment in one click with the new Chrome Extension.' },
-      { type: 'feature', description: 'AI summaries for YouTube transcripts and web pages via OpenAI, Anthropic, or Google Gemini (free tier available).' },
-      { type: 'feature', description: 'After saving, "Open Parchment" takes you directly to the new page. Available on GitHub now — Chrome Web Store approval pending.' },
-    ],
-  },
 ];
 
 /** Max number of change items to show across all versions */

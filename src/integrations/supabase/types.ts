@@ -189,6 +189,7 @@ export type Database = {
           name: string
           position: number
           user_id: string
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -198,6 +199,7 @@ export type Database = {
           name?: string
           position?: number
           user_id: string
+          workspace_id: string
         }
         Update: {
           created_at?: string
@@ -207,8 +209,17 @@ export type Database = {
           name?: string
           position?: number
           user_id?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "collections_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       feature_flags: {
         Row: {
@@ -340,6 +351,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workspaces: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          position: number
+          created_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          position?: number
+          created_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          position?: number
+          created_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

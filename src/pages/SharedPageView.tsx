@@ -112,7 +112,7 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
         </div>
         <span
           className={`text-base text-foreground ${block.checked ? 'line-through text-muted-foreground' : ''}`}
-          dangerouslySetInnerHTML={{ __html: html }}
+          dangerouslySetInnerHTML={{ __html: html }} // eslint-disable-line react/no-danger
         />
       </div>
     );
@@ -123,6 +123,7 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
     return (
       <div className="flex items-start gap-2 py-0.5" style={indent > 0 ? { paddingLeft: `${indent * 1.5}rem` } : undefined}>
         <span className="text-primary mt-1 shrink-0">•</span>
+        {/* eslint-disable-next-line react/no-danger */}
         <span className="text-base text-foreground" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     );
@@ -146,6 +147,7 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
     return (
       <div className="flex items-start gap-2 py-0.5" style={indent > 0 ? { paddingLeft: `${indent * 1.5}rem` } : undefined}>
         <span className="text-muted-foreground text-sm mt-0.5 shrink-0 w-5 text-right">{label}</span>
+        {/* eslint-disable-next-line react/no-danger */}
         <span className="text-base text-foreground" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     );
@@ -164,7 +166,7 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
   return (
     <Tag
       className={classMap[block.type] ?? 'text-base text-foreground'}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: html }} // eslint-disable-line react/no-danger
     />
   );
 }

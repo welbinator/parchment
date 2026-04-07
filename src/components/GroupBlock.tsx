@@ -135,7 +135,7 @@ export default function GroupBlock({ block, pageId, childBlocks, groupBlocksEnab
   const handleStyleChange = useCallback((key: 'bgColor' | 'borderColor', value: string | null) => {
     const next: GroupStyle = { ...groupStyle };
     if (value === null) {
-      delete next[key];
+      delete next[key]; // eslint-disable-line @typescript-eslint/no-dynamic-delete
     } else {
       next[key] = value;
     }

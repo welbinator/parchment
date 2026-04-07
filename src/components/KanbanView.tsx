@@ -19,14 +19,16 @@ import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '@/store/useAppStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useTrashStore } from '@/store/useTrashStore';
+import CollectionContextMenu from '@/components/CollectionContextMenu';
 import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
 import PageContextMenu from '@/components/PageContextMenu';
 import ShareButton from '@/components/ShareButton';
-import UserMenu from '@/components/UserMenu';
 import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical, Clock } from 'lucide-react';
 import type { DbCollection } from '@/store/useCollectionStore';
+import type { DbWorkspace } from '@/store/useWorkspaceStore';
 import type { PageType } from '@/types';
 
 const pageTypeIcons: Record<string, React.ReactNode> = {
@@ -42,11 +44,14 @@ type ColumnProps = Readonly<{
   pages: ReturnType<typeof usePageStore.getState>['pages'];
   activePageId: string | null;
   activeCollections: DbCollection[];
+  workspaces: DbWorkspace[];
+  activeWorkspaceId: string | null;
   onOpenPage: (id: string) => void;
   onAddPage: (collectionId: string, type: PageType) => void;
   onMovePage: (pageId: string, targetCollectionId: string) => void;
   onDeletePage: (pageId: string) => void;
   onDeleteCollection: (id: string) => void;
+  onMoveCollectionToWorkspace: (collectionId: string, workspaceId: string) => void;
   showNewPageMenu: string | null;
   setShowNewPageMenu: (id: string | null) => void;
   renamingId: string | null;
@@ -59,16 +64,20 @@ type ColumnProps = Readonly<{
   isDragOverlay?: boolean;
 }>;
 
+// skipcq: JS-0067
 function CollectionColumn({
   collection,
   pages,
   activePageId,
   activeCollections,
+  workspaces,
+  activeWorkspaceId,
   onOpenPage,
   onAddPage,
   onMovePage,
   onDeletePage,
   onDeleteCollection,
+  onMoveCollectionToWorkspace,
   showNewPageMenu,
   setShowNewPageMenu,
   renamingId,
@@ -134,12 +143,20 @@ function CollectionColumn({
           {collectionPages.length}
         </span>
         <button
-          onClick={() => onDeleteCollection(collection.id)}
-          className="transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground shrink-0"
-          title="Delete collection"
+          onClick={() => { onAddPage(collection.id, 'blank'); }}
+          className="transition-opacity p-1 rounded hover:bg-sidebar-accent text-muted-foreground shrink-0"
+          title="Add page"
         >
-          <Trash2 size={13} />
+          <Plus size={13} />
         </button>
+        <CollectionContextMenu
+          collectionId={collection.id}
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onDelete={() => onDeleteCollection(collection.id)}
+          onMoveToWorkspace={(wsId) => { onMoveCollectionToWorkspace(collection.id, wsId); }}
+          triggerClassName="p-1 rounded hover:bg-sidebar-accent text-muted-foreground"
+        />
       </div>
 
       {/* Pages */}
@@ -206,10 +223,11 @@ function CollectionColumn({
 }
 
 // ── Main KanbanView ────────────────────────────────────────────────────────────
+// skipcq: JS-0067
 export default function KanbanView() {
-  const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
+    const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
   const { pages, movePage, updatePageSharing } = usePageStore();
-  const { collections, renameCollection, deleteCollection, reorderCollections } = useCollectionStore();
+    const { collections, renameCollection, deleteCollection, reorderCollections, moveToWorkspace } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
 
   const [pageModalOpen, setPageModalOpen] = useState(false);
@@ -225,14 +243,21 @@ export default function KanbanView() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
 
+  const { activeWorkspaceId, workspaces } = useWorkspaceStore();
+
   const activeCollections = collections
-    .filter((c) => !c.deleted_at)
+    .filter((c) => !c.deleted_at && c.workspace_id === activeWorkspaceId)
     .sort((a, b) => a.position - b.position);
 
   const activePages = pages.filter((p) => !p.deleted_at);
   const activePage = pages.find(p => p.id === activePageId) ?? null;
-  const deletedPages = trashedPages();
-  const trashCount = deletedPages.length + trashedCollections().length;
+  const wsCollectionIds = new Set(collections.map((c) => c.id));
+  const deletedPages = trashedPages().filter((p) =>
+    wsCollectionIds.has(p.collection_id) &&
+    collections.find((c) => c.id === p.collection_id)?.workspace_id === activeWorkspaceId
+  );
+  const trashCount = deletedPages.length +
+    trashedCollections().filter((c) => c.workspace_id === activeWorkspaceId).length;
 
   const handleAddCollection = async () => {
     await addCollection('New Collection');
@@ -301,11 +326,14 @@ export default function KanbanView() {
     pages: activePages,
     activePageId,
     activeCollections,
+    workspaces,
+    activeWorkspaceId,
     onOpenPage: openPage,
     onAddPage: handleAddPage,
     onMovePage: movePage,
     onDeletePage: deletePage,
     onDeleteCollection: deleteCollection,
+    onMoveCollectionToWorkspace: moveToWorkspace,
     showNewPageMenu,
     setShowNewPageMenu,
     renamingId,
@@ -319,11 +347,6 @@ export default function KanbanView() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* Board top bar */}
-      <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
-        <div className="flex-1" />
-        <UserMenu />
-      </div>
 
       <DndContext
         sensors={sensors}

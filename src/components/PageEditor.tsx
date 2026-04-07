@@ -5,18 +5,17 @@ import { usePageStore } from '@/store/usePageStore';
 import { useSelectionStore } from '@/store/useSelectionStore';
 import BlockItem from './BlockItem';
 import GroupBlock from './GroupBlock';
-import UserMenu from './UserMenu';
-import ShareButton from './ShareButton';
 import SelectionActionBar from './SelectionActionBar';
 import EditorErrorBoundary from './EditorErrorBoundary';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { Plus, PanelLeftOpen, Clock, FileText } from 'lucide-react';
+import { Plus, Clock, FileText } from 'lucide-react';
 
 
-export default function PageEditor({ hideChrome = false }: { hideChrome?: boolean }) {
-  const { activePageId, sidebarOpen, setSidebarOpen } = useAppStore();
+// skipcq: JS-0067
+export default function PageEditor({ hideChrome: _hideChrome = false }: { hideChrome?: boolean }) {
+  const { activePageId } = useAppStore();
   const { blocks, addBlock, undoDeleteBlock, lastDeletedBlock } = useBlockStore();
-  const { pages, updatePageTitle, updatePageSharing } = usePageStore();
+  const { pages, updatePageTitle } = usePageStore();
   const { exitSelectionMode } = useSelectionStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
@@ -124,42 +123,15 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      {/* Top bar */}
-      {!hideChrome && (
-      <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
-        {!sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
-          >
-            <PanelLeftOpen size={16} />
-          </button>
-        )}
-        <div title="Last Updated" className="flex items-center gap-2 text-xs text-muted-foreground cursor-default">
-          <Clock size={12} />
-          <span>{dateTimeStr}</span>
-        </div>
-        <div className="flex-1" />
-        {page.type !== 'blank' && (
-          <span className="text-xs text-muted-foreground font-mono capitalize">{page.type}</span>
-        )}
-        <ShareButton
-          pageId={page.id}
-          shareSettings={{
-            share_enabled: page.share_enabled ?? false,
-            share_mode: page.share_mode ?? 'public',
-            share_token: page.share_token ?? null,
-            shared_with_emails: page.shared_with_emails ?? [],
-          }}
-          onUpdate={(updates) => updatePageSharing(page.id, updates)}
-        />
-        <UserMenu />
-      </div>
-      )}
 
       {/* Editor area */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-8 py-12">
+          {/* Date/time above title */}
+          <div title="Last Updated" className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-default mb-3">
+            <Clock size={11} />
+            <span>{dateTimeStr}</span>
+          </div>
           <div
             ref={titleRef}
             contentEditable

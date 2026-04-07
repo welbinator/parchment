@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import CollectionContextMenu from './CollectionContextMenu';
 import { useTrashStore } from '@/store/useTrashStore';
 import EditableName from './EditableName';
 import { useAuth } from '@/hooks/useAuth';
@@ -73,7 +75,6 @@ function CollectionGripHandle({ id }: Readonly<{ id: string }>) {
   );
 }
 
-// ── Sortable + droppable collection row ─────────────────────────────────────
 function SortableCollection({ id, isOver, children }: Readonly<{ id: string; isOver: boolean; children: React.ReactNode }>) {
   const { setNodeRef: setSortableRef, transform, transition, isDragging } = useSortable({ id, data: { type: 'collection' } });
   const { setNodeRef: setDropRef } = useDroppable({ id });
@@ -237,6 +238,7 @@ function DraggablePage({
 }
 
 // ── Main sidebar ─────────────────────────────────────────────────────────────
+// skipcq: JS-0067
 export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps) {
   const {
     activePageId,
@@ -251,8 +253,9 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
     deletePage,
   } = useAppStore();
   const { pages, updatePageTitle, movePage } = usePageStore();
-  const { collections, renameCollection, reorderCollections } = useCollectionStore();
+  const { collections, renameCollection, reorderCollections, moveToWorkspace } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
+  const { workspaces, activeWorkspaceId } = useWorkspaceStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -272,9 +275,14 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
       .then(({ data }) => setSharedWithMe((data ?? []) as SharedWithMePage[]));
   }, [user?.email]);
 
-  const activeCollections = collections.filter((c) => !c.deleted_at);
+  const activeCollections = collections.filter((c) => !c.deleted_at && c.workspace_id === activeWorkspaceId);
   const activePages = pages.filter((p) => !p.deleted_at);
-  const trashCount = trashedPages().length + trashedCollections().length;
+  const allWsCollectionIds = new Set(collections.map((c) => c.id));
+  const trashCount =
+    trashedCollections().filter((c) => c.workspace_id === activeWorkspaceId).length +
+    trashedPages().filter((p) => allWsCollectionIds.has(p.collection_id) &&
+      collections.find((c) => c.id === p.collection_id)?.workspace_id === activeWorkspaceId
+    ).length;
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [showNewPageMenu, setShowNewPageMenu] = useState<string | null>(null);
@@ -426,15 +434,13 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
                       >
                         <Plus size={14} />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteCollection(collection.id);
-                        }}
-                        className="p-0.5 rounded hover:bg-destructive/20 hover:text-destructive"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <CollectionContextMenu
+                        collectionId={collection.id}
+                        workspaces={workspaces}
+                        activeWorkspaceId={activeWorkspaceId}
+                        onDelete={() => deleteCollection(collection.id)}
+                        onMoveToWorkspace={(wsId) => moveToWorkspace(collection.id, wsId)}
+                      />
                     </div>
                   </div>
 

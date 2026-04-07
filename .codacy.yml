@@ -10,3 +10,5 @@ exclude_paths:
   - "node_modules/**"
   - "src/components/ui/**"
   - "supabase/migrations/**"
+  # shadcn/ui generated hook — no-confusing-void-expression false positives, not ours to change
+  - "src/hooks/use-toast.ts"

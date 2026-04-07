@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { usePageStore } from '@/store/usePageStore';
 import UserMenu from './UserMenu';
 import ShareButton from './ShareButton';
+import { useViewStore } from '@/store/useViewStore';
 import { PanelLeftOpen, ChevronDown } from 'lucide-react';
 
 export default function AppTopBar() {
@@ -16,6 +17,7 @@ export default function AppTopBar() {
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const { viewMode } = useViewStore();
   const activePage = pages.find((p) => p.id === activePageId && !p.deleted_at) ?? null;
 
   useEffect(() => {
@@ -73,8 +75,8 @@ export default function AppTopBar() {
 
       <div className="flex-1" />
 
-      {/* Page type badge + share button — only when a page is active */}
-      {activePage && (
+      {/* Page type badge + share button — list view only, when a page is active */}
+      {activePage && viewMode === 'list' && (
         <>
           {activePage.type !== 'blank' && (
             <span className="text-xs text-muted-foreground font-mono capitalize">

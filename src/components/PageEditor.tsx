@@ -140,7 +140,9 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
           <span>{timeStr}</span>
         </div>
         <div className="flex-1" />
-        <span className="text-xs text-muted-foreground font-mono capitalize">{page.type}</span>
+        {page.type !== 'blank' && (
+          <span className="text-xs text-muted-foreground font-mono capitalize">{page.type}</span>
+        )}
         <ShareButton
           pageId={page.id}
           shareSettings={{

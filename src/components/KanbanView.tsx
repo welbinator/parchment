@@ -389,6 +389,9 @@ export default function KanbanView() {
                 {activePageCollection?.name}
               </span>
               <div className="flex items-center gap-2">
+                {activePage && activePage.type !== 'blank' && (
+                  <span className="text-xs text-muted-foreground font-mono capitalize">{activePage.type}</span>
+                )}
                 {activePage && (
                   <ShareButton
                     pageId={activePage.id}

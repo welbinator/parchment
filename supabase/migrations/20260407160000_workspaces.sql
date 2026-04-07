@@ -61,3 +61,7 @@ ALTER TABLE public.collections
 -- 5. Index for fast workspace-scoped queries
 CREATE INDEX IF NOT EXISTS idx_collections_workspace_id ON public.collections(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_workspaces_user_id ON public.workspaces(user_id);
+
+-- 6. Grant permissions to PostgREST roles
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.workspaces TO authenticated;
+GRANT SELECT ON public.workspaces TO anon;

@@ -143,7 +143,7 @@ function CollectionColumn({
           {collectionPages.length}
         </span>
         <button
-          onClick={() => onAddPage(collection.id, 'blank')}
+          onClick={() => { onAddPage(collection.id, 'blank'); }}
           className="transition-opacity p-1 rounded hover:bg-sidebar-accent text-muted-foreground shrink-0"
           title="Add page"
         >

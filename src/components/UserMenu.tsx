@@ -77,7 +77,7 @@ export default function UserMenu() {
             {/* Workspace submenu item */}
             <div className="relative">
               <button
-                onClick={() => setWorkspaceOpen(!workspaceOpen)}
+                onClick={() => { setWorkspaceOpen(!workspaceOpen); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
               >
                 <Layers size={14} />
@@ -130,7 +130,7 @@ export default function UserMenu() {
                       <input
                         ref={newNameRef}
                         value={newWorkspaceName}
-                        onChange={(e) => setNewWorkspaceName(e.target.value)}
+                        onChange={(e) => { setNewWorkspaceName(e.target.value); }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleCreateWorkspace();
                           if (e.key === 'Escape') { setCreatingWorkspace(false); setNewWorkspaceName(''); }
@@ -142,7 +142,7 @@ export default function UserMenu() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => setCreatingWorkspace(true)}
+                      onClick={() => { setCreatingWorkspace(true); }}
                       className="flex items-center gap-2 w-full px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                     >
                       <Plus size={12} />
@@ -197,7 +197,7 @@ export default function UserMenu() {
       {renameWorkspace && (
         <RenameWorkspaceModal
           workspace={renameWorkspace}
-          onClose={() => setRenameWorkspace(null)}
+          onClose={() => { setRenameWorkspace(null); }}
         />
       )}
       {deleteWorkspace && (

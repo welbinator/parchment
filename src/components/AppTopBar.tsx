@@ -7,6 +7,7 @@ import ShareButton from './ShareButton';
 import { useViewStore } from '@/store/useViewStore';
 import { PanelLeftOpen, ChevronDown } from 'lucide-react';
 
+// skipcq: JS-0067
 export default function AppTopBar() {
   const { sidebarOpen, setSidebarOpen, activePageId, switchWorkspace } = useAppStore();
   const { workspaces, activeWorkspaceId } = useWorkspaceStore();
@@ -28,7 +29,7 @@ export default function AppTopBar() {
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler); // skipcq: JS-0045
+    return () => { document.removeEventListener('mousedown', handler); }; // skipcq: JS-0045
   }, [workspaceDropdownOpen]);
 
   return (
@@ -36,7 +37,7 @@ export default function AppTopBar() {
       {/* Sidebar toggle */}
       {!sidebarOpen && (
         <button
-          onClick={() => setSidebarOpen(true)}
+          onClick={() => { setSidebarOpen(true); }}
           className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"
         >
           <PanelLeftOpen size={16} />
@@ -47,7 +48,7 @@ export default function AppTopBar() {
       {activeWorkspace && (
         <div className="relative hidden sm:block" ref={dropdownRef}>
           <button
-            onClick={() => setWorkspaceDropdownOpen((v) => !v)}
+            onClick={() => { setWorkspaceDropdownOpen((v) => !v); }}
             className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors"
           >
             {activeWorkspace.name}
@@ -91,7 +92,7 @@ export default function AppTopBar() {
               share_token: activePage.share_token ?? null,
               shared_with_emails: activePage.shared_with_emails ?? [],
             }}
-            onUpdate={(updates) => updatePageSharing(activePage.id, updates)}
+            onUpdate={(updates) => { updatePageSharing(activePage.id, updates); }}
           />
         </>
       )}

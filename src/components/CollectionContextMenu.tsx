@@ -39,7 +39,7 @@ export default function CollectionContextMenu({
       }
     };
     document.addEventListener('mousedown', handler);
-    return (): void => document.removeEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler); // skipcq: JS-0045
 
   return (
     <div className="relative" ref={menuRef}>

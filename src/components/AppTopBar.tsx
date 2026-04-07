@@ -29,7 +29,7 @@ export default function AppTopBar() {
       }
     };
     document.addEventListener('mousedown', handler);
-    return (): void => document.removeEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler); // skipcq: JS-0045
 
   return (
     <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0 bg-background z-10">

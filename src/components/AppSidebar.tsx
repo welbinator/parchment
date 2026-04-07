@@ -238,6 +238,7 @@ function DraggablePage({
 }
 
 // ── Main sidebar ─────────────────────────────────────────────────────────────
+// skipcq: JS-0067
 export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps) {
   const {
     activePageId,

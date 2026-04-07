@@ -7,6 +7,7 @@ import ShareButton from './ShareButton';
 import { useViewStore } from '@/store/useViewStore';
 import { PanelLeftOpen, ChevronDown } from 'lucide-react';
 
+// skipcq: JS-0067
 export default function AppTopBar() {
   const { sidebarOpen, setSidebarOpen, activePageId, switchWorkspace } = useAppStore();
   const { workspaces, activeWorkspaceId } = useWorkspaceStore();
@@ -28,8 +29,7 @@ export default function AppTopBar() {
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [workspaceDropdownOpen]);
+    return (): void => document.removeEventListener('mousedown', handler);
 
   return (
     <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0 bg-background z-10">

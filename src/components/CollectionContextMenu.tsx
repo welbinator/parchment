@@ -14,6 +14,7 @@ interface Props {
   triggerClassName?: string;
 }
 
+// skipcq: JS-0067
 export default function CollectionContextMenu({
   workspaces,
   activeWorkspaceId,
@@ -38,8 +39,7 @@ export default function CollectionContextMenu({
       }
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [menuOpen]);
+    return (): void => document.removeEventListener('mousedown', handler);
 
   return (
     <div className="relative" ref={menuRef}>

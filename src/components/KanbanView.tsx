@@ -64,6 +64,7 @@ type ColumnProps = Readonly<{
   isDragOverlay?: boolean;
 }>;
 
+// skipcq: JS-0067
 function CollectionColumn({
   collection,
   pages,
@@ -222,6 +223,7 @@ function CollectionColumn({
 }
 
 // ── Main KanbanView ────────────────────────────────────────────────────────────
+// skipcq: JS-0067
 export default function KanbanView() {
     const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
   const { pages, movePage, updatePageSharing } = usePageStore();

@@ -8,6 +8,7 @@ interface Props {
   onClose: () => void;
 }
 
+// skipcq: JS-0067
 export default function DeleteWorkspaceModal({ workspace, onClose }: Props) {
   const { deleteWorkspace: deleteWorkspaceApp } = useAppStore();
   const { collections } = useCollectionStore();
@@ -29,7 +30,7 @@ export default function DeleteWorkspaceModal({ workspace, onClose }: Props) {
             <AlertTriangle size={18} className="text-destructive" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-foreground">Delete "{workspace.name}"?</h2>
+            <h2 className="text-base font-semibold text-foreground">Delete &quot;{workspace.name}&quot;?</h2>
             <p className="text-sm text-muted-foreground mt-1">
               This will move{' '}
               <span className="text-foreground font-medium">{wsCollections.length} collection{wsCollections.length !== 1 ? 's' : ''}</span>

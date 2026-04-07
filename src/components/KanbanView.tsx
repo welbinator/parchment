@@ -24,7 +24,8 @@ import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
 import PageContextMenu from '@/components/PageContextMenu';
 import ShareButton from '@/components/ShareButton';
-import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical } from 'lucide-react';
+import UserMenu from '@/components/UserMenu';
+import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical, Clock } from 'lucide-react';
 import type { DbCollection } from '@/store/useCollectionStore';
 import type { PageType } from '@/types';
 
@@ -318,6 +319,11 @@ export default function KanbanView() {
 
   return (
     <>
+      {/* Board top bar */}
+      <div className="flex items-center justify-end px-4 h-14 border-b border-border shrink-0">
+        <UserMenu />
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -392,6 +398,16 @@ export default function KanbanView() {
                 {activePage && activePage.type !== 'blank' && (
                   <span className="text-xs text-muted-foreground font-mono capitalize">{activePage.type}</span>
                 )}
+                {activePage && (() => {
+                  const updated = new Date(activePage.updated_at);
+                  const dateTimeStr = updated.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <div title="Last Updated" className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-default">
+                      <Clock size={12} />
+                      <span>{dateTimeStr}</span>
+                    </div>
+                  );
+                })()}
                 {activePage && (
                   <ShareButton
                     pageId={activePage.id}

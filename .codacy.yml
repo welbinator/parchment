@@ -10,3 +10,25 @@ exclude_paths:
   - "node_modules/**"
   - "src/components/ui/**"
   - "supabase/migrations/**"
+
+# Suppress known false positives / intentional patterns
+ignore_warnings:
+  # dangerouslySetInnerHTML — content is sanitized via DOMPurify before use
+  - Semgrep_javascript_react_rule-dangerouslysetinnerhtml:
+      paths:
+        - "src/pages/SharedPageView.tsx"
+  # innerHTML via DOMPurify.sanitize — content is explicitly sanitized
+  - Semgrep_javascript.browser.security.insecure-document-method.insecure-document-method:
+      paths:
+        - "src/hooks/useBlockEditor.ts"
+  - Semgrep_javascript.browser.security.insecure-innerhtml.insecure-innerhtml:
+      paths:
+        - "src/hooks/useBlockEditor.ts"
+  # no-dynamic-delete — intentional pattern for removing optional style keys in GroupBlock
+  - ESLint8_@typescript-eslint_no-dynamic-delete:
+      paths:
+        - "src/components/GroupBlock.tsx"
+  # no-confusing-void-expression in shadcn/ui generated hook — not ours to change
+  - ESLint8_@typescript-eslint_no-confusing-void-expression:
+      paths:
+        - "src/hooks/use-toast.ts"

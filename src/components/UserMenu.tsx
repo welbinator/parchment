@@ -7,6 +7,7 @@ import { useAppStore } from '@/store/useAppStore';
 import RenameWorkspaceModal from './RenameWorkspaceModal';
 import DeleteWorkspaceModal from './DeleteWorkspaceModal';
 
+// skipcq: JS-0067
 export default function UserMenu() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function UserMenu() {
   const ref = useRef<HTMLDivElement>(null);
   const newNameRef = useRef<HTMLInputElement>(null);
 
-  const { workspaces, activeWorkspaceId, setActiveWorkspace } = useWorkspaceStore();
+  const { workspaces, activeWorkspaceId } = useWorkspaceStore();
   const { addWorkspace, switchWorkspace } = useAppStore();
 
   const activeWorkspaces = workspaces.filter((w) => !w.deleted_at).sort((a, b) => a.position - b.position);
@@ -203,7 +204,7 @@ export default function UserMenu() {
       {deleteWorkspace && (
         <DeleteWorkspaceModal
           workspace={deleteWorkspace}
-          onClose={() => setDeleteWorkspace(null)}
+          onClose={() => { setDeleteWorkspace(null); }}
         />
       )}
     </>

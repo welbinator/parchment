@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 
 interface Props {
@@ -10,6 +10,11 @@ interface Props {
 export default function RenameWorkspaceModal({ workspace, onClose }: Props) {
   const [name, setName] = useState(workspace.name);
   const { renameWorkspace } = useWorkspaceStore();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSave = async () => {
     const trimmed = name.trim();
@@ -23,7 +28,7 @@ export default function RenameWorkspaceModal({ workspace, onClose }: Props) {
       <div className="bg-popover border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 p-5">
         <h2 className="text-base font-semibold text-foreground mb-4">Rename Workspace</h2>
         <input
-          autoFocus
+          ref={inputRef}
           value={name}
           onChange={(e) => { setName(e.target.value); }}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onClose(); }}

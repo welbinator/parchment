@@ -11,7 +11,8 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Plus, Clock, FileText } from 'lucide-react';
 
 
-export default function PageEditor({ hideChrome = false }: { hideChrome?: boolean }) {
+// skipcq: JS-0067
+export default function PageEditor({ hideChrome: _hideChrome = false }: { hideChrome?: boolean }) {
   const { activePageId } = useAppStore();
   const { blocks, addBlock, undoDeleteBlock, lastDeletedBlock } = useBlockStore();
   const { pages, updatePageTitle } = usePageStore();

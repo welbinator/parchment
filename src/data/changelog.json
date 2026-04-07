@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.9.0",
+    "date": "2026-04-07",
+    "title": "Workspaces",
+    "changes": [
+      {
+        "type": "feature",
+        "description": "Multiple workspaces — create, rename, and delete named workspaces to organize your collections."
+      },
+      {
+        "type": "feature",
+        "description": "Workspace switcher in your profile menu and top bar lets you jump between workspaces instantly."
+      },
+      {
+        "type": "feature",
+        "description": "Move any collection to a different workspace from the context menu in both list and board view."
+      },
+      {
+        "type": "improvement",
+        "description": "Trash, page counts, and Empty Trash are now scoped to the active workspace."
+      },
+      {
+        "type": "improvement",
+        "description": "Always-visible top bar — the header stays persistent regardless of whether a page is open."
+      },
+      {
+        "type": "feature",
+        "description": "New accounts get Personal and Work workspaces out of the box. Existing users have all collections migrated to a Personal workspace."
+      }
+    ]
+  },
+  {
     "version": "1.8.2",
     "date": "2026-04-06",
     "title": "Board View Header & UI Polish",

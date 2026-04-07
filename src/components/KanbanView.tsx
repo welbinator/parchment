@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '@/store/useAppStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useTrashStore } from '@/store/useTrashStore';
 import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
@@ -224,8 +225,10 @@ export default function KanbanView() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
 
+  const { activeWorkspaceId } = useWorkspaceStore();
+
   const activeCollections = collections
-    .filter((c) => !c.deleted_at)
+    .filter((c) => !c.deleted_at && c.workspace_id === activeWorkspaceId)
     .sort((a, b) => a.position - b.position);
 
   const activePages = pages.filter((p) => !p.deleted_at);

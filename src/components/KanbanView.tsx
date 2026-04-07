@@ -19,13 +19,14 @@ import { CSS } from '@dnd-kit/utilities';
 import { useAppStore } from '@/store/useAppStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useTrashStore } from '@/store/useTrashStore';
 import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
 import PageContextMenu from '@/components/PageContextMenu';
 import ShareButton from '@/components/ShareButton';
 import UserMenu from '@/components/UserMenu';
-import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical, Clock } from 'lucide-react';
+import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical, Clock, ChevronDown } from 'lucide-react';
 import type { DbCollection } from '@/store/useCollectionStore';
 import type { PageType } from '@/types';
 
@@ -211,6 +212,10 @@ export default function KanbanView() {
   const { pages, movePage, updatePageSharing } = usePageStore();
   const { collections, renameCollection, deleteCollection, reorderCollections } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
+  const { workspaces, activeWorkspaceId, setActiveWorkspace } = useWorkspaceStore();
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId && !w.deleted_at) ?? null;
+  const activeWorkspaces = workspaces.filter((w) => !w.deleted_at).sort((a, b) => a.position - b.position);
+  const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
 
   const [pageModalOpen, setPageModalOpen] = useState(false);
   const [trashModalOpen, setTrashModalOpen] = useState(false);
@@ -321,6 +326,33 @@ export default function KanbanView() {
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Board top bar */}
       <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
+        {/* Workspace name — desktop only */}
+        {activeWorkspace && (
+          <div className="relative hidden sm:block">
+            <button
+              onClick={() => setWorkspaceDropdownOpen((v) => !v)}
+              className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              {activeWorkspace.name}
+              {activeWorkspaces.length > 1 && <ChevronDown size={12} className="text-muted-foreground" />}
+            </button>
+            {workspaceDropdownOpen && activeWorkspaces.length > 1 && (
+              <div className="absolute left-0 top-7 w-44 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
+                {activeWorkspaces.map((ws) => (
+                  <button
+                    key={ws.id}
+                    onClick={() => { setActiveWorkspace(ws.id); setWorkspaceDropdownOpen(false); }}
+                    className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors hover:bg-accent ${
+                      ws.id === activeWorkspaceId ? 'text-primary font-medium' : 'text-foreground'
+                    }`}
+                  >
+                    {ws.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex-1" />
         <UserMenu />
       </div>

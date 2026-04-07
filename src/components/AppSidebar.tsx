@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useTrashStore } from '@/store/useTrashStore';
 import EditableName from './EditableName';
 import { useAuth } from '@/hooks/useAuth';
@@ -251,8 +252,9 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
     deletePage,
   } = useAppStore();
   const { pages, updatePageTitle, movePage } = usePageStore();
-  const { collections, renameCollection, reorderCollections } = useCollectionStore();
+  const { collections, renameCollection, reorderCollections, moveToWorkspace } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
+  const { workspaces, activeWorkspaceId } = useWorkspaceStore();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -272,12 +274,28 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
       .then(({ data }) => setSharedWithMe((data ?? []) as SharedWithMePage[]));
   }, [user?.email]);
 
-  const activeCollections = collections.filter((c) => !c.deleted_at);
+  // Close collection context menu on outside click
+  useEffect(() => {
+    if (!collectionMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (collectionMenuRef.current && !collectionMenuRef.current.contains(e.target as Node)) {
+        setCollectionMenuOpen(null);
+        setCollectionMoveMenuOpen(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [collectionMenuOpen]);
+
+  const activeCollections = collections.filter((c) => !c.deleted_at && c.workspace_id === activeWorkspaceId);
   const activePages = pages.filter((p) => !p.deleted_at);
   const trashCount = trashedPages().length + trashedCollections().length;
 
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
   const [showNewPageMenu, setShowNewPageMenu] = useState<string | null>(null);
+  const [collectionMenuOpen, setCollectionMenuOpen] = useState<string | null>(null);
+  const [collectionMoveMenuOpen, setCollectionMoveMenuOpen] = useState<string | null>(null);
+  const collectionMenuRef = useRef<HTMLDivElement>(null);
   const [draggingPageId, setDraggingPageId] = useState<string | null>(null);
   const [draggingCollectionId, setDraggingCollectionId] = useState<string | null>(null);
   const [overCollectionId, setOverCollectionId] = useState<string | null>(null);
@@ -416,7 +434,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
                         className="text-sm"
                       />
                     </div>
-                    <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex opacity-0 group-hover:opacity-100 transition-opacity" ref={collectionMenuOpen === collection.id ? collectionMenuRef : undefined}>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -426,15 +444,73 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
                       >
                         <Plus size={14} />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteCollection(collection.id);
-                        }}
-                        className="p-0.5 rounded hover:bg-destructive/20 hover:text-destructive"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCollectionMenuOpen(collectionMenuOpen === collection.id ? null : collection.id);
+                            setCollectionMoveMenuOpen(null);
+                          }}
+                          className="p-0.5 rounded hover:bg-sidebar-accent"
+                          title="More options"
+                        >
+                          <MoreHorizontal size={14} />
+                        </button>
+                        {collectionMenuOpen === collection.id && (
+                          <div className="absolute right-0 top-6 z-50 w-44 bg-popover border border-border rounded-md shadow-lg py-1 text-sm animate-fade-in">
+                            {/* Move to workspace */}
+                            {workspaces.filter((w) => !w.deleted_at && w.id !== activeWorkspaceId).length > 0 && (
+                              <>
+                                <button
+                                  className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-accent text-popover-foreground"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCollectionMoveMenuOpen(collectionMoveMenuOpen === collection.id ? null : collection.id);
+                                  }}
+                                >
+                                  <MoveRight size={13} />
+                                  Move to…
+                                  <ChevronRight size={12} className="ml-auto" />
+                                </button>
+                                {collectionMoveMenuOpen === collection.id && (
+                                  <div className="border-t border-border mt-1 pt-1">
+                                    {workspaces
+                                      .filter((w) => !w.deleted_at && w.id !== activeWorkspaceId)
+                                      .sort((a, b) => a.position - b.position)
+                                      .map((ws) => (
+                                        <button
+                                          key={ws.id}
+                                          className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-accent text-popover-foreground truncate"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            moveToWorkspace(collection.id, ws.id);
+                                            setCollectionMenuOpen(null);
+                                            setCollectionMoveMenuOpen(null);
+                                          }}
+                                        >
+                                          <Archive size={12} className="shrink-0 text-primary/70" />
+                                          <span className="truncate">{ws.name}</span>
+                                        </button>
+                                      ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                            {/* Delete */}
+                            <button
+                              className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-destructive/10 text-destructive border-t border-border mt-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteCollection(collection.id);
+                                setCollectionMenuOpen(null);
+                              }}
+                            >
+                              <Trash2 size={13} />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

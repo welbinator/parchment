@@ -4,9 +4,11 @@ import type { PageType } from '@/types';
 import { useBlockStore, isInLocalCooldown } from './useBlockStore';
 import { usePageStore } from './usePageStore';
 import { useCollectionStore } from './useCollectionStore';
+import { useWorkspaceStore } from './useWorkspaceStore';
 import type { DbBlock } from './useBlockStore';
 import type { DbPage } from './usePageStore';
 import type { DbCollection } from './useCollectionStore';
+import type { DbWorkspace } from './useWorkspaceStore';
 
 interface AppState {
   activePageId: string | null;
@@ -20,6 +22,10 @@ interface AppState {
   refetch: () => Promise<void>;
   setupRealtime: () => () => void;
   reset: () => void;
+
+  // Workspace orchestration
+  addWorkspace: (name: string) => Promise<string>;
+  deleteWorkspace: (id: string) => Promise<void>;
 
   // UI
   setSidebarOpen: (open: boolean) => void;
@@ -56,26 +62,34 @@ export const useAppStore = create<AppState>((set, get) => ({
   init: async (userId: string) => {
     set({ loading: true, userId });
 
-    const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
+    const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
+      supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
       supabase.from('blocks').select('id, page_id, type, content, checked, list_start, indent_level, position, created_at, group_id, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
     ]);
 
+    const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
     const collections = (collectionsRes.data ?? []) as DbCollection[];
     const pages = (pagesRes.data ?? []) as DbPage[];
     const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
 
-    // If new user, create a welcome collection + page
-    if (collections.length === 0) {
-      const { data: recheck } = await supabase.from('collections').select('id').eq('user_id', userId).limit(1);
+    // If new user, seed workspaces + welcome collection + page
+    if (workspaces.filter((w) => !w.deleted_at).length === 0) {
+      const { data: recheck } = await supabase.from('workspaces').select('id').eq('user_id', userId).limit(1);
       if (recheck && recheck.length > 0) {
         get().refetch();
         return;
       }
+      // Create Personal workspace first
+      const personalWsId = uid();
+      await supabase.from('workspaces').insert({ id: personalWsId, user_id: userId, name: 'Personal', position: 0 });
+      // Create Work workspace (empty)
+      await supabase.from('workspaces').insert({ id: uid(), user_id: userId, name: 'Work', position: 1 });
+
       const colId = uid();
       const pageId = uid();
-      const { data: col } = await supabase.from('collections').insert({ id: colId, user_id: userId, name: 'Getting Started', position: 0 }).select().single();
+      const { data: col } = await supabase.from('collections').insert({ id: colId, user_id: userId, name: 'Getting Started', position: 0, workspace_id: personalWsId }).select().single();
       const { data: page } = await supabase.from('pages').insert({ id: pageId, user_id: userId, collection_id: colId, title: 'Welcome', type: 'blank' }).select().single();
 
       const welcomeBlocks = [
@@ -94,8 +108,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       localStorage.setItem('activePageId', pageId);
       localStorage.setItem('activeCollectionId', colId);
+      localStorage.setItem('activeWorkspaceId', personalWsId);
       localStorage.setItem('parchment_new_user', 'true');
 
+      const { data: freshWorkspaces } = await supabase.from('workspaces').select('*').eq('user_id', userId).order('position');
+      useWorkspaceStore.getState().setWorkspaces((freshWorkspaces ?? []) as DbWorkspace[]);
       useBlockStore.getState().setBlocks(welcomeBlocks as DbBlock[]);
       usePageStore.getState().setPages(page ? [page] : []);
       useCollectionStore.getState().setCollections(col ? [col] : []);
@@ -125,6 +142,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (newActivePageId) localStorage.setItem('activePageId', newActivePageId);
     if (newActiveCollectionId) localStorage.setItem('activeCollectionId', newActiveCollectionId);
 
+    useWorkspaceStore.getState().setWorkspaces(workspaces);
     useBlockStore.getState().setBlocks(blocks);
     usePageStore.getState().setPages(pages);
     useCollectionStore.getState().setCollections(collections);
@@ -139,16 +157,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { userId } = get();
     if (!userId) return;
 
-    const [collectionsRes, pagesRes, blocksRes] = await Promise.all([
+    const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
+      supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
       supabase.from('blocks').select('id, page_id, type, content, checked, list_start, indent_level, position, created_at, group_id, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
     ]);
 
+    const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
     const collections = (collectionsRes.data ?? []) as DbCollection[];
     const pages = (pagesRes.data ?? []) as DbPage[];
     const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
 
+    useWorkspaceStore.getState().setWorkspaces(workspaces);
     useBlockStore.getState().setBlocks(blocks);
     usePageStore.getState().setPages(pages);
     useCollectionStore.getState().setCollections(collections);
@@ -175,6 +196,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks' }, handleRealtimeChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pages' }, handleRealtimeChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'collections' }, handleRealtimeChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces' }, handleRealtimeChange)
       .subscribe();
 
     return () => {
@@ -183,6 +205,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   reset: () => {
+    useWorkspaceStore.getState().resetWorkspaces();
     useBlockStore.getState().resetBlocks();
     usePageStore.getState().resetPages();
     useCollectionStore.getState().resetCollections();
@@ -192,6 +215,38 @@ export const useAppStore = create<AppState>((set, get) => ({
       loading: false,
       userId: null,
     });
+  },
+
+  addWorkspace: async (name) => {
+    const { userId } = get();
+    if (!userId) return '';
+    return useWorkspaceStore.getState().addWorkspace(name, userId);
+  },
+
+  deleteWorkspace: async (id) => {
+    const now = new Date().toISOString();
+    // Soft-delete all collections in this workspace and their pages
+    const { collections } = useCollectionStore.getState();
+    const wsCollections = collections.filter((c) => c.workspace_id === id && !c.deleted_at);
+    const wsCollectionIds = wsCollections.map((c) => c.id);
+
+    if (wsCollectionIds.length > 0) {
+      // Soft-delete collections
+      await supabase.from('collections').update({ deleted_at: now }).in('id', wsCollectionIds);
+      // Soft-delete their pages
+      await supabase.from('pages').update({ deleted_at: now }).in('collection_id', wsCollectionIds).is('deleted_at', null);
+
+      // Update local stores
+      const pageStore = usePageStore.getState();
+      pageStore.setPages(pageStore.pages.map((p) =>
+        wsCollectionIds.includes(p.collection_id) && !p.deleted_at ? { ...p, deleted_at: now } : p
+      ));
+      useCollectionStore.getState().setCollections(
+        collections.map((c) => wsCollectionIds.includes(c.id) ? { ...c, deleted_at: now } : c)
+      );
+    }
+
+    await useWorkspaceStore.getState().deleteWorkspace(id);
   },
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -209,7 +264,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   addCollection: async (name) => {
     const { userId } = get();
     if (!userId) return '';
-    const id = await useCollectionStore.getState().addCollection(name, userId);
+    const workspaceId = useWorkspaceStore.getState().activeWorkspaceId;
+    if (!workspaceId) return '';
+    const id = await useCollectionStore.getState().addCollection(name, userId, workspaceId);
     if (id) {
       set({ activeCollectionId: id });
     }

@@ -4,7 +4,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
-import type { DbWorkspace } from '@/store/useWorkspaceStore';
+import CollectionContextMenu from './CollectionContextMenu';
 import { useTrashStore } from '@/store/useTrashStore';
 import EditableName from './EditableName';
 import { useAuth } from '@/hooks/useAuth';
@@ -74,88 +74,6 @@ function CollectionGripHandle({ id }: Readonly<{ id: string }>) {
     </button>
   );
 }
-
-// ── Collection context menu ────────────────────────────────────────────────
-function CollectionContextMenu({
-  collectionId,
-  workspaces,
-  activeWorkspaceId,
-  onDelete,
-  onMoveToWorkspace,
-}: Readonly<{
-  collectionId: string;
-  workspaces: DbWorkspace[];
-  activeWorkspaceId: string | null;
-  onDelete: () => void;
-  onMoveToWorkspace: (workspaceId: string) => void;
-}>) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [moveMenuOpen, setMoveMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const otherWorkspaces = workspaces.filter((w) => !w.deleted_at && w.id !== activeWorkspaceId).sort((a, b) => a.position - b.position);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-        setMoveMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [menuOpen]);
-
-  return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); setMoveMenuOpen(false); }}
-        className="p-0.5 rounded hover:bg-sidebar-accent"
-        title="More options"
-      >
-        <MoreHorizontal size={14} />
-      </button>
-      {menuOpen && (
-        <div className="absolute right-0 top-6 z-50 w-44 bg-popover border border-border rounded-md shadow-lg py-1 text-sm animate-fade-in">
-          {otherWorkspaces.length > 0 && (
-            <>
-              <button
-                className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-accent text-popover-foreground"
-                onClick={(e) => { e.stopPropagation(); setMoveMenuOpen((o) => !o); }}
-              >
-                <MoveRight size={13} />
-                Move to…
-                <ChevronRight size={12} className="ml-auto" />
-              </button>
-              {moveMenuOpen && (
-                <div className="border-t border-border mt-1 pt-1">
-                  {otherWorkspaces.map((ws) => (
-                    <button
-                      key={ws.id}
-                      className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-accent text-popover-foreground truncate"
-                      onClick={(e) => { e.stopPropagation(); onMoveToWorkspace(ws.id); setMenuOpen(false); setMoveMenuOpen(false); }}
-                    >
-                      <Archive size={12} className="shrink-0 text-primary/70" />
-                      <span className="truncate">{ws.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-          <button
-            className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-destructive/10 text-destructive border-t border-border mt-1"
-            onClick={(e) => { e.stopPropagation(); onDelete(); setMenuOpen(false); }}
-          >
-            <Trash2 size={13} />
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 
 function SortableCollection({ id, isOver, children }: Readonly<{ id: string; isOver: boolean; children: React.ReactNode }>) {
   const { setNodeRef: setSortableRef, transform, transition, isDragging } = useSortable({ id, data: { type: 'collection' } });

@@ -21,12 +21,14 @@ import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useTrashStore } from '@/store/useTrashStore';
+import CollectionContextMenu from '@/components/CollectionContextMenu';
 import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
 import PageContextMenu from '@/components/PageContextMenu';
 import ShareButton from '@/components/ShareButton';
 import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical, Clock } from 'lucide-react';
 import type { DbCollection } from '@/store/useCollectionStore';
+import type { DbWorkspace } from '@/store/useWorkspaceStore';
 import type { PageType } from '@/types';
 
 const pageTypeIcons: Record<string, React.ReactNode> = {
@@ -42,11 +44,14 @@ type ColumnProps = Readonly<{
   pages: ReturnType<typeof usePageStore.getState>['pages'];
   activePageId: string | null;
   activeCollections: DbCollection[];
+  workspaces: DbWorkspace[];
+  activeWorkspaceId: string | null;
   onOpenPage: (id: string) => void;
   onAddPage: (collectionId: string, type: PageType) => void;
   onMovePage: (pageId: string, targetCollectionId: string) => void;
   onDeletePage: (pageId: string) => void;
   onDeleteCollection: (id: string) => void;
+  onMoveCollectionToWorkspace: (collectionId: string, workspaceId: string) => void;
   showNewPageMenu: string | null;
   setShowNewPageMenu: (id: string | null) => void;
   renamingId: string | null;
@@ -64,11 +69,14 @@ function CollectionColumn({
   pages,
   activePageId,
   activeCollections,
+  workspaces,
+  activeWorkspaceId,
   onOpenPage,
   onAddPage,
   onMovePage,
   onDeletePage,
   onDeleteCollection,
+  onMoveCollectionToWorkspace,
   showNewPageMenu,
   setShowNewPageMenu,
   renamingId,
@@ -134,12 +142,20 @@ function CollectionColumn({
           {collectionPages.length}
         </span>
         <button
-          onClick={() => onDeleteCollection(collection.id)}
-          className="transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground shrink-0"
-          title="Delete collection"
+          onClick={() => onAddPage(collection.id, 'blank')}
+          className="transition-opacity p-1 rounded hover:bg-sidebar-accent text-muted-foreground shrink-0"
+          title="Add page"
         >
-          <Trash2 size={13} />
+          <Plus size={13} />
         </button>
+        <CollectionContextMenu
+          collectionId={collection.id}
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onDelete={() => onDeleteCollection(collection.id)}
+          onMoveToWorkspace={(wsId) => onMoveCollectionToWorkspace(collection.id, wsId)}
+          triggerClassName="p-1 rounded hover:bg-sidebar-accent text-muted-foreground"
+        />
       </div>
 
       {/* Pages */}
@@ -209,7 +225,7 @@ function CollectionColumn({
 export default function KanbanView() {
     const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
   const { pages, movePage, updatePageSharing } = usePageStore();
-  const { collections, renameCollection, deleteCollection, reorderCollections } = useCollectionStore();
+    const { collections, renameCollection, deleteCollection, reorderCollections, moveToWorkspace } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
 
   const [pageModalOpen, setPageModalOpen] = useState(false);
@@ -225,7 +241,7 @@ export default function KanbanView() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
 
-  const { activeWorkspaceId } = useWorkspaceStore();
+  const { activeWorkspaceId, workspaces } = useWorkspaceStore();
 
   const activeCollections = collections
     .filter((c) => !c.deleted_at && c.workspace_id === activeWorkspaceId)
@@ -308,11 +324,14 @@ export default function KanbanView() {
     pages: activePages,
     activePageId,
     activeCollections,
+    workspaces,
+    activeWorkspaceId,
     onOpenPage: openPage,
     onAddPage: handleAddPage,
     onMovePage: movePage,
     onDeletePage: deletePage,
     onDeleteCollection: deleteCollection,
+    onMoveCollectionToWorkspace: moveToWorkspace,
     showNewPageMenu,
     setShowNewPageMenu,
     renamingId,

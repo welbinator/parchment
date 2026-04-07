@@ -120,7 +120,7 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
   };
 
   const updated = new Date(page.updated_at);
-  const timeStr = updated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateTimeStr = updated.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
@@ -135,12 +135,14 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
             <PanelLeftOpen size={16} />
           </button>
         )}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div title="Last Updated" className="flex items-center gap-2 text-xs text-muted-foreground cursor-default">
           <Clock size={12} />
-          <span>{timeStr}</span>
+          <span>{dateTimeStr}</span>
         </div>
         <div className="flex-1" />
-        <span className="text-xs text-muted-foreground font-mono capitalize">{page.type}</span>
+        {page.type !== 'blank' && (
+          <span className="text-xs text-muted-foreground font-mono capitalize">{page.type}</span>
+        )}
         <ShareButton
           pageId={page.id}
           shareSettings={{
@@ -176,9 +178,9 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
                 return (
                   <EditorErrorBoundary key={block.id} label="group block">
                     <GroupBlock
-                      block={block as any}
+                      block={block as any /* eslint-disable-line @typescript-eslint/no-explicit-any */}
                       pageId={page.id}
-                      childBlocks={childBlocks as any}
+                      childBlocks={childBlocks as any /* eslint-disable-line @typescript-eslint/no-explicit-any */}
                       groupBlocksEnabled={groupBlocksEnabled}
                     />
                   </EditorErrorBoundary>
@@ -209,7 +211,7 @@ export default function PageEditor({ hideChrome = false }: { hideChrome?: boolea
                   <BlockItem
                     block={{
                       id: block.id,
-                      type: block.type as any,
+                      type: block.type as any, // eslint-disable-line @typescript-eslint/no-explicit-any
                       content: block.content,
                       checked: block.checked ?? undefined,
                       listStart: block.list_start ?? undefined,

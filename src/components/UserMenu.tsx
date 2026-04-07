@@ -20,7 +20,7 @@ export default function UserMenu() {
   const newNameRef = useRef<HTMLInputElement>(null);
 
   const { workspaces, activeWorkspaceId, setActiveWorkspace } = useWorkspaceStore();
-  const { addWorkspace } = useAppStore();
+  const { addWorkspace, switchWorkspace } = useAppStore();
 
   const activeWorkspaces = workspaces.filter((w) => !w.deleted_at).sort((a, b) => a.position - b.position);
 
@@ -47,7 +47,7 @@ export default function UserMenu() {
     const name = newWorkspaceName.trim();
     if (!name) return;
     const id = await addWorkspace(name);
-    if (id) setActiveWorkspace(id);
+    if (id) switchWorkspace(id);
     setCreatingWorkspace(false);
     setNewWorkspaceName('');
     setWorkspaceOpen(false);
@@ -91,7 +91,7 @@ export default function UserMenu() {
                     <div key={ws.id} className="flex items-center group">
                       <button
                         onClick={() => {
-                          setActiveWorkspace(ws.id);
+                          switchWorkspace(ws.id);
                           setWorkspaceOpen(false);
                           setOpen(false);
                         }}

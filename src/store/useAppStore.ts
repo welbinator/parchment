@@ -26,6 +26,7 @@ interface AppState {
   // Workspace orchestration
   addWorkspace: (name: string) => Promise<string>;
   deleteWorkspace: (id: string) => Promise<void>;
+  switchWorkspace: (id: string) => void;
 
   // UI
   setSidebarOpen: (open: boolean) => void;
@@ -221,6 +222,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { userId } = get();
     if (!userId) return '';
     return useWorkspaceStore.getState().addWorkspace(name, userId);
+  },
+
+  switchWorkspace: (id) => {
+    useWorkspaceStore.getState().setActiveWorkspace(id);
+    // Find the first available collection + page in the new workspace
+    const { collections } = useCollectionStore.getState();
+    const { pages } = usePageStore.getState();
+    const wsCollections = collections
+      .filter((c) => c.workspace_id === id && !c.deleted_at)
+      .sort((a, b) => a.position - b.position);
+    const firstCollection = wsCollections[0] ?? null;
+    const firstPage = firstCollection
+      ? pages.filter((p) => p.collection_id === firstCollection.id && !p.deleted_at)[0] ?? null
+      : null;
+    const newPageId = firstPage?.id ?? null;
+    const newCollectionId = firstCollection?.id ?? null;
+    if (newPageId) localStorage.setItem('activePageId', newPageId);
+    else localStorage.removeItem('activePageId');
+    if (newCollectionId) localStorage.setItem('activeCollectionId', newCollectionId);
+    else localStorage.removeItem('activeCollectionId');
+    set({ activePageId: newPageId, activeCollectionId: newCollectionId });
   },
 
   deleteWorkspace: async (id) => {

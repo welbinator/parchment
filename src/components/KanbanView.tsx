@@ -216,6 +216,20 @@ export default function KanbanView() {
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId && !w.deleted_at) ?? null;
   const activeWorkspaces = workspaces.filter((w) => !w.deleted_at).sort((a, b) => a.position - b.position);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
+  const workspaceDropdownRef = useRef<HTMLDivElement>(null);
+  const { switchWorkspace } = useAppStore();
+
+  // Close workspace dropdown on outside click
+  useEffect(() => {
+    if (!workspaceDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (workspaceDropdownRef.current && !workspaceDropdownRef.current.contains(e.target as Node)) {
+        setWorkspaceDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [workspaceDropdownOpen]);
 
   const [pageModalOpen, setPageModalOpen] = useState(false);
   const [trashModalOpen, setTrashModalOpen] = useState(false);
@@ -328,7 +342,7 @@ export default function KanbanView() {
       <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
         {/* Workspace name — desktop only */}
         {activeWorkspace && (
-          <div className="relative hidden sm:block">
+          <div className="relative hidden sm:block" ref={workspaceDropdownRef}>
             <button
               onClick={() => setWorkspaceDropdownOpen((v) => !v)}
               className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors"
@@ -341,7 +355,7 @@ export default function KanbanView() {
                 {activeWorkspaces.map((ws) => (
                   <button
                     key={ws.id}
-                    onClick={() => { setActiveWorkspace(ws.id); setWorkspaceDropdownOpen(false); }}
+                    onClick={() => { switchWorkspace(ws.id); setWorkspaceDropdownOpen(false); }}
                     className={`flex items-center gap-2 w-full px-3 py-1.5 text-sm transition-colors hover:bg-accent ${
                       ws.id === activeWorkspaceId ? 'text-primary font-medium' : 'text-foreground'
                     }`}

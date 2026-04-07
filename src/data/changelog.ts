@@ -13,6 +13,16 @@ interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8.2',
+    date: '2026-04-06',
+    title: 'Board View Header & UI Polish',
+    changes: [
+      { type: 'feature', description: 'Board view now has a persistent top bar with your profile menu, matching the style of List view.' },
+      { type: 'improvement', description: 'Page timestamps now show date and time (e.g. Apr 6, 11:07 PM) with a "Last Updated" tooltip on hover.' },
+      { type: 'improvement', description: 'Page type badge is now hidden for blank pages — only shows for notes, checklist, and roadmap types.' },
+    ],
+  },
+  {
     version: '1.8.1',
     date: '2026-04-06',
     title: 'Share from Board View',

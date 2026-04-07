@@ -21,6 +21,15 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '1.8.2',
+    title: 'Board View Header & UI Polish',
+    changes: [
+      { type: 'feature', description: 'Board view now has a persistent top bar with your profile menu.' },
+      { type: 'improvement', description: 'Timestamps now show date and time with a "Last Updated" tooltip.' },
+      { type: 'improvement', description: 'Page type badge hidden for blank pages — only shows for notes, checklist, and roadmap.' },
+    ],
+  },
+  {
     version: '1.8.1',
     title: 'Share from Board View',
     changes: [

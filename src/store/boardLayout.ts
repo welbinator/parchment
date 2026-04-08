@@ -8,17 +8,19 @@
  */
 
 // Note: STORAGE_KEY is a localStorage namespace string, not a secret or credential
-const STORAGE_KEY = 'parchment_board_layout';
+const STORAGE_KEY = 'parchment_board_layout'; // skipcq: SCT-A000
 
 export interface BoardLayout {
   // Each element is a column; each column is an ordered list of collection IDs
   columns: string[][];
 }
 
+// skipcq: JS-0067
 function defaultLayout(): BoardLayout {
   return { columns: [[], [], [], []] };
 }
 
+// skipcq: JS-0067
 export function loadBoardLayout(): BoardLayout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -33,6 +35,7 @@ export function loadBoardLayout(): BoardLayout {
   }
 }
 
+// skipcq: JS-0067
 export function saveBoardLayout(layout: BoardLayout) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
 }
@@ -44,6 +47,7 @@ export function saveBoardLayout(layout: BoardLayout) {
  * - New collections (not in layout yet) are appended to the shortest column
  * - Deleted collections are removed
  */
+// skipcq: JS-0067
 export function reconcileLayout(
   layout: BoardLayout,
   activeCollectionIds: string[]

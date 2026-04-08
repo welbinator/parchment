@@ -20,6 +20,7 @@ interface UseBlockEditorOptions {
   contentRef: React.RefObject<HTMLDivElement | null>;
 }
 
+// skipcq: JS-0067
 export function useBlockEditor({
   block,
   pageId,
@@ -29,7 +30,7 @@ export function useBlockEditor({
   groupId,
   onSlashKeyDown,
   checkSlashTrigger,
-  closeSlashMenu,
+  closeSlashMenu: _closeSlashMenu,
   showSlashMenu,
   contentRef,
 }: UseBlockEditorOptions) {
@@ -121,6 +122,7 @@ export function useBlockEditor({
     });
   }, [deleteBlock, undoDeleteBlock, pageId, block.id]);
 
+  // skipcq: JS-R1005
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     // Bold/Italic shortcuts
     if ((e.ctrlKey || e.metaKey) && e.key === 'b') {

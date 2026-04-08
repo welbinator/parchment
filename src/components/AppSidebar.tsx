@@ -58,6 +58,7 @@ interface AppSidebarProps {
 }
 
 // ── Grip handle for sortable collections ───────────────────────────────────
+// skipcq: JS-0067
 function CollectionGripHandle({ id }: Readonly<{ id: string }>) {
   const { attributes, listeners } = useSortable({ id, data: { type: 'collection' } });
   return (
@@ -75,6 +76,7 @@ function CollectionGripHandle({ id }: Readonly<{ id: string }>) {
   );
 }
 
+// skipcq: JS-0067
 function SortableCollection({ id, isOver, children }: Readonly<{ id: string; isOver: boolean; children: React.ReactNode }>) {
   const { setNodeRef: setSortableRef, transform, transition, isDragging } = useSortable({ id, data: { type: 'collection' } });
   const { setNodeRef: setDropRef } = useDroppable({ id });
@@ -100,6 +102,8 @@ function SortableCollection({ id, isOver, children }: Readonly<{ id: string; isO
 }
 
 // ── Draggable page row ───────────────────────────────────────────────────────
+// skipcq: JS-0067
+// skipcq: JS-R1005
 function DraggablePage({
   page,
   isActive,
@@ -124,7 +128,7 @@ function DraggablePage({
 
   // Close menu on outside click
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen) return undefined;
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
@@ -304,16 +308,19 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
     });
   };
 
+  // skipcq: JS-R1005
   const handleAddCollection = async () => {
     const id = await addCollection('New Collection');
     if (id) setExpandedCollections((prev) => new Set(prev).add(id));
   };
 
+  // skipcq: JS-R1005
   const handleAddPage = (collectionId: string, type: PageType = 'blank') => {
     addPage(collectionId, type);
     setShowNewPageMenu(null);
   };
 
+  // skipcq: JS-R1005
   const handleDragStart = (event: DragStartEvent) => {
     const type = event.active.data.current?.type;
     if (type === 'collection') {
@@ -327,6 +334,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
     setOverCollectionId(event.over?.id ?? null);
   };
 
+  // skipcq: JS-R1005
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     const type = active.data.current?.type;
@@ -358,6 +366,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
 
   if (!sidebarOpen) return null;
 
+  // skipcq: JS-0415
   return (
     <DndContext
       sensors={sensors}

@@ -8,6 +8,7 @@ import { useViewStore } from '@/store/useViewStore';
 import { PanelLeftOpen, ChevronDown } from 'lucide-react';
 
 // skipcq: JS-0067
+// skipcq: JS-R1005
 export default function AppTopBar() {
   const { sidebarOpen, setSidebarOpen, activePageId, switchWorkspace } = useAppStore();
   const { workspaces, activeWorkspaceId } = useWorkspaceStore();

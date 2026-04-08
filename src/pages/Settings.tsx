@@ -2,13 +2,23 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers } from 'lucide-react';
 import { toast } from 'sonner';
+
+type KeyType = 'master' | 'workspace';
+
+interface DbWorkspace {
+  id: string;
+  name: string;
+}
 
 interface ApiKey {
   id: string;
   name: string;
   key_prefix: string;
+  key_type: KeyType;
+  workspace_ids: string[] | null;
+  can_manage_workspaces: boolean;
   can_create_collections: boolean;
   can_delete_collections: boolean;
   can_create_pages: boolean;
@@ -21,7 +31,7 @@ interface ApiKey {
   revoked: boolean;
 }
 
-const PERMISSIONS = [
+const WORKSPACE_KEY_PERMISSIONS = [
   { key: 'can_read_pages', label: 'Read pages & blocks' },
   { key: 'can_create_collections', label: 'Create collections' },
   { key: 'can_delete_collections', label: 'Delete collections' },
@@ -444,6 +454,8 @@ export default function Settings() {
   };
 
   const [newName, setNewName] = useState('');
+  const [newKeyType, setNewKeyType] = useState<KeyType>('master');
+  const [newCanManageWorkspaces, setNewCanManageWorkspaces] = useState(false);
   const [newPerms, setNewPerms] = useState<Record<string, boolean>>({
     can_read_pages: true,
     can_create_collections: false,
@@ -453,20 +465,25 @@ export default function Settings() {
     can_write_blocks: false,
   });
   const [newExpiry, setNewExpiry] = useState('');
+  const [newWorkspaceIds, setNewWorkspaceIds] = useState<string[]>([]);
+  const [workspaces, setWorkspaces] = useState<DbWorkspace[]>([]);
+
+  const loadWorkspaces = async () => {
+    const { data } = await supabase
+      .from('workspaces')
+      .select('id, name')
+      .is('deleted_at', null)
+      .order('created_at');
+    setWorkspaces((data as DbWorkspace[]) ?? []);
+  };
 
   useEffect(() => {
     loadKeys();
+    loadWorkspaces();
     if (searchParams.get('new') === 'true') {
       setCreating(true);
       setNewName('My Agent');
-      setNewPerms({
-        can_read_pages: true,
-        can_create_collections: true,
-        can_delete_collections: false,
-        can_create_pages: true,
-        can_delete_pages: false,
-        can_write_blocks: true,
-      });
+      setNewKeyType('master');
     }
   }, []);
 
@@ -496,18 +513,44 @@ export default function Settings() {
 
   const createKey = async () => {
     if (!user) return;
+
+    // Validation
+    if (newKeyType === 'workspace' && newWorkspaceIds.length === 0) {
+      toast.error('Select at least one workspace for a Workspace Key');
+      return;
+    }
+
     const rawKey = generateKey();
     const keyHash = await hashKey(rawKey);
     const keyPrefix = rawKey.slice(0, 8);
 
-    const { error } = await supabase.from('api_keys').insert({
+    const insertPayload: Record<string, unknown> = {
       user_id: user.id,
       name: newName || 'Untitled Key',
       key_hash: keyHash,
       key_prefix: keyPrefix,
-      ...newPerms,
+      key_type: newKeyType,
       expires_at: newExpiry ? new Date(newExpiry).toISOString() : null,
-    });
+    };
+
+    if (newKeyType === 'master') {
+      // Master keys get all content permissions; optionally manage workspaces
+      insertPayload.can_read_pages = true;
+      insertPayload.can_create_collections = true;
+      insertPayload.can_delete_collections = true;
+      insertPayload.can_create_pages = true;
+      insertPayload.can_delete_pages = true;
+      insertPayload.can_write_blocks = true;
+      insertPayload.can_manage_workspaces = newCanManageWorkspaces;
+      insertPayload.workspace_ids = null;
+    } else {
+      // Workspace key — scoped permissions + workspace list
+      insertPayload.can_manage_workspaces = false;
+      insertPayload.workspace_ids = newWorkspaceIds;
+      Object.assign(insertPayload, newPerms);
+    }
+
+    const { error } = await supabase.from('api_keys').insert(insertPayload);
 
     if (error) {
       toast.error('Failed to create key');
@@ -518,6 +561,10 @@ export default function Settings() {
     setCreating(false);
     setNewName('');
     setNewExpiry('');
+    setNewKeyType('master');
+    setNewCanManageWorkspaces(false);
+    setNewWorkspaceIds([]);
+    setNewPerms({ can_read_pages: true, can_create_collections: false, can_delete_collections: false, can_create_pages: false, can_delete_pages: false, can_write_blocks: false });
     loadKeys();
     toast.success('API key created');
   };
@@ -593,13 +640,15 @@ export default function Settings() {
               <Key size={18} className="text-primary" />
               <h2 className="text-lg font-semibold font-display text-foreground">API Keys</h2>
             </div>
-            <button
-              onClick={() => { setCreating(true); setNewKeyRevealed(null); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Plus size={14} />
-              New Key
-            </button>
+            {!creating && (
+              <button
+                onClick={() => { setCreating(true); setNewKeyRevealed(null); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus size={14} />
+                New Key
+              </button>
+            )}
           </div>
 
           <p className="text-sm text-muted-foreground mb-6">
@@ -624,29 +673,120 @@ export default function Settings() {
 
           {creating && (
             <div className="mb-6 p-4 rounded-lg border border-border bg-card">
-              <h3 className="text-sm font-semibold text-foreground mb-3">Create API Key</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Create API Key</h3>
+
+              {/* Key name */}
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Key name (e.g. 'My Bot')"
-                className="w-full px-3 py-2 text-sm rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground mb-3 outline-none focus:ring-1 focus:ring-ring"
+                placeholder="Key name (e.g. 'My Agent')"
+                className="w-full px-3 py-2 text-sm rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground mb-4 outline-none focus:ring-1 focus:ring-ring"
               />
-              <div className="mb-3">
-                <label className="text-xs font-medium text-muted-foreground mb-2 block">Permissions</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {PERMISSIONS.map((p) => (
-                    <label key={p.key} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newPerms[p.key] ?? false}
-                        onChange={(e) => setNewPerms({ ...newPerms, [p.key]: e.target.checked })}
-                        className="rounded border-border accent-primary"
-                      />
-                      {p.label}
-                    </label>
-                  ))}
+
+              {/* Key type selector */}
+              <div className="mb-4">
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">Key Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setNewKeyType('master')}
+                    className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-colors ${
+                      newKeyType === 'master'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border bg-background hover:bg-accent/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Crown size={14} className={newKeyType === 'master' ? 'text-primary' : 'text-muted-foreground'} />
+                      <span className={`text-sm font-semibold ${newKeyType === 'master' ? 'text-primary' : 'text-foreground'}`}>Master Key</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Full access to all collections, pages, and blocks. Optionally allow workspace management.</p>
+                  </button>
+                  <button
+                    onClick={() => setNewKeyType('workspace')}
+                    className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-colors ${
+                      newKeyType === 'workspace'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border bg-background hover:bg-accent/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Layers size={14} className={newKeyType === 'workspace' ? 'text-primary' : 'text-muted-foreground'} />
+                      <span className={`text-sm font-semibold ${newKeyType === 'workspace' ? 'text-primary' : 'text-foreground'}`}>Workspace Key</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Scoped to one or more workspaces. Choose specific permissions.</p>
+                  </button>
                 </div>
               </div>
+
+              {/* Master key: workspace management toggle */}
+              {newKeyType === 'master' && (
+                <div className="mb-4 p-3 rounded-lg border border-border bg-background">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Allow workspace management</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Lets this key create/delete workspaces and move collections between them.</p>
+                    </div>
+                    <div
+                      onClick={() => setNewCanManageWorkspaces(v => !v)}
+                      className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ml-4 cursor-pointer ${
+                        newCanManageWorkspaces ? 'bg-primary' : 'bg-muted-foreground/30'
+                      }`}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
+                        newCanManageWorkspaces ? 'left-[18px]' : 'left-0.5'
+                      }`} />
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {/* Workspace key: workspace selector + permissions */}
+              {newKeyType === 'workspace' && (
+                <>
+                  <div className="mb-4">
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Workspaces</label>
+                    {workspaces.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">No workspaces found.</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {workspaces.map(ws => (
+                          <label key={ws.id} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={newWorkspaceIds.includes(ws.id)}
+                              onChange={e => {
+                                setNewWorkspaceIds(prev =>
+                                  e.target.checked ? [...prev, ws.id] : prev.filter(id => id !== ws.id)
+                                );
+                              }}
+                              className="rounded border-border accent-primary"
+                            />
+                            {ws.name}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="mb-4">
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Permissions</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {WORKSPACE_KEY_PERMISSIONS.map((p) => (
+                        <label key={p.key} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newPerms[p.key] ?? false}
+                            onChange={(e) => setNewPerms({ ...newPerms, [p.key]: e.target.checked })}
+                            className="rounded border-border accent-primary"
+                          />
+                          {p.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Expiry */}
               <div className="mb-4">
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Expiration (optional)</label>
                 <input
@@ -656,6 +796,7 @@ export default function Settings() {
                   className="px-3 py-2 text-sm rounded-md bg-background border border-border text-foreground outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
+
               <div className="flex gap-2">
                 <button onClick={createKey} className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                   Generate Key
@@ -676,45 +817,72 @@ export default function Settings() {
             </div>
           ) : (
             <div className="space-y-2">
-              {keys.map((k) => (
-                <div key={k.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card group">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{k.name}</span>
-                      <code className="text-xs font-mono text-muted-foreground">{k.key_prefix}...</code>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span>Created {new Date(k.created_at).toLocaleDateString()}</span>
-                      {k.last_used_at && <span>Last used {new Date(k.last_used_at).toLocaleDateString()}</span>}
-                      {k.expires_at && <span>Expires {new Date(k.expires_at).toLocaleDateString()}</span>}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {PERMISSIONS.filter(p => k[p.key]).map(p => (
-                        <span key={p.key} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                          {p.label}
+              {keys.map((k) => {
+                const isMaster = (k.key_type ?? 'master') === 'master';
+                const wsNames = isMaster ? [] : (k.workspace_ids ?? []).map(id => workspaces.find(w => w.id === id)?.name ?? id);
+                return (
+                  <div key={k.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card group">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        {isMaster
+                          ? <Crown size={13} className="text-amber-500 shrink-0" />
+                          : <Layers size={13} className="text-blue-500 shrink-0" />
+                        }
+                        <span className="text-sm font-medium text-foreground">{k.name}</span>
+                        <code className="text-xs font-mono text-muted-foreground">{k.key_prefix}...</code>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                          isMaster ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                        }`}>
+                          {isMaster ? 'Master' : 'Workspace'}
                         </span>
-                      ))}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                        <span>Created {new Date(k.created_at).toLocaleDateString()}</span>
+                        {k.last_used_at && <span>Last used {new Date(k.last_used_at).toLocaleDateString()}</span>}
+                        {k.expires_at && <span>Expires {new Date(k.expires_at).toLocaleDateString()}</span>}
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {isMaster ? (
+                          <>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">All permissions</span>
+                            {k.can_manage_workspaces && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">Workspace management</span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {WORKSPACE_KEY_PERMISSIONS.filter(p => k[p.key as keyof ApiKey]).map(p => (
+                              <span key={p.key} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{p.label}</span>
+                            ))}
+                            {wsNames.length > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                                {wsNames.join(', ')}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 ml-3">
+                      <button
+                        onClick={() => downloadSkillMd(k.name)}
+                        className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                        title="Download SKILL.md for this key"
+                      >
+                        <Download size={12} />
+                        SKILL.md
+                      </button>
+                      <button
+                        onClick={() => revokeKey(k.id)}
+                        className="p-1.5 rounded hover:bg-destructive/20 hover:text-destructive transition-all"
+                        title="Revoke key"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0 ml-3">
-                    <button
-                      onClick={() => downloadSkillMd(k.name)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                      title="Download SKILL.md for this key"
-                    >
-                      <Download size={12} />
-                      SKILL.md
-                    </button>
-                    <button
-                      onClick={() => revokeKey(k.id)}
-                      className="p-1.5 rounded hover:bg-destructive/20 hover:text-destructive transition-all"
-                      title="Revoke key"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

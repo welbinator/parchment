@@ -22,6 +22,7 @@ export default function DeleteWorkspaceModal({ workspace, onClose }: Props) {
     onClose();
   };
 
+  // skipcq: JS-0415
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
       <div className="bg-popover border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 p-5">

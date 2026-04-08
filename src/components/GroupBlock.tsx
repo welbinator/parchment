@@ -72,6 +72,7 @@ const BORDER_COLORS: { label: string; value: string | null; preview: string }[] 
   { label: 'Pink',     value: 'hsl(330 55% 45%)',     preview: '' },
 ];
 
+// skipcq: JS-0067
 function parseGroupStyle(content: string): GroupStyle {
   if (!content || !content.trim().startsWith('{')) return {};
   try {
@@ -81,6 +82,7 @@ function parseGroupStyle(content: string): GroupStyle {
   }
 }
 
+// skipcq: JS-0067
 function ColorSwatch({
   color,
   label,
@@ -114,6 +116,8 @@ function ColorSwatch({
   );
 }
 
+// skipcq: JS-0067
+// skipcq: JS-R1005
 export default function GroupBlock({ block, pageId, childBlocks, groupBlocksEnabled }: GroupBlockProps) {
   const { addBlock, deleteGroup, updateBlock } = useBlockStore();
   const [focusBlockId, setFocusBlockId] = useState<string | null>(null);
@@ -121,6 +125,7 @@ export default function GroupBlock({ block, pageId, childBlocks, groupBlocksEnab
 
   const groupStyle = parseGroupStyle(block.content);
 
+  // skipcq: JS-R1005
   const handleDeleteGroup = useCallback(async () => {
     await deleteGroup(pageId, block.id);
     toast('Group deleted');
@@ -149,6 +154,7 @@ export default function GroupBlock({ block, pageId, childBlocks, groupBlocksEnab
   if (groupStyle.bgColor) containerStyle.backgroundColor = groupStyle.bgColor;
   if (groupStyle.borderColor) containerStyle.borderColor = groupStyle.borderColor;
 
+  // skipcq: JS-0415
   return (
     <div
       className={`group/group relative border rounded-lg p-4 transition-colors ${

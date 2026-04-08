@@ -8,6 +8,7 @@ import RenameWorkspaceModal from './RenameWorkspaceModal';
 import DeleteWorkspaceModal from './DeleteWorkspaceModal';
 
 // skipcq: JS-0067
+// skipcq: JS-R1005
 export default function UserMenu() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();

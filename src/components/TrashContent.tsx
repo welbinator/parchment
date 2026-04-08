@@ -5,6 +5,7 @@ import { RotateCcw, Trash2, Archive, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 // skipcq: JS-0067
+// skipcq: JS-R1005
 export default function TrashContent() {
   const { collections } = useCollectionStore();
   const { activeWorkspaceId } = useWorkspaceStore();

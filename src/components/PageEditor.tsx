@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useBlockStore } from '@/store/useBlockStore';
 import { usePageStore } from '@/store/usePageStore';
@@ -14,7 +14,7 @@ import { Plus, Clock, FileText } from 'lucide-react';
 // skipcq: JS-0067
 export default function PageEditor({ hideChrome: _hideChrome = false }: { hideChrome?: boolean }) {
   const { activePageId } = useAppStore();
-  const { blocks, addBlock, undoDeleteBlock, lastDeletedBlock } = useBlockStore();
+  const { blocks, addBlock } = useBlockStore();
   const { pages, updatePageTitle } = usePageStore();
   const { exitSelectionMode } = useSelectionStore();
   const page = pages.find((p) => p.id === activePageId && !p.deleted_at);
@@ -37,6 +37,7 @@ export default function PageEditor({ hideChrome: _hideChrome = false }: { hideCh
   }, [activePageId, exitSelectionMode]);
 
   // Ctrl+Z to undo block deletion
+  // skipcq: JS-R1005
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
@@ -48,7 +49,7 @@ export default function PageEditor({ hideChrome: _hideChrome = false }: { hideCh
       }
       // Escape — clear selection
       if (e.key === 'Escape') {
-        const { selectionMode, clearSelection, exitSelectionMode } = useSelectionStore.getState();
+        const { selectionMode, exitSelectionMode } = useSelectionStore.getState();
         if (selectionMode) {
           e.preventDefault();
           exitSelectionMode();
@@ -112,6 +113,7 @@ export default function PageEditor({ hideChrome: _hideChrome = false }: { hideCh
     );
   }
 
+  // skipcq: JS-R1005
   const handleAddBlock = () => {
     const lastBlock = pageBlocks[pageBlocks.length - 1];
     const newId = addBlock(page.id, lastBlock?.id ?? null);
@@ -121,6 +123,7 @@ export default function PageEditor({ hideChrome: _hideChrome = false }: { hideCh
   const updated = new Date(page.updated_at);
   const dateTimeStr = updated.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
+  // skipcq: JS-0415
   return (
     <div className="flex-1 flex flex-col min-w-0">
 

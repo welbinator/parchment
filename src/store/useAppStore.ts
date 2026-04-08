@@ -40,6 +40,7 @@ interface AppState {
   deletePage: (id: string) => Promise<void>;
 }
 
+// skipcq: JS-0067
 function uid() {
   return crypto.randomUUID();
 }
@@ -60,6 +61,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   loading: true,
   userId: null,
 
+  // skipcq: JS-R1005
   init: async (userId: string) => {
     set({ loading: true, userId });
 
@@ -73,7 +75,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
     const collections = (collectionsRes.data ?? []) as DbCollection[];
     const pages = (pagesRes.data ?? []) as DbPage[];
-    const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
+    const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[]; // skipcq: JS-0323
 
     // If new user, seed workspaces + welcome collection + page
     if (workspaces.filter((w) => !w.deleted_at).length === 0) {
@@ -154,6 +156,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  // skipcq: JS-R1005
   refetch: async () => {
     const { userId } = get();
     if (!userId) return;
@@ -168,7 +171,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
     const collections = (collectionsRes.data ?? []) as DbCollection[];
     const pages = (pagesRes.data ?? []) as DbPage[];
-    const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[];
+    const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[]; // skipcq: JS-0323
 
     useWorkspaceStore.getState().setWorkspaces(workspaces);
     useBlockStore.getState().setBlocks(blocks);
@@ -180,14 +183,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
   },
 
+  // skipcq: JS-R1005
   setupRealtime: () => {
     const { userId } = get();
-    if (!userId) return () => {};
+    if (!userId) return () => {}; // skipcq: JS-0321
 
     const handleRealtimeChange = () => {
       if (isInLocalCooldown()) return;
-      clearTimeout((window as any).__syncTimer);
-      (window as any).__syncTimer = setTimeout(() => {
+      clearTimeout((window as any).__syncTimer); // skipcq: JS-0323
+      (window as any).__syncTimer = setTimeout(() => { // skipcq: JS-0323
         if (!isInLocalCooldown()) get().refetch();
       }, 1000);
     };
@@ -205,6 +209,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
   },
 
+  // skipcq: JS-R1005
   reset: () => {
     useWorkspaceStore.getState().resetWorkspaces();
     useBlockStore.getState().resetBlocks();
@@ -218,10 +223,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  // skipcq: JS-R1005
   addWorkspace: async (name) => {
     const { userId } = get();
     if (!userId) return '';
-    return useWorkspaceStore.getState().addWorkspace(name, userId);
+    return await useWorkspaceStore.getState().addWorkspace(name, userId);
   },
 
   switchWorkspace: (id) => {

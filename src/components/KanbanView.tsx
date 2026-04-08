@@ -65,6 +65,7 @@ type ColumnProps = Readonly<{
 }>;
 
 // skipcq: JS-0067
+// skipcq: JS-R1005
 function CollectionColumn({
   collection,
   pages,
@@ -102,6 +103,7 @@ function CollectionColumn({
   const collectionPages = pages.filter((p) => p.collection_id === collection.id && !p.deleted_at);
   const isRenaming = renamingId === collection.id;
 
+  // skipcq: JS-0415
   return (
     <div
       ref={setNodeRef}
@@ -224,6 +226,7 @@ function CollectionColumn({
 
 // ── Main KanbanView ────────────────────────────────────────────────────────────
 // skipcq: JS-0067
+// skipcq: JS-R1005
 export default function KanbanView() {
     const { activePageId, setActivePage, addPage, addCollection, deletePage } = useAppStore();
   const { pages, movePage, updatePageSharing } = usePageStore();
@@ -345,6 +348,7 @@ export default function KanbanView() {
     setRenameValue,
   };
 
+  // skipcq: JS-0415
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
 

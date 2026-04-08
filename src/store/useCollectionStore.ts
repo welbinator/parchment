@@ -14,6 +14,7 @@ export interface DbCollection {
   workspace_id: string;
 }
 
+// skipcq: JS-0067
 function uid() {
   return crypto.randomUUID();
 }

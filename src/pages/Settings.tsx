@@ -31,6 +31,15 @@ interface ApiKey {
   revoked: boolean;
 }
 
+const MASTER_KEY_PERMISSIONS = [
+  { key: 'can_read_pages', label: 'Read pages & blocks' },
+  { key: 'can_create_collections', label: 'Create collections' },
+  { key: 'can_delete_collections', label: 'Delete collections' },
+  { key: 'can_create_pages', label: 'Create pages' },
+  { key: 'can_delete_pages', label: 'Delete pages' },
+  { key: 'can_write_blocks', label: 'Write blocks' },
+] as const;
+
 const WORKSPACE_KEY_PERMISSIONS = [
   { key: 'can_read_pages', label: 'Read pages & blocks' },
   { key: 'can_create_collections', label: 'Create collections' },
@@ -455,7 +464,8 @@ export default function Settings() {
 
   const [newName, setNewName] = useState('');
   const [newKeyType, setNewKeyType] = useState<KeyType>('master');
-  const [newCanManageWorkspaces, setNewCanManageWorkspaces] = useState(false);
+  const [newCanCreateWorkspaces, setNewCanCreateWorkspaces] = useState(false);
+  const [newCanDeleteWorkspaces, setNewCanDeleteWorkspaces] = useState(false);
   const [newPerms, setNewPerms] = useState<Record<string, boolean>>({
     can_read_pages: true,
     can_create_collections: false,
@@ -534,15 +544,12 @@ export default function Settings() {
     };
 
     if (newKeyType === 'master') {
-      // Master keys get all content permissions; optionally manage workspaces
-      insertPayload.can_read_pages = true;
-      insertPayload.can_create_collections = true;
-      insertPayload.can_delete_collections = true;
-      insertPayload.can_create_pages = true;
-      insertPayload.can_delete_pages = true;
-      insertPayload.can_write_blocks = true;
-      insertPayload.can_manage_workspaces = newCanManageWorkspaces;
+      // Master keys: respect individually checked permissions
+      insertPayload.can_manage_workspaces = newCanCreateWorkspaces || newCanDeleteWorkspaces;
+      insertPayload.can_create_workspaces = newCanCreateWorkspaces;
+      insertPayload.can_delete_workspaces = newCanDeleteWorkspaces;
       insertPayload.workspace_ids = null;
+      Object.assign(insertPayload, newPerms);
     } else {
       // Workspace key — scoped permissions + workspace list
       insertPayload.can_manage_workspaces = false;
@@ -562,7 +569,8 @@ export default function Settings() {
     setNewName('');
     setNewExpiry('');
     setNewKeyType('master');
-    setNewCanManageWorkspaces(false);
+    setNewCanCreateWorkspaces(false);
+    setNewCanDeleteWorkspaces(false);
     setNewWorkspaceIds([]);
     setNewPerms({ can_read_pages: true, can_create_collections: false, can_delete_collections: false, can_create_pages: false, can_delete_pages: false, can_write_blocks: false });
     loadKeys();
@@ -718,25 +726,41 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Master key: workspace management toggle */}
+              {/* Master key: permission checkboxes + workspace options */}
               {newKeyType === 'master' && (
-                <div className="mb-4 p-3 rounded-lg border border-border bg-background">
-                  <label className="flex items-center justify-between cursor-pointer">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Allow workspace management</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Lets this key create/delete workspaces and move collections between them.</p>
-                    </div>
-                    <div
-                      onClick={() => setNewCanManageWorkspaces(v => !v)}
-                      className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ml-4 cursor-pointer ${
-                        newCanManageWorkspaces ? 'bg-primary' : 'bg-muted-foreground/30'
-                      }`}
-                    >
-                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
-                        newCanManageWorkspaces ? 'left-[18px]' : 'left-0.5'
-                      }`} />
-                    </div>
-                  </label>
+                <div className="mb-4">
+                  <label className="text-xs font-medium text-muted-foreground mb-2 block">Permissions</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {MASTER_KEY_PERMISSIONS.map((p) => (
+                      <label key={p.key} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newPerms[p.key] ?? false}
+                          onChange={(e) => setNewPerms({ ...newPerms, [p.key]: e.target.checked })}
+                          className="rounded border-border accent-primary"
+                        />
+                        {p.label}
+                      </label>
+                    ))}
+                    <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newCanCreateWorkspaces}
+                        onChange={(e) => setNewCanCreateWorkspaces(e.target.checked)}
+                        className="rounded border-border accent-primary"
+                      />
+                      Create workspaces
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newCanDeleteWorkspaces}
+                        onChange={(e) => setNewCanDeleteWorkspaces(e.target.checked)}
+                        className="rounded border-border accent-primary"
+                      />
+                      Delete workspaces
+                    </label>
+                  </div>
                 </div>
               )}
 
@@ -844,7 +868,9 @@ export default function Settings() {
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {isMaster ? (
                           <>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">All permissions</span>
+                            {MASTER_KEY_PERMISSIONS.filter(p => k[p.key as keyof ApiKey]).map(p => (
+                              <span key={p.key} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{p.label}</span>
+                            ))}
                             {k.can_manage_workspaces && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">Workspace management</span>
                             )}

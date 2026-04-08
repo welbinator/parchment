@@ -42,14 +42,14 @@ BEGIN
     'key_type', v_record.key_type,
     'workspace_ids', COALESCE(to_jsonb(v_record.workspace_ids), 'null'::jsonb),
     'can_manage_workspaces', v_record.can_manage_workspaces,
-    -- For master keys all permissions are implicitly true;
-    -- for workspace keys respect the stored booleans.
-    'can_create_collections', CASE WHEN v_record.key_type = 'master' THEN true ELSE v_record.can_create_collections END,
-    'can_delete_collections', CASE WHEN v_record.key_type = 'master' THEN true ELSE v_record.can_delete_collections END,
-    'can_create_pages',       CASE WHEN v_record.key_type = 'master' THEN true ELSE v_record.can_create_pages END,
-    'can_delete_pages',       CASE WHEN v_record.key_type = 'master' THEN true ELSE v_record.can_delete_pages END,
-    'can_read_pages',         CASE WHEN v_record.key_type = 'master' THEN true ELSE v_record.can_read_pages END,
-    'can_write_blocks',       CASE WHEN v_record.key_type = 'master' THEN true ELSE v_record.can_write_blocks END
+    -- Both master and workspace keys respect their stored permission booleans.
+    -- Master keys have access to all workspaces; workspace keys are scoped by workspace_ids.
+    'can_create_collections', v_record.can_create_collections,
+    'can_delete_collections', v_record.can_delete_collections,
+    'can_create_pages',       v_record.can_create_pages,
+    'can_delete_pages',       v_record.can_delete_pages,
+    'can_read_pages',         v_record.can_read_pages,
+    'can_write_blocks',       v_record.can_write_blocks
   );
 END;
 $$;

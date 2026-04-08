@@ -131,7 +131,7 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
             </svg>
           )}
         </div>
-        {/* nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
+        {/* nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml skipcq: JS-0440 */}
         <span
           className={`text-base text-foreground ${block.checked ? 'line-through text-muted-foreground' : ''}`}
           dangerouslySetInnerHTML={{ __html: html }}
@@ -145,7 +145,7 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
     return (
       <div className="flex items-start gap-2 py-0.5" style={indent > 0 ? { paddingLeft: `${indent * 1.5}rem` } : undefined}>
         <span className="text-primary mt-1 shrink-0">•</span>
-        {/* nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
+        {/* nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml skipcq: JS-0440 */}
         <span className="text-base text-foreground" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     );
@@ -169,7 +169,7 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
     return (
       <div className="flex items-start gap-2 py-0.5" style={indent > 0 ? { paddingLeft: `${indent * 1.5}rem` } : undefined}>
         <span className="text-muted-foreground text-sm mt-0.5 shrink-0 w-5 text-right">{label}</span>
-        {/* nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
+        {/* nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml skipcq: JS-0440 */}
         <span className="text-base text-foreground" dangerouslySetInnerHTML={{ __html: html }} />
       </div>
     );

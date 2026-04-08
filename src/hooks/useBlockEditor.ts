@@ -49,7 +49,7 @@ export function useBlockEditor({
       // realtime write that would race with the Supabase realtime subscription
       // and overwrite the DOM back to the un-linkified version.
       const linkified = block.type !== 'code' ? autoLinkify(html) : html;
-      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method, javascript.browser.security.insecure-innerhtml.insecure-innerhtml
+      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method, javascript.browser.security.insecure-innerhtml.insecure-innerhtml skipcq: JS-0440
       ref.current.innerHTML = DOMPurify.sanitize(linkified); // Content sanitized by DOMPurify before assignment
       initializedRef.current = true;
     }
@@ -65,7 +65,7 @@ export function useBlockEditor({
       return;
     }
     if (ref.current) {
-      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method, javascript.browser.security.insecure-innerhtml.insecure-innerhtml
+      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method, javascript.browser.security.insecure-innerhtml.insecure-innerhtml skipcq: JS-0440
       ref.current.innerHTML = DOMPurify.sanitize(convertStyledJsonToHtml(block.content));
     }
   }, [block.type]);

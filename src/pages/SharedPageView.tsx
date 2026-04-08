@@ -288,6 +288,7 @@ export default function SharedPageView() {
 
   // skipcq: JS-0415
   return (
+    <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-8 py-16">
         {/* Page title */}
         <h1 className="text-4xl font-bold font-display text-foreground mb-10">

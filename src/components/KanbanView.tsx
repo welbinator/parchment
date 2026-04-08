@@ -155,7 +155,7 @@ function CollectionColumn({
           collectionId={collection.id}
           workspaces={workspaces}
           activeWorkspaceId={activeWorkspaceId}
-          onDelete={() => onDeleteCollection(collection.id)}
+          onDelete={() => { onDeleteCollection(collection.id); }}
           onMoveToWorkspace={(wsId) => { onMoveCollectionToWorkspace(collection.id, wsId); }}
           triggerClassName="p-1 rounded hover:bg-sidebar-accent text-muted-foreground"
         />

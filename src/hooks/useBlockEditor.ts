@@ -49,7 +49,7 @@ export function useBlockEditor({
       // realtime write that would race with the Supabase realtime subscription
       // and overwrite the DOM back to the un-linkified version.
       const linkified = block.type !== 'code' ? autoLinkify(html) : html;
-      // eslint-disable-next-line react/no-danger
+      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method, javascript.browser.security.insecure-innerhtml.insecure-innerhtml
       ref.current.innerHTML = DOMPurify.sanitize(linkified); // Content sanitized by DOMPurify before assignment
       initializedRef.current = true;
     }
@@ -65,7 +65,7 @@ export function useBlockEditor({
       return;
     }
     if (ref.current) {
-      // eslint-disable-next-line react/no-danger
+      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method, javascript.browser.security.insecure-innerhtml.insecure-innerhtml
       ref.current.innerHTML = DOMPurify.sanitize(convertStyledJsonToHtml(block.content));
     }
   }, [block.type]);
@@ -109,7 +109,7 @@ export function useBlockEditor({
     const html = ref.current.innerHTML;
     const linkified = autoLinkify(html);
     if (linkified !== html) {
-      ref.current.innerHTML = DOMPurify.sanitize(linkified);
+      ref.current.innerHTML = DOMPurify.sanitize(linkified); // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method, javascript.browser.security.insecure-innerhtml.insecure-innerhtml
       updateBlock(pageId, block.id, { content: DOMPurify.sanitize(linkified) });
     }
   }, [block.type, updateBlock, pageId, block.id]);

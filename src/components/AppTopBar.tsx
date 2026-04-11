@@ -95,13 +95,13 @@ export default function AppTopBar() {
                       value={newWorkspaceName}
                       onChange={(e) => { setNewWorkspaceName(e.target.value); }}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleCreateWorkspace();
+                        if (e.key === 'Enter') { void handleCreateWorkspace(); }
                         if (e.key === 'Escape') { setCreatingWorkspace(false); setNewWorkspaceName(''); }
                       }}
                       placeholder="Workspace name"
                       className="flex-1 text-sm bg-background border border-border rounded px-2 py-0.5 outline-none focus:ring-1 focus:ring-primary"
                     />
-                    <button onClick={handleCreateWorkspace} className="text-xs text-primary font-medium px-1 shrink-0">Add</button>
+                    <button onClick={() => { void handleCreateWorkspace(); }} className="text-xs text-primary font-medium px-1 shrink-0">Add</button>
                   </div>
                 ) : (
                   <button

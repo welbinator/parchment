@@ -70,7 +70,7 @@ export default function UserMenu() {
           {initial}
         </button>
         {open && (
-          <div className="absolute right-0 top-10 w-52 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
+          <div className="absolute right-0 top-10 w-64 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
             <div className="px-3 py-2 border-b border-border">
               <p className="text-sm font-medium text-foreground truncate">{user.user_metadata?.full_name || user.email}</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>

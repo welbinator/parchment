@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.9.1",
+    "date": "2026-04-11",
+    "title": "API Improvements & Bug Fixes",
+    "changes": [
+      {
+        "type": "feature",
+        "description": "API: New workspace actions — create, rename, and delete workspaces programmatically via Master Key with workspace management permissions."
+      },
+      {
+        "type": "improvement",
+        "description": "API docs updated to document all workspace actions with full curl examples."
+      },
+      {
+        "type": "improvement",
+        "description": "Downloadable SKILL.md now includes workspace operations for AI agent integrations."
+      },
+      {
+        "type": "fix",
+        "description": "Chrome extension \"Open Parchment\" button now correctly deep-links to the newly saved page instead of the home screen."
+      },
+      {
+        "type": "fix",
+        "description": "Workspace switcher dropdown buttons are now left-aligned."
+      }
+    ]
+  },
+  {
     "version": "1.9.0",
     "date": "2026-04-07",
     "title": "Workspaces",

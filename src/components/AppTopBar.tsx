@@ -63,7 +63,7 @@ export default function AppTopBar() {
                 <button
                   key={ws.id}
                   onClick={() => { switchWorkspace(ws.id); setWorkspaceDropdownOpen(false); }}
-                  className={`flex items-center justify-start gap-2 w-full px-3 py-1.5 text-sm transition-colors hover:bg-accent ${
+                  className={`flex items-center justify-start gap-2 w-full px-3 py-1.5 text-sm text-left transition-colors hover:bg-accent ${
                     ws.id === activeWorkspaceId ? 'text-primary font-medium' : 'text-foreground'
                   }`}
                 >

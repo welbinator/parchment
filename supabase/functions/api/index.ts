@@ -114,6 +114,9 @@ Deno.serve(async (req) => {
     }
 
     const userId = validation.user_id
+    const keyType: 'master' | 'workspace' = validation.key_type ?? 'master'
+    const keyWorkspaceIds: string[] | null = validation.workspace_ids ?? null
+    const canManageWorkspaces: boolean = validation.can_manage_workspaces ?? false
     const permissions = {
       can_create_collections: validation.can_create_collections,
       can_delete_collections: validation.can_delete_collections,
@@ -123,6 +126,23 @@ Deno.serve(async (req) => {
       can_write_blocks: validation.can_write_blocks,
     }
 
+    // Helper: for workspace keys, restrict a collection query to allowed workspaces.
+    // Returns null if the collection is accessible, or a 403 response if not.
+    async function assertCollectionAccess(collection_id: string): Promise<Response | null> {
+      if (keyType !== 'workspace' || !keyWorkspaceIds || keyWorkspaceIds.length === 0) return null
+      const { data: col } = await supabase
+        .from('collections')
+        .select('workspace_id')
+        .eq('id', collection_id)
+        .eq('user_id', userId)
+        .single()
+      if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
+      if (!keyWorkspaceIds.includes(col.workspace_id)) {
+        return json({ error: 'This workspace key does not have access to that collection\'s workspace' }, corsHeaders, 403)
+      }
+      return null
+    }
+
     const body = await req.json()
     const { action } = body
 
@@ -130,16 +150,28 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'list_collections': {
         if (!permissions.can_read_pages) return deny(corsHeaders)
-        const { data } = await supabase.from('collections').select('id, name, icon, position, created_at').eq('user_id', userId).order('position')
+        let query = supabase.from('collections').select('id, name, icon, position, workspace_id, created_at').eq('user_id', userId)
+        // Workspace keys only see collections in their allowed workspaces
+        if (keyType === 'workspace' && keyWorkspaceIds && keyWorkspaceIds.length > 0) {
+          query = query.in('workspace_id', keyWorkspaceIds)
+        }
+        const { data } = await query.order('position')
         return json({ collections: data }, corsHeaders)
       }
 
       case 'create_collection': {
         if (!permissions.can_create_collections) return deny(corsHeaders)
-        const { name } = body
+        const { name, workspace_id } = body
+        // Workspace keys must provide a workspace_id that is in their allowed list
+        let targetWorkspaceId = workspace_id
+        if (keyType === 'workspace') {
+          if (!targetWorkspaceId || !keyWorkspaceIds?.includes(targetWorkspaceId)) {
+            return json({ error: 'workspace_id is required and must be one of this key\'s allowed workspaces' }, corsHeaders, 403)
+          }
+        }
         const { data: existing } = await supabase.from('collections').select('position').eq('user_id', userId).order('position', { ascending: false }).limit(1)
         const position = (existing?.[0]?.position ?? -1) + 1
-        const { data, error } = await supabase.from('collections').insert({ user_id: userId, name: name || 'Untitled', position }).select().single()
+        const { data, error } = await supabase.from('collections').insert({ user_id: userId, name: name || 'Untitled', position, workspace_id: targetWorkspaceId ?? null }).select().single()
         if (error) return json({ error: error.message }, corsHeaders, 400)
         return json({ collection: data }, corsHeaders)
       }
@@ -147,6 +179,8 @@ Deno.serve(async (req) => {
       case 'delete_collection': {
         if (!permissions.can_delete_collections) return deny(corsHeaders)
         const { collection_id } = body
+        const accessDenied = await assertCollectionAccess(collection_id)
+        if (accessDenied) return accessDenied
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
         if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
         const { error } = await supabase.from('collections').delete().eq('id', collection_id)
@@ -157,8 +191,24 @@ Deno.serve(async (req) => {
       case 'list_pages': {
         if (!permissions.can_read_pages) return deny(corsHeaders)
         const { collection_id } = body
+        if (collection_id) {
+          const accessDenied = await assertCollectionAccess(collection_id)
+          if (accessDenied) return accessDenied
+        }
         let query = supabase.from('pages').select('id, title, type, collection_id, created_at, updated_at').eq('user_id', userId)
-        if (collection_id) query = query.eq('collection_id', collection_id)
+        if (collection_id) {
+          query = query.eq('collection_id', collection_id)
+        } else if (keyType === 'workspace' && keyWorkspaceIds && keyWorkspaceIds.length > 0) {
+          // Scope to pages in collections belonging to allowed workspaces
+          const { data: wsCols } = await supabase
+            .from('collections')
+            .select('id')
+            .eq('user_id', userId)
+            .in('workspace_id', keyWorkspaceIds)
+          const colIds = (wsCols ?? []).map((c: { id: string }) => c.id)
+          if (colIds.length === 0) return json({ pages: [] }, corsHeaders)
+          query = query.in('collection_id', colIds)
+        }
         const { data } = await query.order('created_at')
         return json({ pages: data }, corsHeaders)
       }
@@ -166,6 +216,8 @@ Deno.serve(async (req) => {
       case 'create_page': {
         if (!permissions.can_create_pages) return deny(corsHeaders)
         const { collection_id, title, type } = body
+        const accessDenied = await assertCollectionAccess(collection_id)
+        if (accessDenied) return accessDenied
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
         if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
         const { data: page, error } = await supabase.from('pages').insert({
@@ -354,6 +406,8 @@ Deno.serve(async (req) => {
         if (!permissions.can_create_collections) return deny(corsHeaders)
         const { collection_id, name } = body
         if (!collection_id || !name) return json({ error: 'collection_id and name are required' }, corsHeaders, 400)
+        const accessDenied = await assertCollectionAccess(collection_id)
+        if (accessDenied) return accessDenied
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
         if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
         const { error } = await supabase.from('collections').update({ name }).eq('id', collection_id)
@@ -387,6 +441,53 @@ Deno.serve(async (req) => {
         )
         await Promise.all(updates)
         return json({ success: true, reordered: collection_ids.length }, corsHeaders)
+      }
+
+      // ── Workspace management actions (master keys with can_manage_workspaces only) ──
+
+      case 'list_workspaces': {
+        // Any key type can list workspaces (read-only)
+        if (!permissions.can_read_pages) return deny(corsHeaders)
+        let query = supabase.from('workspaces').select('id, name, created_at').eq('user_id', userId)
+        if (keyType === 'workspace' && keyWorkspaceIds && keyWorkspaceIds.length > 0) {
+          query = query.in('id', keyWorkspaceIds)
+        }
+        const { data } = await query.order('created_at')
+        return json({ workspaces: data }, corsHeaders)
+      }
+
+      case 'create_workspace': {
+        if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
+        const { name } = body
+        if (!name) return json({ error: 'name is required' }, corsHeaders, 400)
+        const { data, error } = await supabase.from('workspaces').insert({ user_id: userId, name }).select().single()
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ workspace: data }, corsHeaders)
+      }
+
+      case 'delete_workspace': {
+        if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
+        const { workspace_id } = body
+        if (!workspace_id) return json({ error: 'workspace_id is required' }, corsHeaders, 400)
+        const { data: ws } = await supabase.from('workspaces').select('id').eq('id', workspace_id).eq('user_id', userId).single()
+        if (!ws) return json({ error: 'Workspace not found' }, corsHeaders, 404)
+        const { error } = await supabase.from('workspaces').delete().eq('id', workspace_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
+      }
+
+      case 'move_collection': {
+        // Move a collection to a different workspace
+        if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
+        const { collection_id, workspace_id: target_workspace_id } = body
+        if (!collection_id || !target_workspace_id) return json({ error: 'collection_id and workspace_id are required' }, corsHeaders, 400)
+        const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
+        if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
+        const { data: ws } = await supabase.from('workspaces').select('id').eq('id', target_workspace_id).eq('user_id', userId).single()
+        if (!ws) return json({ error: 'Target workspace not found' }, corsHeaders, 404)
+        const { error } = await supabase.from('collections').update({ workspace_id: target_workspace_id }).eq('id', collection_id)
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ success: true }, corsHeaders)
       }
 
       // share_page: control sharing for a page on behalf of the user.
@@ -475,6 +576,7 @@ Deno.serve(async (req) => {
           'list_pages', 'create_page', 'delete_page', 'rename_page', 'move_page', 'get_page',
           'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block', 'delete_group',
           'share_page',
+          'list_workspaces', 'create_workspace (master + can_manage_workspaces)', 'delete_workspace (master + can_manage_workspaces)', 'move_collection (master + can_manage_workspaces)',
         ]}, corsHeaders, 400)
     }
   } catch (err) {

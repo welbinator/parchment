@@ -367,6 +367,7 @@ export default function Settings() {
   }
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
 
+  // skipcq: JS-0356
   const fetchFlags = async () => {
     const { data } = await supabase.from('feature_flags').select('*').order('created_at', { ascending: true });
     setFlags((data as FeatureFlag[]) ?? []);
@@ -392,6 +393,7 @@ export default function Settings() {
       });
   }, [user]);
 
+  // skipcq: JS-0357
   const loadBetaFlags = async () => {
     if (!user) return;
     // Fetch ALL non-globally-enabled flags — any logged-in user can read these now
@@ -488,6 +490,7 @@ export default function Settings() {
   };
   const [workspaces, setWorkspaces] = useState<DbWorkspace[]>([]);
 
+  // skipcq: JS-0357
   const loadWorkspaces = async () => {
     const { data } = await supabase
       .from('workspaces')

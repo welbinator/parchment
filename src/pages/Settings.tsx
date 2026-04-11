@@ -126,6 +126,44 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
   -d '{"action": "move_page", "page_id": "PAGE_ID", "collection_id": "TARGET_COLLECTION_ID"}'
 \`\`\`
 
+## Workspace Operations (Master Key + can_manage_workspaces)
+
+Workspaces are top-level containers above collections. These actions require a Master Key with the \`can_manage_workspaces\` permission enabled. \`list_workspaces\` is available to any key.
+
+### List all workspaces
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "list_workspaces"}'
+\`\`\`
+
+### Create a workspace
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "create_workspace", "name": "My Workspace"}'
+\`\`\`
+
+### Rename a workspace
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "rename_workspace", "workspace_id": "WORKSPACE_ID", "name": "New Name"}'
+\`\`\`
+
+### Delete a workspace
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "delete_workspace", "workspace_id": "WORKSPACE_ID"}'
+\`\`\`
+
+To create a collection inside a workspace, pass \`workspace_id\` to \`create_collection\`.
+
 ### List pages in a collection
 \`\`\`bash
 curl -X POST https://theparchment.app/functions/v1/api \\\\

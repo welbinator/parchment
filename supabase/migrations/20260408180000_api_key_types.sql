@@ -6,7 +6,9 @@ ALTER TABLE public.api_keys
   ADD COLUMN IF NOT EXISTS key_type text NOT NULL DEFAULT 'master' -- NOSONAR
     CHECK (key_type IN ('master', 'workspace')), -- NOSONAR
   ADD COLUMN IF NOT EXISTS workspace_ids uuid[] NULL,
-  ADD COLUMN IF NOT EXISTS can_manage_workspaces boolean NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS can_manage_workspaces boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS can_create_workspaces boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS can_delete_workspaces boolean NOT NULL DEFAULT false;
 
 -- 2. Migrate any rows that still have the old 'standard' default (shouldn't exist yet, but be safe)
 UPDATE public.api_keys SET key_type = 'master' WHERE key_type NOT IN ('master', 'workspace'); -- NOSONAR

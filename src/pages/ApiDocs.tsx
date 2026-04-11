@@ -82,6 +82,10 @@ export default function ApiDocs() {
           <h2 className="text-2xl font-semibold font-display mb-3">Actions</h2>
           <ul className="grid sm:grid-cols-2 gap-2 text-sm">
             {[
+              'list_workspaces',
+              'create_workspace',
+              'rename_workspace',
+              'delete_workspace',
               'list_collections',
               'create_collection',
               'delete_collection',
@@ -156,6 +160,34 @@ export default function ApiDocs() {
         </section>
 
         {/* Rename examples */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">Workspaces</h2>
+          <p className="text-muted-foreground mb-3">
+            Workspaces are the top-level containers above collections. Workspace actions require a <strong>Master Key</strong> with <code className="bg-muted px-1 py-0.5 rounded">can_manage_workspaces</code> enabled (except <code className="bg-muted px-1 py-0.5 rounded">list_workspaces</code> which any key can use).
+          </p>
+          <CodeBlock>{`# List all workspaces
+curl -X POST ${API_BASE} \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"action": "list_workspaces"}'`}</CodeBlock>
+          <CodeBlock>{`# Create a workspace (requires can_manage_workspaces)
+curl -X POST ${API_BASE} \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"action": "create_workspace", "name": "My Workspace"}'`}</CodeBlock>
+          <CodeBlock>{`# Rename a workspace (requires can_manage_workspaces)
+curl -X POST ${API_BASE} \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"action": "rename_workspace", "workspace_id": "WORKSPACE_ID", "name": "New Name"}'`}</CodeBlock>
+          <CodeBlock>{`# Delete a workspace (requires can_manage_workspaces)
+curl -X POST ${API_BASE} \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"action": "delete_workspace", "workspace_id": "WORKSPACE_ID"}'`}</CodeBlock>
+          <p className="text-muted-foreground text-sm mt-2">To create a collection inside a workspace, pass <code className="bg-muted px-1 py-0.5 rounded">workspace_id</code> to <code className="bg-muted px-1 py-0.5 rounded">create_collection</code>.</p>
+        </section>
+
         <section className="mb-8">
           <h2 className="text-2xl font-semibold font-display mb-3">rename_page</h2>
           <p className="text-muted-foreground mb-2">Rename an existing page. Requires <code className="bg-muted px-1 py-0.5 rounded">can_create_pages</code> permission.</p>

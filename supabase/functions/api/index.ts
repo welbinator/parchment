@@ -465,6 +465,18 @@ Deno.serve(async (req) => {
         return json({ workspace: data }, corsHeaders)
       }
 
+      case 'rename_workspace': {
+        if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
+        const { workspace_id, name } = body
+        if (!workspace_id) return json({ error: 'workspace_id is required' }, corsHeaders, 400)
+        if (!name) return json({ error: 'name is required' }, corsHeaders, 400)
+        const { data: ws } = await supabase.from('workspaces').select('id').eq('id', workspace_id).eq('user_id', userId).single()
+        if (!ws) return json({ error: 'Workspace not found' }, corsHeaders, 404)
+        const { data, error } = await supabase.from('workspaces').update({ name }).eq('id', workspace_id).select().single()
+        if (error) return json({ error: error.message }, corsHeaders, 400)
+        return json({ workspace: data }, corsHeaders)
+      }
+
       case 'delete_workspace': {
         if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
         const { workspace_id } = body
@@ -576,7 +588,7 @@ Deno.serve(async (req) => {
           'list_pages', 'create_page', 'delete_page', 'rename_page', 'move_page', 'get_page',
           'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block', 'delete_group',
           'share_page',
-          'list_workspaces', 'create_workspace (master + can_manage_workspaces)', 'delete_workspace (master + can_manage_workspaces)', 'move_collection (master + can_manage_workspaces)',
+          'list_workspaces', 'create_workspace (master + can_manage_workspaces)', 'rename_workspace (master + can_manage_workspaces)', 'delete_workspace (master + can_manage_workspaces)', 'move_collection (master + can_manage_workspaces)',
         ]}, corsHeaders, 400)
     }
   } catch (err) {

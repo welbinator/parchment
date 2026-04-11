@@ -165,7 +165,7 @@ function LandingOrApp() {
       </div>
     );
   }
-  if (user) return <Navigate to="/app" replace />;
+  if (user) return <Navigate to={`/app${window.location.search}`} replace />;
   return <Landing />;
 }
 

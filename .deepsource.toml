@@ -35,6 +35,7 @@ file_patterns = ["postcss.config.js", "eslint.config.js", "*.config.*"]
 # DeepSource flags top-level function components as "global scope" but they're ES module exports.
 # This is a false positive for all ES module files — nothing here is actually global.
 issue_code = "JS-0067"
+file_patterns = ["src/**", "supabase/**"]
 
 [[issues]]
 # Cyclomatic complexity in React components — inherent to JSX rendering logic with conditionals.

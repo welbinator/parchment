@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { usePageStore } from '@/store/usePageStore';
+import { useAuth } from '@/hooks/useAuth';
 import UserMenu from './UserMenu';
 import ShareButton from './ShareButton';
 import { useViewStore } from '@/store/useViewStore';
@@ -13,6 +14,7 @@ export default function AppTopBar() {
   const { sidebarOpen, setSidebarOpen, activePageId, switchWorkspace } = useAppStore();
   const { workspaces, activeWorkspaceId, addWorkspace } = useWorkspaceStore();
   const { pages, updatePageSharing } = usePageStore();
+  const { user } = useAuth();
 
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId && !w.deleted_at) ?? null;
   const activeWorkspaces = workspaces.filter((w) => !w.deleted_at).sort((a, b) => a.position - b.position);
@@ -31,8 +33,8 @@ export default function AppTopBar() {
 
   const handleCreateWorkspace = async () => {
     const name = newWorkspaceName.trim();
-    if (!name) return;
-    const id = await addWorkspace(name);
+    if (!name || !user) return;
+    const id = await addWorkspace(name, user.id);
     if (id) switchWorkspace(id);
     setCreatingWorkspace(false);
     setNewWorkspaceName('');

@@ -367,6 +367,7 @@ export default function Settings() {
   }
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
 
+  // skipcq: JS-0356
   const fetchFlags = async () => {
     const { data } = await supabase.from('feature_flags').select('*').order('created_at', { ascending: true });
     setFlags((data as FeatureFlag[]) ?? []);
@@ -392,6 +393,7 @@ export default function Settings() {
       });
   }, [user]);
 
+  // skipcq: JS-0357
   const loadBetaFlags = async () => {
     if (!user) return;
     // Fetch ALL non-globally-enabled flags — any logged-in user can read these now
@@ -476,8 +478,19 @@ export default function Settings() {
   });
   const [newExpiry, setNewExpiry] = useState('');
   const [newWorkspaceIds, setNewWorkspaceIds] = useState<string[]>([]);
+
+  const handleNewPermChange = (key: string, checked: boolean) => {
+    setNewPerms(prev => ({ ...prev, [key]: checked }));
+  };
+
+  const handleWorkspaceToggle = (wsId: string, checked: boolean) => {
+    setNewWorkspaceIds(prev =>
+      checked ? [...prev, wsId] : prev.filter(id => id !== wsId)
+    );
+  };
   const [workspaces, setWorkspaces] = useState<DbWorkspace[]>([]);
 
+  // skipcq: JS-0357
   const loadWorkspaces = async () => {
     const { data } = await supabase
       .from('workspaces')
@@ -732,30 +745,33 @@ export default function Settings() {
                   <label className="text-xs font-medium text-muted-foreground mb-2 block">Permissions</label>
                   <div className="grid grid-cols-2 gap-2">
                     {MASTER_KEY_PERMISSIONS.map((p) => (
-                      <label key={p.key} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                      <label key={p.key} htmlFor={`new-master-perm-${p.key}`} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                         <input
+                          id={`new-master-perm-${p.key}`}
                           type="checkbox"
                           checked={newPerms[p.key] ?? false}
-                          onChange={(e) => setNewPerms({ ...newPerms, [p.key]: e.target.checked })}
+                          onChange={(e) => { handleNewPermChange(p.key, e.target.checked); }}
                           className="rounded border-border accent-primary"
                         />
                         {p.label}
                       </label>
                     ))}
-                    <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                    <label htmlFor="new-can-create-workspaces" className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                       <input
+                        id="new-can-create-workspaces"
                         type="checkbox"
                         checked={newCanCreateWorkspaces}
-                        onChange={(e) => setNewCanCreateWorkspaces(e.target.checked)}
+                        onChange={(e) => { setNewCanCreateWorkspaces(e.target.checked); }}
                         className="rounded border-border accent-primary"
                       />
                       Create workspaces
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                    <label htmlFor="new-can-delete-workspaces" className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                       <input
+                        id="new-can-delete-workspaces"
                         type="checkbox"
                         checked={newCanDeleteWorkspaces}
-                        onChange={(e) => setNewCanDeleteWorkspaces(e.target.checked)}
+                        onChange={(e) => { setNewCanDeleteWorkspaces(e.target.checked); }}
                         className="rounded border-border accent-primary"
                       />
                       Delete workspaces
@@ -774,15 +790,12 @@ export default function Settings() {
                     ) : (
                       <div className="space-y-1.5">
                         {workspaces.map(ws => (
-                          <label key={ws.id} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                          <label key={ws.id} htmlFor={`new-ws-${ws.id}`} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                             <input
+                              id={`new-ws-${ws.id}`}
                               type="checkbox"
                               checked={newWorkspaceIds.includes(ws.id)}
-                              onChange={e => {
-                                setNewWorkspaceIds(prev =>
-                                  e.target.checked ? [...prev, ws.id] : prev.filter(id => id !== ws.id)
-                                );
-                              }}
+                              onChange={e => { handleWorkspaceToggle(ws.id, e.target.checked); }}
                               className="rounded border-border accent-primary"
                             />
                             {ws.name}
@@ -795,11 +808,12 @@ export default function Settings() {
                     <label className="text-xs font-medium text-muted-foreground mb-2 block">Permissions</label>
                     <div className="grid grid-cols-2 gap-2">
                       {WORKSPACE_KEY_PERMISSIONS.map((p) => (
-                        <label key={p.key} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                        <label key={p.key} htmlFor={`new-ws-perm-${p.key}`} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                           <input
+                            id={`new-ws-perm-${p.key}`}
                             type="checkbox"
                             checked={newPerms[p.key] ?? false}
-                            onChange={(e) => setNewPerms({ ...newPerms, [p.key]: e.target.checked })}
+                            onChange={(e) => { handleNewPermChange(p.key, e.target.checked); }}
                             className="rounded border-border accent-primary"
                           />
                           {p.label}

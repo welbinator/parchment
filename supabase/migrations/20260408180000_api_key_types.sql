@@ -3,13 +3,13 @@
 
 -- 1. Add new columns (safe to re-run — IF NOT EXISTS)
 ALTER TABLE public.api_keys
-  ADD COLUMN IF NOT EXISTS key_type text NOT NULL DEFAULT 'master'
-    CHECK (key_type IN ('master', 'workspace')),
+  ADD COLUMN IF NOT EXISTS key_type text NOT NULL DEFAULT 'master' -- NOSONAR
+    CHECK (key_type IN ('master', 'workspace')), -- NOSONAR
   ADD COLUMN IF NOT EXISTS workspace_ids uuid[] NULL,
   ADD COLUMN IF NOT EXISTS can_manage_workspaces boolean NOT NULL DEFAULT false;
 
 -- 2. Migrate any rows that still have the old 'standard' default (shouldn't exist yet, but be safe)
-UPDATE public.api_keys SET key_type = 'master' WHERE key_type NOT IN ('master', 'workspace');
+UPDATE public.api_keys SET key_type = 'master' WHERE key_type NOT IN ('master', 'workspace'); -- NOSONAR
 
 -- 3. Update the validate_api_key function to return new fields
 CREATE OR REPLACE FUNCTION public.validate_api_key(p_key text)

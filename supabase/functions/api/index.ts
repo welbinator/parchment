@@ -146,6 +146,31 @@ Deno.serve(async (req) => {
     const body = await req.json()
     const { action } = body
 
+    // Shared helper: resolve a workspace by name (partial, case-insensitive) or ID.
+    // Returns the workspace ID string, or a Response error to return immediately.
+    const resolveWorkspaceId = async (
+      wsId: string | undefined,
+      wsName: string | undefined
+    ): Promise<string | Response> => {
+      if (wsId) return wsId
+      if (wsName) {
+        const { data: matchedWs } = await supabase
+          .from('workspaces').select('id, name')
+          .eq('user_id', userId).is('deleted_at', null)
+          .ilike('name', `%${wsName.trim()}%`)
+          .order('created_at', { ascending: true })
+        if (!matchedWs || matchedWs.length === 0) {
+          const { data: allWs } = await supabase.from('workspaces').select('name').eq('user_id', userId).is('deleted_at', null).order('created_at', { ascending: true })
+          return new Response(JSON.stringify({ error: `No workspace found matching "${wsName}".`, available_workspaces: (allWs || []).map((w: { name: string }) => w.name), hint: 'Use list_workspaces to see all workspaces.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        }
+        if (matchedWs.length > 1) {
+          return new Response(JSON.stringify({ error: `Multiple workspaces match "${wsName}". Please be more specific.`, matches: matchedWs.map((w: { id: string; name: string }) => ({ id: w.id, name: w.name })), hint: 'Use the exact name or pass workspace_id.' }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        }
+        return matchedWs[0].id as string
+      }
+      return new Response(JSON.stringify({ error: 'workspace_id or workspace_name is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     // Route actions
     switch (action) {
       case 'list_collections': {
@@ -523,7 +548,7 @@ Deno.serve(async (req) => {
         const { workspace_id: rn_ws_id, workspace_name: rn_ws_name, name: new_ws_name } = body
         if (!rn_ws_id && !rn_ws_name) return json({ error: 'workspace_id or workspace_name is required' }, corsHeaders, 400)
         if (!new_ws_name) return json({ error: 'name is required' }, corsHeaders, 400)
-        const resolvedRn = await resolveWorkspaceId(supabase, userId, rn_ws_id, rn_ws_name, corsHeaders)
+        const resolvedRn = await resolveWorkspaceId(rn_ws_id, rn_ws_name)
         if (resolvedRn instanceof Response) return resolvedRn
         const { data, error } = await supabase.from('workspaces').update({ name: new_ws_name }).eq('id', resolvedRn).select().single()
         if (error) return json({ error: error.message }, corsHeaders, 400)
@@ -534,7 +559,7 @@ Deno.serve(async (req) => {
         if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
         const { workspace_id: del_ws_id, workspace_name: del_ws_name } = body
         if (!del_ws_id && !del_ws_name) return json({ error: 'workspace_id or workspace_name is required' }, corsHeaders, 400)
-        const resolvedDel = await resolveWorkspaceId(supabase, userId, del_ws_id, del_ws_name, corsHeaders)
+        const resolvedDel = await resolveWorkspaceId(del_ws_id, del_ws_name)
         if (resolvedDel instanceof Response) return resolvedDel
         const { error } = await supabase.from('workspaces').delete().eq('id', resolvedDel)
         if (error) return json({ error: error.message }, corsHeaders, 400)
@@ -549,7 +574,7 @@ Deno.serve(async (req) => {
         if (!mv_ws_id && !mv_ws_name) return json({ error: 'workspace_id or workspace_name is required' }, corsHeaders, 400)
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
         if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
-        const resolvedMove = await resolveWorkspaceId(supabase, userId, mv_ws_id, mv_ws_name, corsHeaders)
+        const resolvedMove = await resolveWorkspaceId(mv_ws_id, mv_ws_name)
         if (resolvedMove instanceof Response) return resolvedMove
         const { data: ws } = await supabase.from('workspaces').select('id').eq('id', resolvedMove).eq('user_id', userId).is('deleted_at', null).single()
         if (!ws) return json({ error: 'Target workspace not found' }, corsHeaders, 404)

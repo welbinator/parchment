@@ -161,15 +161,33 @@ Deno.serve(async (req) => {
 
       case 'create_collection': {
         if (!permissions.can_create_collections) return deny(corsHeaders)
-        const { name, workspace_id } = body
+        const { name, workspace_id, workspace_name } = body
         // Workspace keys must provide a workspace_id that is in their allowed list
         let targetWorkspaceId = workspace_id
+
+        // Allow workspace_name as a human-friendly alternative to workspace_id.
+        // Useful for AI assistants that know "Personal" or "Work" but not the UUID.
+        if (!targetWorkspaceId && workspace_name) {
+          const { data: namedWs } = await supabase
+            .from('workspaces')
+            .select('id')
+            .eq('user_id', userId)
+            .ilike('name', workspace_name.trim())
+            .limit(1)
+            .single()
+          if (namedWs) {
+            targetWorkspaceId = namedWs.id
+          } else {
+            return json({ error: `No workspace found with name "${workspace_name}". Use list_workspaces to see available workspaces.` }, corsHeaders, 404)
+          }
+        }
+
         if (keyType === 'workspace') {
           if (!targetWorkspaceId || !keyWorkspaceIds?.includes(targetWorkspaceId)) {
             return json({ error: 'workspace_id is required and must be one of this key\'s allowed workspaces' }, corsHeaders, 403)
           }
         }
-        // For personal keys: if no workspace_id provided, default to the user's
+        // For personal keys: if still no workspace_id, default to the user's
         // first workspace (sorted by created_at) so collections are always visible
         // in the UI. Without this, collections created via API land in a null-workspace
         // limbo and never appear in the sidebar.

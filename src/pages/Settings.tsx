@@ -94,7 +94,7 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
 curl -X POST https://theparchment.app/functions/v1/api \\\\
   -H "Authorization: Bearer YOUR_API_KEY" \\\\
   -H "Content-Type: application/json" \\\\
-  -d '{"action": "create_collection", "name": "My Collection"}'
+  -d '{"action": "create_collection", "name": "My Collection", "workspace_name": "Personal"}'
 \`\`\`
 
 ### Rename a collection
@@ -162,7 +162,7 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
   -d '{"action": "delete_workspace", "workspace_id": "WORKSPACE_ID"}'
 \`\`\`
 
-To create a collection inside a workspace, pass \`workspace_id\` to \`create_collection\`.
+To target a specific workspace, pass \`workspace_name\` or \`workspace_id\` to \`create_collection\`. \`workspace_name\` supports partial, case-insensitive matching — \`"work"\` will match \`"Work Stuff"\`. If multiple workspaces match, the API returns a 409 with the list of matches so you can ask the user to clarify. If omitted, the collection is created in your first workspace. Always call \`list_workspaces\` first if you are unsure of the name.
 
 ### List pages in a collection
 \`\`\`bash

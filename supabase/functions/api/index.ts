@@ -161,13 +161,66 @@ Deno.serve(async (req) => {
 
       case 'create_collection': {
         if (!permissions.can_create_collections) return deny(corsHeaders)
-        const { name, workspace_id } = body
+        const { name, workspace_id, workspace_name } = body
         // Workspace keys must provide a workspace_id that is in their allowed list
         let targetWorkspaceId = workspace_id
+
+        // Allow workspace_name as a human-friendly alternative to workspace_id.
+        // Supports partial, case-insensitive matching so AI assistants can pass
+        // natural-language names like "work" and match "Work Stuff".
+        // If multiple workspaces match, returns an error listing the matches so
+        // the AI can ask the user to clarify.
+        if (!targetWorkspaceId && workspace_name) {
+          const { data: matchedWs } = await supabase
+            .from('workspaces')
+            .select('id, name')
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+            .ilike('name', `%${workspace_name.trim()}%`)
+            .order('created_at', { ascending: true })
+          if (!matchedWs || matchedWs.length === 0) {
+            const { data: allWs } = await supabase
+              .from('workspaces')
+              .select('name')
+              .eq('user_id', userId)
+              .is('deleted_at', null)
+              .order('created_at', { ascending: true })
+            const names = (allWs || []).map((w: { name: string }) => w.name)
+            return json({
+              error: `No workspace found matching "${workspace_name}".`,
+              available_workspaces: names,
+              hint: 'Use list_workspaces to see all workspaces, then retry with the exact or partial name.',
+            }, corsHeaders, 404)
+          }
+          if (matchedWs.length > 1) {
+            return json({
+              error: `Multiple workspaces match "${workspace_name}". Please be more specific.`,
+              matches: matchedWs.map((w: { id: string; name: string }) => ({ id: w.id, name: w.name })),
+              hint: 'Retry with workspace_name set to the exact name, or pass workspace_id directly.',
+            }, corsHeaders, 409)
+          }
+          targetWorkspaceId = matchedWs[0].id
+        }
+
         if (keyType === 'workspace') {
           if (!targetWorkspaceId || !keyWorkspaceIds?.includes(targetWorkspaceId)) {
             return json({ error: 'workspace_id is required and must be one of this key\'s allowed workspaces' }, corsHeaders, 403)
           }
+        }
+        // For personal keys: if still no workspace_id, default to the user's
+        // first workspace (sorted by created_at) so collections are always visible
+        // in the UI. Without this, collections created via API land in a null-workspace
+        // limbo and never appear in the sidebar.
+        if (!targetWorkspaceId) {
+          const { data: defaultWs } = await supabase
+            .from('workspaces')
+            .select('id')
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .single()
+          if (defaultWs) targetWorkspaceId = defaultWs.id
         }
         const { data: existing } = await supabase.from('collections').select('position').eq('user_id', userId).order('position', { ascending: false }).limit(1)
         const position = (existing?.[0]?.position ?? -1) + 1
@@ -448,7 +501,7 @@ Deno.serve(async (req) => {
       case 'list_workspaces': {
         // Any key type can list workspaces (read-only)
         if (!permissions.can_read_pages) return deny(corsHeaders)
-        let query = supabase.from('workspaces').select('id, name, created_at').eq('user_id', userId)
+        let query = supabase.from('workspaces').select('id, name, created_at').eq('user_id', userId).is('deleted_at', null)
         if (keyType === 'workspace' && keyWorkspaceIds && keyWorkspaceIds.length > 0) {
           query = query.in('id', keyWorkspaceIds)
         }

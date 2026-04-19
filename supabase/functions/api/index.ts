@@ -544,13 +544,16 @@ Deno.serve(async (req) => {
       case 'move_collection': {
         // Move a collection to a different workspace
         if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
-        const { collection_id, workspace_id: target_workspace_id } = body
-        if (!collection_id || !target_workspace_id) return json({ error: 'collection_id and workspace_id are required' }, corsHeaders, 400)
+        const { collection_id, workspace_id: mv_ws_id, workspace_name: mv_ws_name } = body
+        if (!collection_id) return json({ error: 'collection_id is required' }, corsHeaders, 400)
+        if (!mv_ws_id && !mv_ws_name) return json({ error: 'workspace_id or workspace_name is required' }, corsHeaders, 400)
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
         if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
-        const { data: ws } = await supabase.from('workspaces').select('id').eq('id', target_workspace_id).eq('user_id', userId).single()
+        const resolvedMove = await resolveWorkspaceId(supabase, userId, mv_ws_id, mv_ws_name, corsHeaders)
+        if (resolvedMove instanceof Response) return resolvedMove
+        const { data: ws } = await supabase.from('workspaces').select('id').eq('id', resolvedMove).eq('user_id', userId).is('deleted_at', null).single()
         if (!ws) return json({ error: 'Target workspace not found' }, corsHeaders, 404)
-        const { error } = await supabase.from('collections').update({ workspace_id: target_workspace_id }).eq('id', collection_id)
+        const { error } = await supabase.from('collections').update({ workspace_id: resolvedMove }).eq('id', collection_id)
         if (error) return json({ error: error.message }, corsHeaders, 400)
         return json({ success: true }, corsHeaders)
       }

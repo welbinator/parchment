@@ -520,23 +520,23 @@ Deno.serve(async (req) => {
 
       case 'rename_workspace': {
         if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
-        const { workspace_id, name } = body
-        if (!workspace_id) return json({ error: 'workspace_id is required' }, corsHeaders, 400)
-        if (!name) return json({ error: 'name is required' }, corsHeaders, 400)
-        const { data: ws } = await supabase.from('workspaces').select('id').eq('id', workspace_id).eq('user_id', userId).single()
-        if (!ws) return json({ error: 'Workspace not found' }, corsHeaders, 404)
-        const { data, error } = await supabase.from('workspaces').update({ name }).eq('id', workspace_id).select().single()
+        const { workspace_id: rn_ws_id, workspace_name: rn_ws_name, name: new_ws_name } = body
+        if (!rn_ws_id && !rn_ws_name) return json({ error: 'workspace_id or workspace_name is required' }, corsHeaders, 400)
+        if (!new_ws_name) return json({ error: 'name is required' }, corsHeaders, 400)
+        const resolvedRn = await resolveWorkspaceId(supabase, userId, rn_ws_id, rn_ws_name, corsHeaders)
+        if (resolvedRn instanceof Response) return resolvedRn
+        const { data, error } = await supabase.from('workspaces').update({ name: new_ws_name }).eq('id', resolvedRn).select().single()
         if (error) return json({ error: error.message }, corsHeaders, 400)
         return json({ workspace: data }, corsHeaders)
       }
 
       case 'delete_workspace': {
         if (!canManageWorkspaces) return json({ error: 'This key does not have permission to manage workspaces. Enable \'can_manage_workspaces\' on a master key.' }, corsHeaders, 403)
-        const { workspace_id } = body
-        if (!workspace_id) return json({ error: 'workspace_id is required' }, corsHeaders, 400)
-        const { data: ws } = await supabase.from('workspaces').select('id').eq('id', workspace_id).eq('user_id', userId).single()
-        if (!ws) return json({ error: 'Workspace not found' }, corsHeaders, 404)
-        const { error } = await supabase.from('workspaces').delete().eq('id', workspace_id)
+        const { workspace_id: del_ws_id, workspace_name: del_ws_name } = body
+        if (!del_ws_id && !del_ws_name) return json({ error: 'workspace_id or workspace_name is required' }, corsHeaders, 400)
+        const resolvedDel = await resolveWorkspaceId(supabase, userId, del_ws_id, del_ws_name, corsHeaders)
+        if (resolvedDel instanceof Response) return resolvedDel
+        const { error } = await supabase.from('workspaces').delete().eq('id', resolvedDel)
         if (error) return json({ error: error.message }, corsHeaders, 400)
         return json({ success: true }, corsHeaders)
       }

@@ -175,6 +175,7 @@ Deno.serve(async (req) => {
             .from('workspaces')
             .select('id, name')
             .eq('user_id', userId)
+            .is('deleted_at', null)
             .ilike('name', `%${workspace_name.trim()}%`)
             .order('created_at', { ascending: true })
           if (!matchedWs || matchedWs.length === 0) {
@@ -182,6 +183,7 @@ Deno.serve(async (req) => {
               .from('workspaces')
               .select('name')
               .eq('user_id', userId)
+              .is('deleted_at', null)
               .order('created_at', { ascending: true })
             const names = (allWs || []).map((w: { name: string }) => w.name)
             return json({
@@ -214,6 +216,7 @@ Deno.serve(async (req) => {
             .from('workspaces')
             .select('id')
             .eq('user_id', userId)
+            .is('deleted_at', null)
             .order('created_at', { ascending: true })
             .limit(1)
             .single()
@@ -498,7 +501,7 @@ Deno.serve(async (req) => {
       case 'list_workspaces': {
         // Any key type can list workspaces (read-only)
         if (!permissions.can_read_pages) return deny(corsHeaders)
-        let query = supabase.from('workspaces').select('id, name, created_at').eq('user_id', userId)
+        let query = supabase.from('workspaces').select('id, name, created_at').eq('user_id', userId).is('deleted_at', null)
         if (keyType === 'workspace' && keyWorkspaceIds && keyWorkspaceIds.length > 0) {
           query = query.in('id', keyWorkspaceIds)
         }

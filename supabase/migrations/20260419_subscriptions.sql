@@ -16,6 +16,7 @@ CREATE POLICY "Users can view own subscription" ON public.subscriptions FOR SELE
 
 GRANT SELECT ON public.subscriptions TO authenticated;
 GRANT SELECT ON public.subscriptions TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.subscriptions TO service_role;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user_subscription()
 RETURNS TRIGGER AS $$

@@ -440,8 +440,9 @@ Deno.serve(async (req) => {
           }
         }
         const insertedBlocks: Record<string, unknown>[] = []
-        for (let i = 0; i < ib_blocks.length; i++) {
-          const block = ib_blocks[i]
+        let ib_offset = 0
+        for (const block of ib_blocks) {
+          const i = ib_offset++
           const { data: inserted } = await supabase.from('blocks').insert({
             page_id,
             type: block.type || 'text',

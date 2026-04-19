@@ -448,6 +448,8 @@ export default function Settings() {
   const [newKeyRevealed, setNewKeyRevealed] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [upgradingPlan, setUpgradingPlan] = useState(false);
+  const [managingSubscription, setManagingSubscription] = useState(false);
 
   const ADMIN_EMAIL = 'james.welbes@gmail.com';
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -461,6 +463,48 @@ export default function Settings() {
     enabled_for: string[];
   }
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
+
+  const handleUpgrade = async () => {
+    setUpgradingPlan(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.error ?? 'Failed to start checkout');
+      }
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setUpgradingPlan(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setManagingSubscription(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.error ?? 'Failed to open billing portal');
+      }
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setManagingSubscription(false);
+    }
+  };
 
   // skipcq: JS-0356
   const fetchFlags = async () => {
@@ -786,17 +830,20 @@ export default function Settings() {
                 </div>
                 {plan === 'free' ? (
                   <button
-                    onClick={() => toast.info('Stripe integration coming soon!')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    onClick={handleUpgrade}
+                    disabled={upgradingPlan}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-60"
                   >
-                    <Zap size={14} />
-                    Upgrade to Pro — $4.99/mo
+                    {upgradingPlan ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                    Upgrade to Pro &mdash; $4.99/mo
                   </button>
                 ) : (
                   <button
-                    onClick={() => toast.info('Stripe portal coming soon!')}
-                    className="px-3 py-1.5 text-sm rounded-md border border-border text-foreground hover:bg-accent transition-colors"
+                    onClick={handleManageSubscription}
+                    disabled={managingSubscription}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border border-border text-foreground hover:bg-accent transition-colors disabled:opacity-60"
                   >
+                    {managingSubscription ? <Loader2 size={14} className="animate-spin" /> : null}
                     Manage Subscription
                   </button>
                 )}

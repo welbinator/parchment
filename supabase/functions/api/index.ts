@@ -166,20 +166,38 @@ Deno.serve(async (req) => {
         let targetWorkspaceId = workspace_id
 
         // Allow workspace_name as a human-friendly alternative to workspace_id.
-        // Useful for AI assistants that know "Personal" or "Work" but not the UUID.
+        // Supports partial, case-insensitive matching so AI assistants can pass
+        // natural-language names like "work" and match "Work Stuff".
+        // If multiple workspaces match, returns an error listing the matches so
+        // the AI can ask the user to clarify.
         if (!targetWorkspaceId && workspace_name) {
-          const { data: namedWs } = await supabase
+          const { data: matchedWs } = await supabase
             .from('workspaces')
-            .select('id')
+            .select('id, name')
             .eq('user_id', userId)
-            .ilike('name', workspace_name.trim())
-            .limit(1)
-            .single()
-          if (namedWs) {
-            targetWorkspaceId = namedWs.id
-          } else {
-            return json({ error: `No workspace found with name "${workspace_name}". Use list_workspaces to see available workspaces.` }, corsHeaders, 404)
+            .ilike('name', `%${workspace_name.trim()}%`)
+            .order('created_at', { ascending: true })
+          if (!matchedWs || matchedWs.length === 0) {
+            const { data: allWs } = await supabase
+              .from('workspaces')
+              .select('name')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: true })
+            const names = (allWs || []).map((w: { name: string }) => w.name)
+            return json({
+              error: `No workspace found matching "${workspace_name}".`,
+              available_workspaces: names,
+              hint: 'Use list_workspaces to see all workspaces, then retry with the exact or partial name.',
+            }, corsHeaders, 404)
           }
+          if (matchedWs.length > 1) {
+            return json({
+              error: `Multiple workspaces match "${workspace_name}". Please be more specific.`,
+              matches: matchedWs.map((w: { id: string; name: string }) => ({ id: w.id, name: w.name })),
+              hint: 'Retry with workspace_name set to the exact name, or pass workspace_id directly.',
+            }, corsHeaders, 409)
+          }
+          targetWorkspaceId = matchedWs[0].id
         }
 
         if (keyType === 'workspace') {

@@ -162,7 +162,7 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
   -d '{"action": "delete_workspace", "workspace_id": "WORKSPACE_ID"}'
 \`\`\`
 
-To target a specific workspace, pass \`workspace_name\` (e.g. \`\"Personal\"\` or \`\"Work\"\`) or \`workspace_id\` to \`create_collection\`. Using \`workspace_name\` is recommended for AI assistants. If omitted, the collection is created in your first workspace.
+To target a specific workspace, pass \`workspace_name\` or \`workspace_id\` to \`create_collection\`. \`workspace_name\` supports partial, case-insensitive matching — \`\"work\"\` will match \`\"Work Stuff\"\`. If multiple workspaces match, the API returns a 409 with the list of matches so you can ask the user to clarify. If omitted, the collection is created in your first workspace. Always call \`list_workspaces\` first if you are unsure of the name.
 
 ### List pages in a collection
 \`\`\`bash

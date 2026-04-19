@@ -185,7 +185,7 @@ curl -X POST ${API_BASE} \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"action": "delete_workspace", "workspace_id": "WORKSPACE_ID"}'`}</CodeBlock>
-          <p className="text-muted-foreground text-sm mt-2">To create a collection inside a specific workspace, pass <code className="bg-muted px-1 py-0.5 rounded">workspace_id</code> or <code className="bg-muted px-1 py-0.5 rounded">workspace_name</code> to <code className="bg-muted px-1 py-0.5 rounded">create_collection</code>. Using <code className="bg-muted px-1 py-0.5 rounded">workspace_name</code> (e.g. &quot;Personal&quot; or &quot;Work&quot;) is recommended for AI assistants. If neither is provided, the collection is created in your first workspace.</p>
+          <p className="text-muted-foreground text-sm mt-2">To target a specific workspace, pass <code className="bg-muted px-1 py-0.5 rounded">workspace_name</code> or <code className="bg-muted px-1 py-0.5 rounded">workspace_id</code> to <code className="bg-muted px-1 py-0.5 rounded">create_collection</code>. <code className="bg-muted px-1 py-0.5 rounded">workspace_name</code> supports partial, case-insensitive matching — &quot;work&quot; matches &quot;Work Stuff&quot;. If multiple workspaces match, a 409 is returned listing the matches so the AI can ask the user to clarify. If omitted, defaults to the first workspace.</p>
         </section>
 
         <section className="mb-8">

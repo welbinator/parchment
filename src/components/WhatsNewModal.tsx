@@ -21,13 +21,13 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
-    version: '1.9.0',
-    title: 'Workspaces',
+    version: '1.9.2',
+    title: 'API: Block Editing & Workspace Improvements',
     changes: [
-      { type: 'feature', description: 'Multiple workspaces — create, rename, and delete named workspaces to organize your collections.' },
-      { type: 'feature', description: 'Workspace switcher in your profile menu lets you jump between workspaces instantly.' },
-      { type: 'feature', description: 'Move any collection to a different workspace from its context menu.' },
-      { type: 'improvement', description: 'Trash and page counts are now scoped to the active workspace.' },
+      { type: 'feature', description: 'New insert_blocks API action — insert blocks at any position in a page. Existing blocks shift down automatically.' },
+      { type: 'feature', description: 'New update_block API action — patch a single block&apos;s content or type in-place without rewriting the whole page.' },
+      { type: 'feature', description: 'New move_collection API action — move a collection to a different workspace programmatically.' },
+      { type: 'improvement', description: 'workspace_name now works on all workspace-targeting API actions (move_collection, rename_workspace, delete_workspace).' },
     ],
   },
 ];

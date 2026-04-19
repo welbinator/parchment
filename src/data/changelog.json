@@ -1,12 +1,39 @@
 [
   {
+    "version": "1.9.2",
+    "date": "2026-04-19",
+    "title": "API: Block Editing & Workspace Improvements",
+    "changes": [
+      {
+        "type": "feature",
+        "description": "API: New insert_blocks action \u2014 insert blocks at a specific position in a page using after_block_id or position. Existing blocks shift down automatically."
+      },
+      {
+        "type": "feature",
+        "description": "API: New update_block action \u2014 patch a single block's content, type, checked state, or indent level in-place without affecting its position."
+      },
+      {
+        "type": "feature",
+        "description": "API: New move_collection action \u2014 move a collection to a different workspace via the API."
+      },
+      {
+        "type": "improvement",
+        "description": "API: workspace_name is now supported on move_collection, rename_workspace, and delete_workspace \u2014 use a partial name instead of an ID for all workspace-targeting actions."
+      },
+      {
+        "type": "improvement",
+        "description": "API docs and downloadable SKILL.md updated to reflect all new actions with full examples."
+      }
+    ]
+  },
+  {
     "version": "1.9.1",
     "date": "2026-04-11",
     "title": "API Improvements & Bug Fixes",
     "changes": [
       {
         "type": "feature",
-        "description": "API: New workspace actions — create, rename, and delete workspaces programmatically via Master Key with workspace management permissions."
+        "description": "API: New workspace actions \u2014 create, rename, and delete workspaces programmatically via Master Key with workspace management permissions."
       },
       {
         "type": "improvement",
@@ -33,7 +60,7 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Multiple workspaces — create, rename, and delete named workspaces to organize your collections."
+        "description": "Multiple workspaces \u2014 create, rename, and delete named workspaces to organize your collections."
       },
       {
         "type": "feature",
@@ -49,7 +76,7 @@
       },
       {
         "type": "improvement",
-        "description": "Always-visible top bar — the header stays persistent regardless of whether a page is open."
+        "description": "Always-visible top bar \u2014 the header stays persistent regardless of whether a page is open."
       },
       {
         "type": "feature",
@@ -72,7 +99,7 @@
       },
       {
         "type": "improvement",
-        "description": "Page type badge is now hidden for blank pages — only shows for notes, checklist, and roadmap types."
+        "description": "Page type badge is now hidden for blank pages \u2014 only shows for notes, checklist, and roadmap types."
       }
     ]
   },
@@ -83,7 +110,7 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Pages opened in Board view now have a Share button in the modal header — toggle sharing, set public or private access, and copy the link without leaving the board."
+        "description": "Pages opened in Board view now have a Share button in the modal header \u2014 toggle sharing, set public or private access, and copy the link without leaving the board."
       }
     ]
   },
@@ -98,11 +125,11 @@
       },
       {
         "type": "feature",
-        "description": "New API action: reorder_collections — set the display order of your collections programmatically."
+        "description": "New API action: reorder_collections \u2014 set the display order of your collections programmatically."
       },
       {
         "type": "feature",
-        "description": "New API action: move_page — move a page to a different collection via API."
+        "description": "New API action: move_page \u2014 move a page to a different collection via API."
       },
       {
         "type": "improvement",
@@ -125,7 +152,7 @@
       },
       {
         "type": "fix",
-        "description": "Fixed trash page in list view stretching full width — now constrained to the standard page container."
+        "description": "Fixed trash page in list view stretching full width \u2014 now constrained to the standard page container."
       },
       {
         "type": "improvement",
@@ -140,7 +167,7 @@
     "changes": [
       {
         "type": "improvement",
-        "description": "Added Socket.dev supply chain security monitoring — every dependency change is scanned for malicious packages, typosquatting, and compromised maintainers."
+        "description": "Added Socket.dev supply chain security monitoring \u2014 every dependency change is scanned for malicious packages, typosquatting, and compromised maintainers."
       },
       {
         "type": "improvement",
@@ -166,7 +193,7 @@
     "changes": [
       {
         "type": "feature",
-        "description": "New Board view — a Trello-style horizontal layout showing all your collections as columns. Toggle between List and Board views with the pill at the bottom of the screen."
+        "description": "New Board view \u2014 a Trello-style horizontal layout showing all your collections as columns. Toggle between List and Board views with the pill at the bottom of the screen."
       },
       {
         "type": "feature",
@@ -205,7 +232,7 @@
       },
       {
         "type": "feature",
-        "description": "AI-powered page detection — the extension automatically recognizes recipes, YouTube videos, and general articles, routing each to the right collection."
+        "description": "AI-powered page detection \u2014 the extension automatically recognizes recipes, YouTube videos, and general articles, routing each to the right collection."
       },
       {
         "type": "feature",
@@ -213,7 +240,7 @@
       },
       {
         "type": "feature",
-        "description": "After saving, \"Open Parchment\" deep-links directly to the newly created page — no hunting through the sidebar."
+        "description": "After saving, \"Open Parchment\" deep-links directly to the newly created page \u2014 no hunting through the sidebar."
       },
       {
         "type": "improvement",
@@ -228,11 +255,11 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Move pages between collections — drag and drop on desktop, or use the ⋮ menu on any page and choose \"Move to…\" on mobile."
+        "description": "Move pages between collections \u2014 drag and drop on desktop, or use the \u22ee menu on any page and choose \"Move to\u2026\" on mobile."
       },
       {
         "type": "feature",
-        "description": "URLs in API-inserted blocks are now automatically clickable on page load — no need to click in and out of the block first."
+        "description": "URLs in API-inserted blocks are now automatically clickable on page load \u2014 no need to click in and out of the block first."
       },
       {
         "type": "feature",
@@ -240,7 +267,7 @@
       },
       {
         "type": "feature",
-        "description": "New API action: move_page — moves a page to a different collection by page_id and target collection_id."
+        "description": "New API action: move_page \u2014 moves a page to a different collection by page_id and target collection_id."
       }
     ]
   },
@@ -251,7 +278,7 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Multi-select blocks — hover any block to reveal a checkbox, click to enter selection mode. Select multiple blocks and delete them all at once."
+        "description": "Multi-select blocks \u2014 hover any block to reveal a checkbox, click to enter selection mode. Select multiple blocks and delete them all at once."
       },
       {
         "type": "feature",
@@ -270,15 +297,15 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Nested list indentation — press TAB on any numbered or bullet list item to indent it into a sub-list. SHIFT+TAB outdents. Numbered sub-lists automatically use letter labels (a., b., c.) at level 2 and roman numerals (i., ii., iii.) at level 3+."
+        "description": "Nested list indentation \u2014 press TAB on any numbered or bullet list item to indent it into a sub-list. SHIFT+TAB outdents. Numbered sub-lists automatically use letter labels (a., b., c.) at level 2 and roman numerals (i., ii., iii.) at level 3+."
       },
       {
         "type": "feature",
-        "description": "Slash command keyboard navigation — use the arrow keys to move through the slash command menu and press Enter to select. No more reaching for the mouse."
+        "description": "Slash command keyboard navigation \u2014 use the arrow keys to move through the slash command menu and press Enter to select. No more reaching for the mouse."
       },
       {
         "type": "fix",
-        "description": "Page titles no longer truncate when they're too long — the title field now grows to wrap across multiple lines, just like a regular heading."
+        "description": "Page titles no longer truncate when they're too long \u2014 the title field now grows to wrap across multiple lines, just like a regular heading."
       }
     ]
   },
@@ -289,15 +316,15 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Group blocks — use /group to create a container block that groups related content together. Delete the whole group at once, or style it with a custom background and border color."
+        "description": "Group blocks \u2014 use /group to create a container block that groups related content together. Delete the whole group at once, or style it with a custom background and border color."
       },
       {
         "type": "feature",
-        "description": "Group block styling — click the pencil icon on any group to pick a background and border color from a curated palette."
+        "description": "Group block styling \u2014 click the pencil icon on any group to pick a background and border color from a curated palette."
       },
       {
         "type": "feature",
-        "description": "Resizable sidebar — drag the border between the sidebar and main content to make the sidebar wider or narrower. Your preferred width is saved automatically."
+        "description": "Resizable sidebar \u2014 drag the border between the sidebar and main content to make the sidebar wider or narrower. Your preferred width is saved automatically."
       },
       {
         "type": "improvement",
@@ -316,19 +343,19 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Page Sharing — share any page via a public link anyone can view, or restrict it to specific Parchment users by email. Shared pages are fully read-only for viewers."
+        "description": "Page Sharing \u2014 share any page via a public link anyone can view, or restrict it to specific Parchment users by email. Shared pages are fully read-only for viewers."
       },
       {
         "type": "feature",
-        "description": "Shared with me — pages privately shared with your email address now appear in a dedicated sidebar section."
+        "description": "Shared with me \u2014 pages privately shared with your email address now appear in a dedicated sidebar section."
       },
       {
         "type": "feature",
-        "description": "Beta Tester program — opt in from Settings to get early access to features still being tested. Check the boxes for the features you want to try."
+        "description": "Beta Tester program \u2014 opt in from Settings to get early access to features still being tested. Check the boxes for the features you want to try."
       },
       {
         "type": "feature",
-        "description": "Progressive Web App (PWA) — Parchment can now be installed to your home screen on mobile and desktop for a native app-like experience."
+        "description": "Progressive Web App (PWA) \u2014 Parchment can now be installed to your home screen on mobile and desktop for a native app-like experience."
       },
       {
         "type": "improvement",
@@ -343,11 +370,11 @@
     "changes": [
       {
         "type": "feature",
-        "description": "New users are now redirected to Settings after signup with the API key form pre-opened and agent-friendly permissions pre-selected — making it easy to connect an AI agent right away."
+        "description": "New users are now redirected to Settings after signup with the API key form pre-opened and agent-friendly permissions pre-selected \u2014 making it easy to connect an AI agent right away."
       },
       {
         "type": "feature",
-        "description": "Each API key card now shows a \"Download SKILL.md\" button — downloads a ready-to-use skill file for your AI agent with full API reference, curl examples, and block type docs."
+        "description": "Each API key card now shows a \"Download SKILL.md\" button \u2014 downloads a ready-to-use skill file for your AI agent with full API reference, curl examples, and block type docs."
       },
       {
         "type": "fix",
@@ -370,7 +397,7 @@
       },
       {
         "type": "feature",
-        "description": "New favicon — the Parchment logo is now shown in browser tabs."
+        "description": "New favicon \u2014 the Parchment logo is now shown in browser tabs."
       },
       {
         "type": "improvement",
@@ -378,7 +405,7 @@
       },
       {
         "type": "improvement",
-        "description": "API docs crawler-friendly noscript block updated to match the full public docs — AI bots can now read complete API documentation."
+        "description": "API docs crawler-friendly noscript block updated to match the full public docs \u2014 AI bots can now read complete API documentation."
       },
       {
         "type": "fix",
@@ -397,7 +424,7 @@
       },
       {
         "type": "fix",
-        "description": "Fixed Settings → Export Data button pointing to the wrong server."
+        "description": "Fixed Settings \u2192 Export Data button pointing to the wrong server."
       },
       {
         "type": "fix",
@@ -427,19 +454,19 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Inline formatting toolbar — select text to bold, italicize, strikethrough, change color, or turn it into a link."
+        "description": "Inline formatting toolbar \u2014 select text to bold, italicize, strikethrough, change color, or turn it into a link."
       },
       {
         "type": "feature",
-        "description": "Auto-linkify — URLs typed into blocks automatically become clickable links when you leave the block."
+        "description": "Auto-linkify \u2014 URLs typed into blocks automatically become clickable links when you leave the block."
       },
       {
         "type": "feature",
-        "description": "Ctrl+click (Cmd+click on Mac) to open links — regular clicks place the cursor for editing."
+        "description": "Ctrl+click (Cmd+click on Mac) to open links \u2014 regular clicks place the cursor for editing."
       },
       {
         "type": "improvement",
-        "description": "Mobile-friendly toolbar positioning — on touch devices the toolbar appears below the selection to avoid clashing with native OS menus."
+        "description": "Mobile-friendly toolbar positioning \u2014 on touch devices the toolbar appears below the selection to avoid clashing with native OS menus."
       }
     ]
   },
@@ -450,7 +477,7 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Ctrl+Z / Cmd+Z now undoes the last block deletion — no need to click the toast, just press undo like you normally would."
+        "description": "Ctrl+Z / Cmd+Z now undoes the last block deletion \u2014 no need to click the toast, just press undo like you normally would."
       }
     ]
   },
@@ -461,11 +488,11 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Added Trash for pages and collections — deleted items are now soft-deleted and can be restored or permanently removed from the Trash view."
+        "description": "Added Trash for pages and collections \u2014 deleted items are now soft-deleted and can be restored or permanently removed from the Trash view."
       },
       {
         "type": "feature",
-        "description": "Block-level undo — deleting a block now shows a toast with an Undo action to instantly recover it."
+        "description": "Block-level undo \u2014 deleting a block now shows a toast with an Undo action to instantly recover it."
       },
       {
         "type": "fix",
@@ -484,7 +511,7 @@
     "changes": [
       {
         "type": "feature",
-        "description": "Pages & Collections — organise your thoughts into pages grouped by collections."
+        "description": "Pages & Collections \u2014 organise your thoughts into pages grouped by collections."
       },
       {
         "type": "feature",
@@ -492,7 +519,7 @@
       },
       {
         "type": "feature",
-        "description": "Slash commands — type \"/\" to quickly change block types."
+        "description": "Slash commands \u2014 type \"/\" to quickly change block types."
       },
       {
         "type": "feature",

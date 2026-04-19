@@ -154,6 +154,15 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
   -d '{"action": "rename_workspace", "workspace_id": "WORKSPACE_ID", "name": "New Name"}'
 \`\`\`
 
+You can also use \`workspace_name\` instead of \`workspace_id\` for any workspace-targeting action (\`move_collection\`, \`rename_workspace\`, \`delete_workspace\`). \`workspace_name\` supports partial, case-insensitive matching:
+
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "rename_workspace", "workspace_name": "work", "name": "New Name"}'
+\`\`\`
+
 ### Delete a workspace
 \`\`\`bash
 curl -X POST https://theparchment.app/functions/v1/api \\\\
@@ -162,7 +171,15 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
   -d '{"action": "delete_workspace", "workspace_id": "WORKSPACE_ID"}'
 \`\`\`
 
-To target a specific workspace, pass \`workspace_name\` or \`workspace_id\` to \`create_collection\`. \`workspace_name\` supports partial, case-insensitive matching — \`"work"\` will match \`"Work Stuff"\`. If multiple workspaces match, the API returns a 409 with the list of matches so you can ask the user to clarify. If omitted, the collection is created in your first workspace. Always call \`list_workspaces\` first if you are unsure of the name.
+\`workspace_name\` is supported on \`create_collection\`, \`move_collection\`, \`rename_workspace\`, and \`delete_workspace\`. It does partial, case-insensitive matching — \`"work"\` will match \`"Work Stuff"\`. If multiple workspaces match, the API returns a 409 listing them so you can clarify. If omitted from \`create_collection\`, it defaults to the first workspace. Always call \`list_workspaces\` first if you are unsure of the name.
+
+### Move a collection to a different workspace
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{"action": "move_collection", "collection_id": "COLLECTION_ID", "workspace_name": "work"}'
+\`\`\`
 
 ### List pages in a collection
 \`\`\`bash
@@ -224,6 +241,39 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
     ]
   }'
 \`\`\`
+
+### Insert blocks at a specific position
+Use \`insert_blocks\` to add blocks at a specific point in the page. Pass \`after_block_id\` to insert after a specific block, or \`position\` (0-based integer) to insert at that index. Existing blocks shift down automatically.
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "insert_blocks",
+    "page_id": "PAGE_ID",
+    "after_block_id": "BLOCK_ID",
+    "blocks": [
+      {"type": "text", "content": "Inserted content"}
+    ]
+  }'
+\`\`\`
+
+### Update a single block in-place
+Use \`update_block\` to patch a specific block&apos;s content, type, checked state, or indent level without changing its position.
+\`\`\`bash
+curl -X POST https://theparchment.app/functions/v1/api \\\\
+  -H "x-api-key: YOUR_API_KEY" \\\\
+  -H "Content-Type: application/json" \\\\
+  -d '{
+    "action": "update_block",
+    "page_id": "PAGE_ID",
+    "block_id": "BLOCK_ID",
+    "content": "Updated content",
+    "type": "heading2"
+  }'
+\`\`\`
+
+Fields you can update: \`content\`, \`type\`, \`checked\`, \`indent_level\`. Only pass the fields you want to change.
 
 ## Block Types
 
@@ -372,10 +422,14 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 ## Tips for Agents
 
 - Always \`list_collections\` first to get IDs before creating pages
-- Use \`replace_blocks\` when you want to fully overwrite a page
-- Use \`append_blocks\` when you want to add to existing content
+- Use \`replace_blocks\` to fully overwrite a page
+- Use \`append_blocks\` to add to the end of a page
+- Use \`insert_blocks\` with \`after_block_id\` to insert at a specific spot
+- Use \`update_block\` to patch a single block&apos;s content or type in-place
 - Use \`move_page\` to reorganize pages between collections
+- Use \`move_collection\` to move a collection to a different workspace
 - Use \`reorder_collections\` to set the display order of collections
+- Use \`workspace_name\` instead of \`workspace_id\` for human-readable workspace targeting
 - IDs are UUIDs — store them if you need to reference the same page later
 - The API is append-friendly: create a collection once, add pages over time
 `;

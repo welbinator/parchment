@@ -98,11 +98,14 @@ export default function ApiDocs() {
               'move_page',
               'get_page',
               'append_blocks',
+              'insert_blocks',
+              'update_block',
               'replace_blocks',
               'update_blocks (alias for append_blocks)',
               'delete_block',
               'delete_group',
               'share_page',
+              'move_collection',
             ].map((action) => (
               <li key={action} className="border border-border rounded px-3 py-2 font-mono bg-card">{action}</li>
             ))}
@@ -159,6 +162,43 @@ export default function ApiDocs() {
           </p>
         </section>
 
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">insert_blocks</h2>
+          <p className="text-muted-foreground mb-3">
+            Insert new blocks at a specific position in the page. Pass <code className="bg-muted px-1 py-0.5 rounded">after_block_id</code> to insert after a known block, or <code className="bg-muted px-1 py-0.5 rounded">position</code> (0-based integer) to insert at a specific index. All existing blocks at or after the insert point shift down automatically.
+          </p>
+          <CodeBlock>{`curl -X POST \${API_BASE} \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "action": "insert_blocks",
+    "page_id": "PAGE_ID",
+    "after_block_id": "BLOCK_ID",
+    "blocks": [
+      {"type": "text", "content": "Inserted between existing blocks"}
+    ]
+  }'`}</CodeBlock>
+          <p className="text-muted-foreground text-sm mt-2">Use <code className="bg-muted px-1 py-0.5 rounded">get_page</code> to retrieve block IDs, then pass the ID of the block you want to insert after.</p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">update_block</h2>
+          <p className="text-muted-foreground mb-3">
+            Update a single existing block in-place by its ID. Patches only the fields you provide — position is never changed. Useful for correcting content or changing a block&apos;s type without rewriting the whole page.
+          </p>
+          <CodeBlock>{`curl -X POST \${API_BASE} \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "action": "update_block",
+    "page_id": "PAGE_ID",
+    "block_id": "BLOCK_ID",
+    "content": "Updated content here",
+    "type": "heading2"
+  }'`}</CodeBlock>
+          <p className="text-muted-foreground text-sm mt-2">Updatable fields: <code className="bg-muted px-1 py-0.5 rounded">content</code>, <code className="bg-muted px-1 py-0.5 rounded">type</code>, <code className="bg-muted px-1 py-0.5 rounded">checked</code>, <code className="bg-muted px-1 py-0.5 rounded">indent_level</code>. Only pass fields you want to change.</p>
+        </section>
+
         {/* Rename examples */}
         <section className="mb-8">
           <h2 className="text-2xl font-semibold font-display mb-3">Workspaces</h2>
@@ -185,7 +225,18 @@ curl -X POST ${API_BASE} \\
   -H "x-api-key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"action": "delete_workspace", "workspace_id": "WORKSPACE_ID"}'`}</CodeBlock>
-          <p className="text-muted-foreground text-sm mt-2">To target a specific workspace, pass <code className="bg-muted px-1 py-0.5 rounded">workspace_name</code> or <code className="bg-muted px-1 py-0.5 rounded">workspace_id</code> to <code className="bg-muted px-1 py-0.5 rounded">create_collection</code>. <code className="bg-muted px-1 py-0.5 rounded">workspace_name</code> supports partial, case-insensitive matching — &quot;work&quot; matches &quot;Work Stuff&quot;. If multiple workspaces match, a 409 is returned listing the matches so the AI can ask the user to clarify. If omitted, defaults to the first workspace.</p>
+          <p className="text-muted-foreground text-sm mt-2"><code className="bg-muted px-1 py-0.5 rounded">workspace_name</code> is supported on <code className="bg-muted px-1 py-0.5 rounded">create_collection</code>, <code className="bg-muted px-1 py-0.5 rounded">move_collection</code>, <code className="bg-muted px-1 py-0.5 rounded">rename_workspace</code>, and <code className="bg-muted px-1 py-0.5 rounded">delete_workspace</code>. It does partial, case-insensitive matching — &quot;work&quot; matches &quot;Work Stuff&quot;. Multiple matches return a 409 with the full list. Omitting it on <code className="bg-muted px-1 py-0.5 rounded">create_collection</code> defaults to the first workspace.</p>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">move_collection</h2>
+          <p className="text-muted-foreground mb-3">
+            Move a collection to a different workspace. Requires a Master Key with <code className="bg-muted px-1 py-0.5 rounded">can_manage_workspaces</code>. Accepts <code className="bg-muted px-1 py-0.5 rounded">workspace_id</code> or <code className="bg-muted px-1 py-0.5 rounded">workspace_name</code> (partial match).
+          </p>
+          <CodeBlock>{`curl -X POST \${API_BASE} \\
+  -H "x-api-key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"action": "move_collection", "collection_id": "COLLECTION_ID", "workspace_name": "work"}'`}</CodeBlock>
         </section>
 
         <section className="mb-8">

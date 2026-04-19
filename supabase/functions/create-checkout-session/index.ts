@@ -1,5 +1,3 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -8,6 +6,39 @@ const corsHeaders = {
 const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') ?? ''
 const STRIPE_PRICE_ID = Deno.env.get('STRIPE_PRICE_ID') ?? ''
 const APP_URL = Deno.env.get('APP_URL') ?? 'https://theparchment.app'
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+async function getUser(authHeader: string) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { Authorization: authHeader, apikey: SERVICE_ROLE_KEY },
+  })
+  if (!res.ok) return null
+  return res.json()
+}
+
+async function getSubscription(userId: string) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/subscriptions?user_id=eq.${userId}&select=stripe_customer_id,plan`,
+    { headers: { Authorization: `Bearer ${SERVICE_ROLE_KEY}`, apikey: SERVICE_ROLE_KEY } }
+  )
+  if (!res.ok) return null
+  const rows = await res.json()
+  return rows?.[0] ?? null
+}
+
+async function upsertSubscription(userId: string, data: Record<string, unknown>) {
+  await fetch(`${SUPABASE_URL}/rest/v1/subscriptions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      apikey: SERVICE_ROLE_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify({ user_id: userId, ...data }),
+  })
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,29 +46,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth: get user from JWT
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } }
-    )
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const authHeader = req.headers.get('Authorization') ?? ''
+    if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Check if user already has a Stripe customer ID
-    const adminSupabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-    const { data: sub } = await adminSupabase
-      .from('subscriptions')
-      .select('stripe_customer_id, plan')
-      .eq('user_id', user.id)
-      .single()
+    const user = await getUser(authHeader)
+    if (!user?.id) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
 
-    // Already pro
+    const sub = await getSubscription(user.id)
+
     if (sub?.plan === 'pro') {
       return new Response(JSON.stringify({ error: 'Already on Pro plan' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
@@ -48,28 +68,21 @@ Deno.serve(async (req) => {
       const customerRes = await fetch('https://api.stripe.com/v1/customers', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
+          Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          email: user.email ?? '',
-          metadata: JSON.stringify({ user_id: user.id }),
-        }),
+        body: new URLSearchParams({ email: user.email ?? '', 'metadata[user_id]': user.id }),
       })
       const customer = await customerRes.json()
       customerId = customer.id
-
-      // Save customer ID to subscriptions table
-      await adminSupabase
-        .from('subscriptions')
-        .upsert({ user_id: user.id, stripe_customer_id: customerId, plan: 'free', status: 'active' })
+      await upsertSubscription(user.id, { stripe_customer_id: customerId, plan: 'free', status: 'active' })
     }
 
     // Create Stripe Checkout Session
     const sessionRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
+        Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({

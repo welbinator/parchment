@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { Settings, LogOut, BookOpen, BarChart3, ScrollText, Layers, Check, ChevronRight, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
@@ -11,6 +12,7 @@ import DeleteWorkspaceModal from './DeleteWorkspaceModal';
 // skipcq: JS-R1005
 export default function UserMenu() {
   const { user, signOut } = useAuth();
+  const { isPro } = useSubscription();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
@@ -72,7 +74,14 @@ export default function UserMenu() {
         {open && (
           <div className="absolute right-0 top-10 w-64 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
             <div className="px-3 py-2 border-b border-border">
-              <p className="text-sm font-medium text-foreground truncate">{user.user_metadata?.full_name || user.email}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-foreground truncate flex-1">{user.user_metadata?.full_name || user.email}</p>
+                {isPro && (
+                  <span className="bg-primary/15 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
+                    PRO
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
 

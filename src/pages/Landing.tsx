@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FileText, Zap, Shield, Terminal, ArrowRight } from 'lucide-react';
+import { FileText, Zap, Shield, Terminal, ArrowRight, Check } from 'lucide-react';
 import PublicNav from '@/components/PublicNav';
 
 
@@ -86,6 +86,90 @@ export default function Landing() {
                 <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="py-20 md:py-28 border-t border-border">
+        <div className="mx-auto max-w-5xl px-6">
+          <h2 className="text-center text-3xl font-bold font-display text-foreground mb-4">
+            Simple, honest pricing.
+          </h2>
+          <p className="text-center text-muted-foreground mb-14 max-w-lg mx-auto">
+            Start free. Upgrade when you need more room.
+          </p>
+          <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
+            {/* Free Plan */}
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h3 className="text-xl font-bold font-display text-foreground mb-2">Free</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-foreground">$0</span>
+                <span className="text-muted-foreground ml-2">/forever</span>
+              </div>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground">2 workspaces (Personal &amp; Work)</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground">5 collections</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground">15 pages</span>
+                </li>
+              </ul>
+              <Link
+                to="/auth"
+                className="block w-full text-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+              >
+                Get Started
+              </Link>
+            </div>
+
+            {/* Pro Plan */}
+            <div className="rounded-xl border border-primary bg-primary/5 p-6 relative shadow-lg">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="inline-block bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
+                  Most Popular
+                </span>
+              </div>
+              <h3 className="text-xl font-bold font-display text-foreground mb-2">Pro</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-foreground">$4.99</span>
+                <span className="text-muted-foreground ml-2">/month</span>
+              </div>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground">Unlimited workspaces</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground">Unlimited collections</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground">Unlimited pages</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground">Chrome extension access</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span className="text-foreground">API access</span>
+                </li>
+              </ul>
+              <Link
+                to="/auth"
+                className="block w-full text-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                Get Pro
+              </Link>
+            </div>
           </div>
         </div>
       </section>

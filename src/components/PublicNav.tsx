@@ -4,6 +4,7 @@ import { Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
   { label: 'Features', href: '/#features' },
+  { label: 'Pricing', href: '/#pricing' },
   { label: 'API', href: '/docs/api' },
   { label: 'Changelog', href: '/changelog' },
 ];
@@ -37,6 +38,16 @@ export default function PublicNav() {
     }
   };
 
+  const handlePricingClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpen(false);
+    if (pathname === '/') {
+      document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/#pricing');
+    }
+  };
+
   const linkClass = (href: string) => {
     const active = href === '/' ? pathname === '/' : pathname.startsWith(href.split('#')[0]);
     return `text-sm transition-colors ${
@@ -58,6 +69,10 @@ export default function PublicNav() {
           {NAV_LINKS.map((l) =>
             l.href === '/#features' ? (
               <a key={l.label} href={l.href} onClick={handleFeaturesClick} className={linkClass(l.href)}>
+                {l.label}
+              </a>
+            ) : l.href === '/#pricing' ? (
+              <a key={l.label} href={l.href} onClick={handlePricingClick} className={linkClass(l.href)}>
                 {l.label}
               </a>
             ) : (
@@ -86,6 +101,10 @@ export default function PublicNav() {
           {NAV_LINKS.map((l) =>
             l.href === '/#features' ? (
               <a key={l.label} href={l.href} onClick={handleFeaturesClick} className={`block ${linkClass(l.href)}`}>
+                {l.label}
+              </a>
+            ) : l.href === '/#pricing' ? (
+              <a key={l.label} href={l.href} onClick={handlePricingClick} className={`block ${linkClass(l.href)}`}>
                 {l.label}
               </a>
             ) : (

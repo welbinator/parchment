@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 type KeyType = 'master' | 'workspace';
@@ -435,8 +436,10 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 `;
 }
 
+// skipcq: JS-0067
 export default function Settings() {
   const { user } = useAuth();
+  const { plan, status, isPro, isLoading: subLoading, currentPeriodEnd } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [keys, setKeys] = useState<ApiKey[]>([]);
@@ -746,6 +749,61 @@ export default function Settings() {
 
         <h1 className="text-3xl font-bold font-display text-foreground mb-2">Settings</h1>
         <p className="text-muted-foreground mb-10">Manage your API keys and account.</p>
+
+        {/* Plan & Billing */}
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-4">
+            <Crown size={18} className="text-primary" />
+            <h2 className="text-lg font-semibold font-display text-foreground">Plan &amp; Billing</h2>
+          </div>
+          
+          {subLoading ? (
+            <div className="p-4 rounded-lg border border-border bg-card">
+              <Loader2 size={16} className="animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="p-4 rounded-lg border border-border bg-card">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium text-foreground">Current Plan:</span>
+                    <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded uppercase ${
+                      isPro ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {plan}
+                    </span>
+                  </div>
+                  {isPro && currentPeriodEnd && (
+                    <p className="text-xs text-muted-foreground">
+                      Renews on {new Date(currentPeriodEnd).toLocaleDateString()}
+                    </p>
+                  )}
+                  {plan === 'free' && (
+                    <p className="text-xs text-muted-foreground">
+                      2 workspaces • 5 collections • 15 pages
+                    </p>
+                  )}
+                </div>
+                {plan === 'free' ? (
+                  <button
+                    onClick={() => toast.info('Stripe integration coming soon!')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    <Zap size={14} />
+                    Upgrade to Pro — $4.99/mo
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => toast.info('Stripe portal coming soon!')}
+                    className="px-3 py-1.5 text-sm rounded-md border border-border text-foreground hover:bg-accent transition-colors"
+                  >
+                    Manage Subscription
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
 
         <section>
           <div className="flex items-center justify-between mb-4">

@@ -169,6 +169,20 @@ Deno.serve(async (req) => {
             return json({ error: 'workspace_id is required and must be one of this key\'s allowed workspaces' }, corsHeaders, 403)
           }
         }
+        // For personal keys: if no workspace_id provided, default to the user's
+        // first workspace (sorted by created_at) so collections are always visible
+        // in the UI. Without this, collections created via API land in a null-workspace
+        // limbo and never appear in the sidebar.
+        if (!targetWorkspaceId) {
+          const { data: defaultWs } = await supabase
+            .from('workspaces')
+            .select('id')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .single()
+          if (defaultWs) targetWorkspaceId = defaultWs.id
+        }
         const { data: existing } = await supabase.from('collections').select('position').eq('user_id', userId).order('position', { ascending: false }).limit(1)
         const position = (existing?.[0]?.position ?? -1) + 1
         const { data, error } = await supabase.from('collections').insert({ user_id: userId, name: name || 'Untitled', position, workspace_id: targetWorkspaceId ?? null }).select().single()

@@ -379,6 +379,83 @@ Deno.serve(async (req) => {
         return json({ success: true, mode: 'append', blocks_added: insertedBlocks.length, blocks: insertedBlocks }, corsHeaders)
       }
 
+      // update_block: updates a single existing block's content/type/checked/indent in-place by ID.
+      // Does not change position. Returns the updated block.
+      case 'update_block': {
+        if (!permissions.can_write_blocks) return deny(corsHeaders)
+        const { page_id, block_id: ub_id, content: ub_content, type: ub_type, checked: ub_checked, indent_level: ub_indent } = body
+        if (!page_id || !ub_id) return json({ error: 'page_id and block_id are required' }, corsHeaders, 400)
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+        const { data: existing } = await supabase.from('blocks').select('id').eq('id', ub_id).eq('page_id', page_id).single()
+        if (!existing) return json({ error: 'Block not found' }, corsHeaders, 404)
+        if (ub_type && !VALID_BLOCK_TYPES.has(ub_type)) {
+          return json({ error: `Invalid block type: "${ub_type}". Valid types: ${[...VALID_BLOCK_TYPES].join(', ')}` }, corsHeaders, 400)
+        }
+        if (ub_content && new TextEncoder().encode(ub_content).length > MAX_BLOCK_CONTENT_BYTES) {
+          return json({ error: `Block content exceeds maximum size of ${MAX_BLOCK_CONTENT_BYTES / 1024}KB` }, corsHeaders, 413)
+        }
+        const ub_updates: Record<string, unknown> = {}
+        if (ub_content !== undefined) ub_updates.content = convertStyledJsonToHtml(ub_content)
+        if (ub_type !== undefined) ub_updates.type = ub_type
+        if (ub_checked !== undefined) ub_updates.checked = ub_checked
+        if (ub_indent !== undefined) ub_updates.indent_level = ub_indent
+        if (Object.keys(ub_updates).length === 0) return json({ error: 'Nothing to update — provide at least one of: content, type, checked, indent_level' }, corsHeaders, 400)
+        const { data: ub_updated, error: ub_err } = await supabase.from('blocks').update(ub_updates).eq('id', ub_id).select().single()
+        if (ub_err) return json({ error: ub_err.message }, corsHeaders, 400)
+        return json({ success: true, block: ub_updated }, corsHeaders)
+      }
+
+      // insert_blocks: inserts new blocks at a specific position in the page.
+      // Pass after_block_id to insert after a specific block, or position (0-based integer) to insert at that index.
+      // All existing blocks at or after the insert point are shifted down to make room.
+      case 'insert_blocks': {
+        if (!permissions.can_write_blocks) return deny(corsHeaders)
+        const { page_id, blocks: ib_blocks, after_block_id: ib_after, position: ib_pos } = body
+        if (!page_id || !ib_blocks?.length) return json({ error: 'page_id and blocks are required' }, corsHeaders, 400)
+        if (ib_after === undefined && ib_pos === undefined) return json({ error: 'after_block_id or position is required' }, corsHeaders, 400)
+        const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
+        if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
+        for (const block of ib_blocks) {
+          if (block.type && !VALID_BLOCK_TYPES.has(block.type)) {
+            return json({ error: `Invalid block type: "${block.type}". Valid types: ${[...VALID_BLOCK_TYPES].join(', ')}`, block_id: 'new' }, corsHeaders, 400)
+          }
+          if (block.content && new TextEncoder().encode(block.content).length > MAX_BLOCK_CONTENT_BYTES) {
+            return json({ error: `Block content exceeds maximum size of ${MAX_BLOCK_CONTENT_BYTES / 1024}KB` }, corsHeaders, 413)
+          }
+        }
+        let insertAt: number
+        if (ib_after) {
+          const { data: refBlock } = await supabase.from('blocks').select('position').eq('id', ib_after).eq('page_id', page_id).single()
+          if (!refBlock) return json({ error: 'after_block_id not found on this page' }, corsHeaders, 404)
+          insertAt = (refBlock.position as number) + 1
+        } else {
+          insertAt = ib_pos as number
+        }
+        // Shift existing blocks at or after insertAt to make room
+        const { data: toShift } = await supabase.from('blocks').select('id, position').eq('page_id', page_id).gte('position', insertAt).order('position', { ascending: false })
+        if (toShift?.length) {
+          for (const b of toShift) {
+            await supabase.from('blocks').update({ position: (b.position as number) + ib_blocks.length }).eq('id', b.id)
+          }
+        }
+        const insertedBlocks: Record<string, unknown>[] = []
+        for (let i = 0; i < ib_blocks.length; i++) {
+          const block = ib_blocks[i]
+          const { data: inserted } = await supabase.from('blocks').insert({
+            page_id,
+            type: block.type || 'text',
+            content: convertStyledJsonToHtml(block.content || ''),
+            checked: block.checked ?? null,
+            indent_level: block.indent_level ?? 0,
+            position: insertAt + i,
+            group_id: block.group_id || null,
+          }).select().single()
+          if (inserted) insertedBlocks.push(inserted)
+        }
+        return json({ success: true, blocks_added: insertedBlocks.length, inserted_at: insertAt, blocks: insertedBlocks }, corsHeaders)
+      }
+
       // replace_blocks: deletes ALL existing blocks on the page, then inserts the new blocks in order.
       // Use this when you want to fully rewrite a page's content.
       case 'replace_blocks': {
@@ -667,7 +744,7 @@ Deno.serve(async (req) => {
         return json({ error: `Unknown action: ${action}`, available_actions: [
           'list_collections', 'create_collection', 'delete_collection', 'rename_collection', 'reorder_collections',
           'list_pages', 'create_page', 'delete_page', 'rename_page', 'move_page', 'get_page',
-          'append_blocks', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block', 'delete_group',
+          'append_blocks', 'insert_blocks', 'update_block', 'replace_blocks', 'update_blocks (alias for append_blocks)', 'delete_block', 'delete_group',
           'share_page',
           'list_workspaces', 'create_workspace (master + can_manage_workspaces)', 'rename_workspace (master + can_manage_workspaces)', 'delete_workspace (master + can_manage_workspaces)', 'move_collection (master + can_manage_workspaces)',
         ]}, corsHeaders, 400)

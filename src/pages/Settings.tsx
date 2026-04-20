@@ -439,7 +439,8 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 // skipcq: JS-0067
 export default function Settings() {
   const { user } = useAuth();
-  const { plan, status, isPro, isLoading: subLoading, currentPeriodEnd } = useSubscription();
+  const { plan, isPro, isLoading: subLoading, currentPeriodEnd, refetch: refetchSub } = useSubscription();
+  const [upgradePending, setUpgradePending] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [keys, setKeys] = useState<ApiKey[]>([]);
@@ -639,6 +640,25 @@ export default function Settings() {
     setWorkspaces((data as DbWorkspace[]) ?? []);
   };
 
+  // When redirected back from Stripe checkout (?upgraded=true), poll the DB directly
+  // until the webhook has updated the subscription to pro (or we give up after 20s).
+  useEffect(() => {
+    if (searchParams.get('upgraded') !== 'true') return;
+    setUpgradePending(true);
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = setInterval(async () => {
+      attempts++;
+      const { data } = await supabase.from('subscriptions').select('plan').eq('user_id', user?.id ?? '').single();
+      if ((data as { plan?: string })?.plan === 'pro' || attempts >= maxAttempts) {
+        clearInterval(interval);
+        setUpgradePending(false);
+        await refetchSub();
+      }
+    }, 2000);
+    return () => { clearInterval(interval); }; // skipcq: JS-0045
+  }, [user?.id]);
+
   useEffect(() => {
     loadKeys();
     loadWorkspaces();
@@ -805,9 +825,12 @@ export default function Settings() {
             <h2 className="text-lg font-semibold font-display text-foreground">Plan &amp; Billing</h2>
           </div>
           
-          {subLoading ? (
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <Loader2 size={16} className="animate-spin text-muted-foreground" />
+          {subLoading || upgradePending ? (
+            <div className="p-4 rounded-lg border border-border bg-card flex items-center gap-3">
+              <Loader2 size={16} className="animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">
+                {upgradePending ? 'Activating your Pro subscription…' : 'Loading…'}
+              </span>
             </div>
           ) : (
             <div className="p-4 rounded-lg border border-border bg-card">

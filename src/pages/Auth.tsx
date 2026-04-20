@@ -21,7 +21,8 @@ export default function AuthPage() {
     const json = await res.json();
     // Validate it's a Stripe checkout URL before redirecting (prevents XSS)
     if (typeof json.url === 'string' && json.url.startsWith('https://checkout.stripe.com/')) {
-      globalThis.location.href = escape(encodeURI(json.url)); // skipcq: no-deprecated — Codacy XSS rule requires escape() wrapper
+      // eslint-disable-next-line scanjs-rules/assign_to_location -- URL validated above (startsWith checkout.stripe.com)
+      globalThis.location.href = encodeURI(json.url);
     }
   };
 

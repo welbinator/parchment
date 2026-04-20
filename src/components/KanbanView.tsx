@@ -161,8 +161,8 @@ function CollectionColumn({
         />
       </div>
 
-      {/* Pages */}
-      <div className="p-2 space-y-1.5">
+      {/* Pages — scrollable so tall collections don't overflow the board */}
+      <div className="p-2 space-y-1.5 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
         {collectionPages.map((page) => (
           <div
             key={page.id}

@@ -177,9 +177,25 @@ export const useAppStore = create<AppState>((set, get) => ({
     useBlockStore.getState().setBlocks(blocks);
     usePageStore.getState().setPages(pages);
     useCollectionStore.getState().setCollections(collections);
+
+    // Restore active context — prefer what's already set (or localStorage) over defaulting to first item.
+    // This prevents mobile "comes back from background" wiping out what the user was looking at.
+    const savedPageId = get().activePageId || localStorage.getItem('activePageId');
+    const savedCollectionId = get().activeCollectionId || localStorage.getItem('activeCollectionId');
+    const savedWorkspaceId = useWorkspaceStore.getState().activeWorkspaceId || localStorage.getItem('activeWorkspaceId');
+
+    const newActivePageId = savedPageId && pages.some((p) => p.id === savedPageId && !p.deleted_at)
+      ? savedPageId
+      : (pages.filter(p => !p.deleted_at)[0]?.id ?? null);
+    const newActiveCollectionId = savedCollectionId && collections.some((c) => c.id === savedCollectionId)
+      ? savedCollectionId
+      : (collections[0]?.id ?? null);
+    if (savedWorkspaceId && workspaces.some((w) => w.id === savedWorkspaceId)) {
+      useWorkspaceStore.getState().setActiveWorkspace(savedWorkspaceId);
+    }
     set((s) => ({
-      activePageId: s.activePageId && pages.some((p) => p.id === s.activePageId) ? s.activePageId : (pages[0]?.id ?? null),
-      activeCollectionId: s.activeCollectionId && collections.some((c) => c.id === s.activeCollectionId) ? s.activeCollectionId : (collections[0]?.id ?? null),
+      activePageId: newActivePageId,
+      activeCollectionId: s.activeCollectionId === newActiveCollectionId ? s.activeCollectionId : newActiveCollectionId,
     }));
   },
 

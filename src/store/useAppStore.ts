@@ -186,7 +186,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const newActivePageId = savedPageId && pages.some((p) => p.id === savedPageId && !p.deleted_at)
       ? savedPageId
-      : (pages.filter(p => !p.deleted_at)[0]?.id ?? null);
+      : (pages.find(p => !p.deleted_at)?.id ?? null);
     const newActiveCollectionId = savedCollectionId && collections.some((c) => c.id === savedCollectionId)
       ? savedCollectionId
       : (collections[0]?.id ?? null);

@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, Zap } from 'lucide-react';
 
 export default function AuthPage() {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const isProIntent = searchParams.get('checkout') === 'true' || searchParams.get('redirect')?.includes('checkout');
+  const [isSignUp, setIsSignUp] = useState(true); // default to signup — most visitors are new
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,9 +58,14 @@ export default function AuthPage() {
         {/* Logo */}
         <div className="mb-10 text-center">
           <h1 className="text-3xl font-bold font-display text-gradient-primary">Parchment</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            A simple place for your thoughts.
-          </p>
+          {isProIntent ? (
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
+              <Zap size={12} />
+              First, let&apos;s create your account &mdash; then we&apos;ll get you set up with Pro.
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">A simple place for your thoughts.</p>
+          )}
         </div>
 
         {/* Google button */}

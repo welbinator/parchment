@@ -37,9 +37,32 @@ export default function AuthPage() {
           return;
         }
 
-        // Email autoconfirm is enabled — user gets a session immediately.
-        // Verification email is still sent but is not required to log in.
-        // The redirect param will handle taking Pro-intent users to checkout.
+        // If Pro intent: use the session to call checkout immediately.
+        // If no session yet (email confirmation required): send to check-email page.
+        if (isProIntent) {
+          const token = data.session?.access_token;
+          if (token) {
+            // We have a session — call checkout directly
+            try {
+              const res = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+                { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+              );
+              const checkoutData = await res.json();
+              if (checkoutData.url) {
+                globalThis.location.href = checkoutData.url;
+                return;
+              }
+            } catch {
+              // Checkout call failed — fall through to normal redirect
+            }
+          }
+          // No session yet (email confirmation pending) — tell user to check email first
+          toast.info('Check your email to confirm your account, then sign in to upgrade to Pro.');
+          return;
+        }
+
+        toast.success('Account created! Check your email to confirm.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

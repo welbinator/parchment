@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
-  { label: 'Features', href: '/#features' },
+  { label: 'Features', href: '/features' },
   { label: 'Pricing', href: '/#pricing' },
   { label: 'API', href: '/docs/api' },
   { label: 'Changelog', href: '/changelog' },
@@ -22,21 +22,9 @@ export default function PublicNav() {
       const timer = setTimeout(() => {
         document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
       }, 50);
-      return () => clearTimeout(timer);
+      return () => clearTimeout(timer); // skipcq: JS-0045
     }
   }, [pathname, hash]);
-
-  const handleFeaturesClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setOpen(false);
-    if (pathname === '/') {
-      // Already on home — just scroll
-      document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      // Navigate home with hash; useEffect above handles the scroll
-      navigate('/#features');
-    }
-  };
 
   const handlePricingClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -67,11 +55,7 @@ export default function PublicNav() {
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((l) =>
-            l.href === '/#features' ? (
-              <a key={l.label} href={l.href} onClick={handleFeaturesClick} className={linkClass(l.href)}>
-                {l.label}
-              </a>
-            ) : l.href === '/#pricing' ? (
+            l.href === '/#pricing' ? (
               <a key={l.label} href={l.href} onClick={handlePricingClick} className={linkClass(l.href)}>
                 {l.label}
               </a>
@@ -99,11 +83,7 @@ export default function PublicNav() {
       {open && (
         <div className="md:hidden border-t border-border bg-background px-6 py-4 space-y-3">
           {NAV_LINKS.map((l) =>
-            l.href === '/#features' ? (
-              <a key={l.label} href={l.href} onClick={handleFeaturesClick} className={`block ${linkClass(l.href)}`}>
-                {l.label}
-              </a>
-            ) : l.href === '/#pricing' ? (
+            l.href === '/#pricing' ? (
               <a key={l.label} href={l.href} onClick={handlePricingClick} className={`block ${linkClass(l.href)}`}>
                 {l.label}
               </a>
@@ -111,7 +91,7 @@ export default function PublicNav() {
               <Link
                 key={l.label}
                 to={l.href}
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); }}
                 className={`block ${linkClass(l.href)}`}
               >
                 {l.label}
@@ -120,7 +100,7 @@ export default function PublicNav() {
           )}
           <Link
             to="/auth"
-            onClick={() => setOpen(false)}
+            onClick={() => { setOpen(false); }}
             className="block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground text-center"
           >
             Sign In

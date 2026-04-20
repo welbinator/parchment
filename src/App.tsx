@@ -18,6 +18,7 @@ import Reports from "./pages/Reports";
 import Trash from "./pages/Trash";
 import NotFound from "./pages/NotFound";
 import SharedPageView from "./pages/SharedPageView";
+import Features from "./pages/Features";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import FeedbackWidget from "./components/FeedbackWidget";
 import { useViewStore } from '@/store/useViewStore';
@@ -194,6 +195,7 @@ const App = () => (
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/docs" element={<Docs />} />
             <Route path="/changelog" element={<Changelog />} />
+            <Route path="/features" element={<Features />} />
             <Route path="/share/:token" element={<SharedPageView />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<NotFound />} />

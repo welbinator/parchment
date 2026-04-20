@@ -303,7 +303,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="mx-auto max-w-6xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-sm text-muted-foreground">© {new Date().getFullYear()} Parchment</span>
+          <span className="text-sm text-muted-foreground">© {new Date().getFullYear()} Parchment <span className="font-mono text-xs opacity-50">v{__APP_VERSION__}·{__APP_COMMIT__}</span></span>
           <div className="flex gap-6">
             <Link to="/changelog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Changelog

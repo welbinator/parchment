@@ -45,7 +45,13 @@ export default function AuthPage() {
         if (error) throw error;
       }
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Something went wrong');
+      const msg = error instanceof Error ? error.message : 'Something went wrong';
+      // Make Supabase rate limit error human-readable
+      if (msg.toLowerCase().includes('security purposes') || msg.toLowerCase().includes('after')) {
+        toast.error('Too many attempts — please wait a moment and try again.');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }

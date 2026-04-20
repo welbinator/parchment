@@ -2,9 +2,9 @@
 import { X, Zap } from 'lucide-react';
 
 interface UpgradeModalProps {
-  open: boolean;
-  onClose: () => void;
-  limitType: 'collections' | 'pages' | null;
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly limitType: 'collections' | 'pages' | null;
 }
 
 // skipcq: JS-0067
@@ -19,7 +19,12 @@ export default function UpgradeModal({ open, onClose, limitType }: UpgradeModalP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+      <button
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm w-full cursor-default"
+        onClick={onClose}
+        aria-label="Close"
+        tabIndex={-1}
+      />
       <div className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors">
           <X size={16} />

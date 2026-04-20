@@ -599,7 +599,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
     <UpgradeModal
       open={upgradeModal.open}
       limitType={upgradeModal.limitType}
-      onClose={() => setUpgradeModal({ open: false, limitType: null })}
+      onClose={() => { setUpgradeModal({ open: false, limitType: null }); }}
     />
     </>
   );

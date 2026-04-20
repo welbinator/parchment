@@ -122,6 +122,32 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return cleanup;
   }, [user, setupRealtime]);
 
+  // If auth resolved but store is still loading after 15s, something is genuinely broken.
+  // Show a non-crashing error UI — don't sign out, just let them retry.
+  const [storeTimeout, setStoreTimeout] = useState(false);
+  useEffect(() => {
+    if (!user || !storeLoading) { setStoreTimeout(false); return; }
+    const t = setTimeout(() => { setStoreTimeout(true); }, 15000);
+    return () => { clearTimeout(t); }; // skipcq: JS-0045
+  }, [user, storeLoading]);
+
+  if (storeTimeout) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6">
+        <div className="text-center max-w-sm">
+          <p className="text-foreground font-medium mb-3">Taking longer than expected&hellip;</p>
+          <p className="text-muted-foreground text-sm mb-6">There may be a connection issue. Try reloading.</p>
+          <button
+            onClick={() => { globalThis.location.reload(); }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (authLoading || (user && storeLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">

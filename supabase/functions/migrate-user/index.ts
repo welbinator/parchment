@@ -1,4 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 
 const ALLOWED_ORIGINS = new Set([
   'https://theparchment.app',
@@ -7,6 +9,7 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:5173',
 ])
 
+// skipcq: JS-0067
 function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('Origin') ?? ''
   const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://theparchment.app'
@@ -17,6 +20,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
   }
 }
 
+// skipcq: JS-0067
 function generateKey(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   const randomValues = crypto.getRandomValues(new Uint8Array(40))
@@ -25,10 +29,38 @@ function generateKey(): string {
   return key
 }
 
+// skipcq: JS-0067
 async function hashKey(key: string): Promise<string> {
   const encoded = new TextEncoder().encode(key)
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoded)
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// skipcq: JS-0067
+async function getUser(authHeader: string) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { Authorization: authHeader, apikey: ANON_KEY },
+  })
+  if (!res.ok) return null
+  return res.json()
+}
+
+// skipcq: JS-0067
+async function rest(method: string, path: string, body?: unknown, headers?: Record<string, string>) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      apikey: SERVICE_ROLE_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation',
+      ...headers,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) return { data: null, error: await res.text() }
+  const text = await res.text()
+  return { data: text ? JSON.parse(text) : null, error: null }
 }
 
 Deno.serve(async (req) => {
@@ -49,19 +81,8 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     const dryRun = body.dry_run === true
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
-
-    const supabaseUser = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    )
-
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
-    if (userError || !user) {
+    const user = await getUser(authHeader)
+    if (!user?.id) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -71,12 +92,8 @@ Deno.serve(async (req) => {
     const email = user.email
 
     // Find orphaned profile matching this email
-    const { data: orphanedProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('user_id, email, display_name')
-      .eq('email', email)
-      .neq('user_id', newUuid)
-      .maybeSingle()
+    const { data: orphanedProfiles } = await rest('GET', `profiles?email=eq.${encodeURIComponent(email)}&user_id=neq.${newUuid}&select=user_id,email,display_name&limit=1`)
+    const orphanedProfile = orphanedProfiles?.[0] ?? null
 
     if (!orphanedProfile) {
       return new Response(JSON.stringify({ migrated: false, needs_migration: false }), {
@@ -93,32 +110,22 @@ Deno.serve(async (req) => {
     const oldUuid = orphanedProfile.user_id
 
     // Reassign collections and pages
-    const { error: collectionsError } = await supabaseAdmin
-      .from('collections')
-      .update({ user_id: newUuid })
-      .eq('user_id', oldUuid)
-    if (collectionsError) throw collectionsError
+    const { error: collectionsError } = await rest('PATCH', `collections?user_id=eq.${oldUuid}`, { user_id: newUuid })
+    if (collectionsError) throw new Error(collectionsError)
 
-    const { error: pagesError } = await supabaseAdmin
-      .from('pages')
-      .update({ user_id: newUuid })
-      .eq('user_id', oldUuid)
-    if (pagesError) throw pagesError
+    const { error: pagesError } = await rest('PATCH', `pages?user_id=eq.${oldUuid}`, { user_id: newUuid })
+    if (pagesError) throw new Error(pagesError)
 
-    // Restore API keys — generate new key values since hashes can't be reversed
-    const { data: oldKeys } = await supabaseAdmin
-      .from('api_keys')
-      .select('*')
-      .eq('user_id', oldUuid)
-      .eq('revoked', false)
-
+    // Restore API keys
+    const { data: oldKeys } = await rest('GET', `api_keys?user_id=eq.${oldUuid}&revoked=eq.false&select=*`)
     const newKeys: string[] = []
+
     if (oldKeys && oldKeys.length > 0) {
       for (const oldKey of oldKeys) {
         const rawKey = generateKey()
         const keyHash = await hashKey(rawKey)
         const keyPrefix = rawKey.slice(0, 8)
-        await supabaseAdmin.from('api_keys').insert({
+        await rest('POST', 'api_keys', {
           user_id: newUuid,
           name: oldKey.name,
           key_hash: keyHash,
@@ -130,20 +137,16 @@ Deno.serve(async (req) => {
           can_create_collections: oldKey.can_create_collections,
           can_delete_collections: oldKey.can_delete_collections,
           expires_at: oldKey.expires_at,
-        })
+        }, { Prefer: 'return=minimal' })
         newKeys.push(rawKey)
       }
-      // Delete old orphaned keys
-      await supabaseAdmin.from('api_keys').delete().eq('user_id', oldUuid)
+      await rest('PATCH', `api_keys?user_id=eq.${oldUuid}`, { revoked: true })
     }
 
     // Delete the orphaned profile
-    await supabaseAdmin.from('profiles').delete().eq('user_id', oldUuid)
+    await rest('DELETE', `profiles?user_id=eq.${oldUuid}`)
 
-    return new Response(JSON.stringify({
-      migrated: true,
-      new_api_keys: newKeys, // Return new key values so we can show them to user
-    }), {
+    return new Response(JSON.stringify({ migrated: true, new_api_keys: newKeys }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 

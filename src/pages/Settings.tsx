@@ -647,6 +647,10 @@ export default function Settings() {
       setNewName('My Agent');
       setNewKeyType('master');
     }
+    // Auto-trigger checkout if redirected from "Get Pro" on pricing page
+    if (searchParams.get('checkout') === 'true') {
+      handleUpgrade();
+    }
   }, []);
 
   const loadKeys = async () => {

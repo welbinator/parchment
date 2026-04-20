@@ -13,37 +13,37 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const redirectToCheckout = async (token: string) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+    );
+    const json = await res.json();
+    if (json.url) { globalThis.location.href = json.url; }
+  };
+
+  const handleSignUp = async () => {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+      toast.error('An account with that email already exists.', {
+        description: 'Switch to Sign In below to access your account.',
+        duration: 6000,
+      });
+      setIsSignUp(false);
+      return;
+    }
+    if (isProIntent && data.session?.access_token) {
+      await redirectToCheckout(data.session.access_token);
+    }
+  };
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-
-        // Detect duplicate email (Supabase fake-success)
-        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-          toast.error('An account with that email already exists.', {
-            description: 'Switch to Sign In below to access your account.',
-            duration: 6000,
-          });
-          setIsSignUp(false);
-          return;
-        }
-
-        if (isProIntent && data.session?.access_token) {
-          const res = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
-            { method: 'POST', headers: { Authorization: `Bearer ${data.session.access_token}`, 'Content-Type': 'application/json' } }
-          );
-          const json = await res.json();
-          if (json.url) {
-            globalThis.location.href = json.url;
-            return;
-          }
-        }
-        // Non-pro signup — app will redirect automatically once session is set
+        await handleSignUp();
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

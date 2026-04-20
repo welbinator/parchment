@@ -19,7 +19,10 @@ export default function AuthPage() {
       { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
     );
     const json = await res.json();
-    if (json.url) { globalThis.location.href = json.url; }
+    // Validate it's a Stripe checkout URL before redirecting (prevents XSS)
+    if (typeof json.url === 'string' && json.url.startsWith('https://checkout.stripe.com/')) {
+      globalThis.location.href = json.url;
+    }
   };
 
   const handleSignUp = async () => {

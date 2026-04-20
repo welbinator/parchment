@@ -13,7 +13,7 @@ export default class RootErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, errorMessage: '' };
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, errorMessage: error.message + ' — ' + error.stack?.split('\n')[1]?.trim() };
+    return { hasError: true, errorMessage: `${error.message} — ${error.stack?.split('\n')[1]?.trim() ?? ''}` };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {

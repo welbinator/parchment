@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Mail, Loader2, Zap } from 'lucide-react';
+import { Mail, Loader2, Zap, ArrowLeft } from 'lucide-react';
 
+// skipcq: JS-0067
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
   const isProIntent = searchParams.get('checkout') === 'true' || searchParams.get('redirect')?.includes('checkout');
-  const [isSignUp, setIsSignUp] = useState(true); // default to signup — most visitors are new
+  const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,19 +19,31 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+
+        // Supabase returns a fake-success when the email already exists.
+        // Detect this: session is null AND identities is empty.
+        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+          toast.error('An account with that email already exists.', {
+            description: 'Switch to Sign In below to access your account.',
+            duration: 6000,
+          });
+          setIsSignUp(false);
+          return;
+        }
+
         toast.success('Check your email to confirm your account');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -41,13 +54,11 @@ export default function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        },
+        options: { redirectTo: window.location.origin },
       });
       if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Something went wrong');
       setLoading(false);
     }
   };
@@ -55,17 +66,49 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm animate-fade-in">
-        {/* Logo */}
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold font-display text-gradient-primary">Parchment</h1>
-          {isProIntent ? (
+
+        {/* Back to home */}
+        <div className="mb-8">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft size={14} />
+            Back to home
+          </Link>
+        </div>
+
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold font-display text-foreground">
+            {isSignUp ? 'Create your account' : 'Welcome back'}
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {isSignUp ? 'Start writing in 30 seconds. Free forever.' : 'Sign in to your Parchment account.'}
+          </p>
+          {isProIntent && (
             <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
               <Zap size={12} />
-              First, let&apos;s create your account &mdash; then we&apos;ll get you set up with Pro.
+              After signup we&apos;ll take you straight to Pro checkout.
             </div>
-          ) : (
-            <p className="mt-2 text-sm text-muted-foreground">A simple place for your thoughts.</p>
           )}
+        </div>
+
+        {/* Mode toggle — prominent tabs */}
+        <div className="flex rounded-lg border border-border bg-muted p-1 mb-6">
+          <button
+            onClick={() => { setIsSignUp(true); }}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              isSignUp ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Create account
+          </button>
+          <button
+            onClick={() => { setIsSignUp(false); }}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              !isSignUp ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Sign in
+          </button>
         </div>
 
         {/* Google button */}
@@ -84,7 +127,7 @@ export default function AuthPage() {
         </button>
 
         {/* Divider */}
-        <div className="my-6 flex items-center gap-3">
+        <div className="my-5 flex items-center gap-3">
           <div className="flex-1 border-t border-border" />
           <span className="text-xs text-muted-foreground">or</span>
           <div className="flex-1 border-t border-border" />
@@ -96,15 +139,15 @@ export default function AuthPage() {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); }}
             required
             className="w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary transition-colors"
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder={isSignUp ? 'Choose a password (min 6 characters)' : 'Password'}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => { setPassword(e.target.value); }}
             required
             minLength={6}
             className="w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary transition-colors"
@@ -119,16 +162,6 @@ export default function AuthPage() {
           </button>
         </form>
 
-        {/* Toggle */}
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary hover:underline"
-          >
-            {isSignUp ? 'Sign in' : 'Create one'}
-          </button>
-        </p>
       </div>
     </div>
   );

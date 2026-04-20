@@ -453,7 +453,6 @@ export default function Settings() {
   const [managingSubscription, setManagingSubscription] = useState(false);
   const [sendingVerification, setSendingVerification] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
-  // emailVerified comes from useSubscription hook (gates isPro)
 
   const ADMIN_EMAIL = 'james.welbes@gmail.com';
   const isAdmin = user?.email === ADMIN_EMAIL;

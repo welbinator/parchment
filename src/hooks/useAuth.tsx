@@ -28,7 +28,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timeout = setTimeout(() => setLoading(false), 5000);
 
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // USER_DELETED or TOKEN_REFRESHED with no session = account gone, clear everything
+      if (event === 'USER_DELETED' || (event === 'TOKEN_REFRESHED' && !session)) {
+        supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        clearTimeout(timeout);
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -38,16 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // getSession seeds the initial state; onAuthStateChange will also fire INITIAL_SESSION,
     // but we still call getSession as a fallback for environments where the event may be missed.
     // The store's initInProgress guard prevents double-seeding of welcome data.
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      // If the session is invalid (e.g. user was deleted), clear it so the app doesn't loop
-      if (error || (session && !session.user)) {
-        supabase.auth.signOut();
-        setSession(null);
-        setUser(null);
-      } else {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       setLoading(false);
       clearTimeout(timeout);
     });

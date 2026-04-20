@@ -6,13 +6,14 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  errorMessage: string;
 }
 
 export default class RootErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  state: State = { hasError: false, errorMessage: '' };
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, errorMessage: `${error.message} — ${error.stack?.split('\n')[1]?.trim() ?? ''}` };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -55,7 +56,7 @@ export default class RootErrorBoundary extends Component<Props, State> {
             Something went wrong
           </h1>
           <p style={{ fontSize: '0.875rem', color: '#888', margin: 0, maxWidth: '20rem' }}>
-            Parchment ran into an unexpected error. Tap the button below to reload — this clears the cache and fetches the latest version.
+            {this.state.errorMessage || 'Parchment ran into an unexpected error.'}
           </p>
           <button
             onClick={this.handleRefresh}

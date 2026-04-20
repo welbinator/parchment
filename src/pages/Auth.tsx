@@ -13,37 +13,51 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const redirectToCheckout = async (token: string) => {
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+    );
+    const json = await res.json();
+    // Validate it's a Stripe checkout URL before redirecting (prevents XSS)
+    if (typeof json.url === 'string' && json.url.startsWith('https://checkout.stripe.com/')) {
+      globalThis.location.href = escape(encodeURI(json.url));
+    }
+  };
+
+  const handleSignUp = async () => {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+      toast.error('An account with that email already exists.', {
+        description: 'Switch to Sign In below to access your account.',
+        duration: 6000,
+      });
+      setIsSignUp(false);
+      return;
+    }
+    if (isProIntent && data.session?.access_token) {
+      await redirectToCheckout(data.session.access_token);
+    }
+  };
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-
-        // Supabase returns a fake-success when the email already exists.
-        // Detect this: session is null AND identities is empty.
-        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-          toast.error('An account with that email already exists.', {
-            description: 'Switch to Sign In below to access your account.',
-            duration: 6000,
-          });
-          setIsSignUp(false);
-          return;
-        }
-
-        toast.success('Check your email to confirm your account');
+        await handleSignUp();
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Something went wrong');
+      const msg = error instanceof Error ? error.message : 'Something went wrong';
+      if (msg.toLowerCase().includes('security purposes') || msg.toLowerCase().includes('after')) {
+        toast.error('Too many attempts — please wait a moment and try again.');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -67,7 +81,6 @@ export default function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm animate-fade-in">
 
-        {/* Back to home */}
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft size={14} />
@@ -75,7 +88,6 @@ export default function AuthPage() {
           </Link>
         </div>
 
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold font-display text-foreground">
             {isSignUp ? 'Create your account' : 'Welcome back'}
@@ -91,7 +103,6 @@ export default function AuthPage() {
           )}
         </div>
 
-        {/* Mode toggle — prominent tabs */}
         <div className="flex rounded-lg border border-border bg-muted p-1 mb-6">
           <button
             onClick={() => { setIsSignUp(true); }}
@@ -111,7 +122,6 @@ export default function AuthPage() {
           </button>
         </div>
 
-        {/* Google button */}
         <button
           onClick={handleGoogleAuth}
           disabled={loading}
@@ -126,14 +136,12 @@ export default function AuthPage() {
           Continue with Google
         </button>
 
-        {/* Divider */}
         <div className="my-5 flex items-center gap-3">
           <div className="flex-1 border-t border-border" />
           <span className="text-xs text-muted-foreground">or</span>
           <div className="flex-1 border-t border-border" />
         </div>
 
-        {/* Email form */}
         <form onSubmit={handleEmailAuth} className="space-y-3">
           <input
             type="email"

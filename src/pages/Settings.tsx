@@ -644,16 +644,25 @@ export default function Settings() {
   // until the webhook has updated the subscription to pro (or we give up after 20s).
   useEffect(() => {
     if (searchParams.get('upgraded') !== 'true') return;
+    if (!user?.id) return; // Wait until user is loaded
     setUpgradePending(true);
     let attempts = 0;
     const maxAttempts = 10;
+    const userId = user.id;
     const interval = setInterval(async () => {
       attempts++;
-      const { data } = await supabase.from('subscriptions').select('plan').eq('user_id', user?.id ?? '').single();
-      if ((data as { plan?: string })?.plan === 'pro' || attempts >= maxAttempts) {
-        clearInterval(interval);
-        setUpgradePending(false);
-        await refetchSub();
+      try {
+        const { data } = await supabase.from('subscriptions').select('plan').eq('user_id', userId).maybeSingle();
+        if ((data as { plan?: string } | null)?.plan === 'pro' || attempts >= maxAttempts) {
+          clearInterval(interval);
+          setUpgradePending(false);
+          await refetchSub();
+        }
+      } catch {
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setUpgradePending(false);
+        }
       }
     }, 2000);
     return () => { clearInterval(interval); }; // skipcq: JS-0045
@@ -878,6 +887,7 @@ export default function Settings() {
             </div>
           )}
         </section>
+
 
         <section>
           <div className="flex items-center justify-between mb-4">

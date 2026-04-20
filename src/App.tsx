@@ -33,6 +33,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
   const [showMigration, setShowMigration] = useState(false);
+  const [storeTimeout, setStoreTimeout] = useState(false);
   const navigate = useNavigate();
   const initCalledRef = useRef(false);
 
@@ -122,32 +123,25 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return cleanup;
   }, [user, setupRealtime]);
 
-  // Safety net: if loading takes more than 10 seconds, the session is likely stale/broken.
-  // Force sign out so the user isn't trapped in an infinite spinner.
-  const [loadTimeout, setLoadTimeout] = useState(false);
+  // If auth resolved but store is still loading after 15s, show a reload prompt.
   useEffect(() => {
-    if (!authLoading && !storeLoading) return;
-    const t = setTimeout(() => { setLoadTimeout(true); }, 10000);
-    return () => { clearTimeout(t); }; // skipcq: JS-0045
-  }, [authLoading, storeLoading]);
+    if (!user || !storeLoading) { setStoreTimeout(false); return; }
+    const timer = setTimeout(() => { setStoreTimeout(true); }, 15000);
+    return () => { clearTimeout(timer); }; // skipcq: JS-0045
+  }, [user, storeLoading]);
 
-  useEffect(() => {
-    if (!loadTimeout) return;
-    supabase.auth.signOut().then(() => { // skipcq: JS-0045
-      localStorage.clear();
-      sessionStorage.clear();
-    });
-  }, [loadTimeout]);
-
-  if (loadTimeout) {
+  if (storeTimeout) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="text-center max-w-sm">
-          <p className="text-foreground font-medium mb-2">Something went wrong loading your account.</p>
-          <p className="text-muted-foreground text-sm mb-6">Your session may have expired. Please sign in again.</p>
-          <a href="/auth" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity">
-            Sign In
-          </a>
+          <p className="text-foreground font-medium mb-3">Taking longer than expected&hellip;</p>
+          <p className="text-muted-foreground text-sm mb-6">There may be a connection issue. Try reloading.</p>
+          <button
+            onClick={() => { globalThis.location.reload(); }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            Reload
+          </button>
         </div>
       </div>
     );

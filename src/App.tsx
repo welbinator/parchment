@@ -33,6 +33,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
   const [showMigration, setShowMigration] = useState(false);
+  const [storeTimeout, setStoreTimeout] = useState(false);
   const navigate = useNavigate();
   const initCalledRef = useRef(false);
 
@@ -122,9 +123,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return cleanup;
   }, [user, setupRealtime]);
 
-  // If auth resolved but store is still loading after 15s, something is genuinely broken.
-  // Show a non-crashing error UI — don't sign out, just let them retry.
-  const [storeTimeout, setStoreTimeout] = useState(false);
+  // If auth resolved but store is still loading after 15s, show a reload prompt.
   useEffect(() => {
     if (!user || !storeLoading) { setStoreTimeout(false); return; }
     const t = setTimeout(() => { setStoreTimeout(true); }, 15000);

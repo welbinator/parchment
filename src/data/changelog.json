@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.9.3",
+    "date": "2026-04-20",
+    "title": "Free Plan Limits, Board Scrolling & Mobile Fix",
+    "changes": [
+      {
+        "type": "feature",
+        "description": "Free plan limits are now enforced \u2014 5 collections and 15 pages. An upgrade prompt appears when you hit the wall."
+      },
+      {
+        "type": "feature",
+        "description": "Usage indicator in the sidebar shows your collection count (X/5) on the free plan."
+      },
+      {
+        "type": "fix",
+        "description": "Board view: columns with many pages now scroll instead of overflowing off the screen."
+      },
+      {
+        "type": "fix",
+        "description": "Mobile: switching away from Parchment and returning no longer resets your workspace and active page."
+      }
+    ]
+  },
+  {
     "version": "1.9.2",
     "date": "2026-04-19",
     "title": "API: Block Editing & Workspace Improvements",

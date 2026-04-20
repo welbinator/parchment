@@ -21,6 +21,16 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '1.9.3',
+    title: 'Free Plan Limits & Bug Fixes',
+    changes: [
+      { type: 'feature', description: 'Free plan now enforces limits — 5 collections and 15 pages. An upgrade prompt appears when you hit the cap.' },
+      { type: 'feature', description: 'Usage indicator in the sidebar shows your collection count on the free plan.' },
+      { type: 'fix', description: 'Board view columns with many pages now scroll instead of overflowing off the screen.' },
+      { type: 'fix', description: 'Mobile: returning to Parchment after switching apps no longer resets your active workspace and page.' },
+    ],
+  },
+  {
     version: '1.9.2',
     title: 'API: Block Editing & Workspace Improvements',
     changes: [

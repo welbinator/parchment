@@ -8,7 +8,9 @@ import CollectionContextMenu from './CollectionContextMenu';
 import { useTrashStore } from '@/store/useTrashStore';
 import EditableName from './EditableName';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
+import UpgradeModal from './UpgradeModal';
 import {
   DndContext,
   DragOverlay,
@@ -260,6 +262,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
   const { collections, renameCollection, reorderCollections, moveToWorkspace } = useCollectionStore();
   const { trashedPages, trashedCollections } = useTrashStore();
   const { workspaces, activeWorkspaceId } = useWorkspaceStore();
+  const { isPro } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -267,6 +270,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
   interface SharedWithMePage { id: string; title: string; share_token: string; }
   const [sharedWithMe, setSharedWithMe] = useState<SharedWithMePage[]>([]);
   const [sharedExpanded, setSharedExpanded] = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; limitType: 'collections' | 'pages' | null }>({ open: false, limitType: null });
 
   useEffect(() => {
     if (!user?.email) return;
@@ -310,12 +314,23 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
 
   // skipcq: JS-R1005
   const handleAddCollection = async () => {
+    // Check free plan limits before creating
+    if (!isPro && activeCollections.length >= 5) {
+      setUpgradeModal({ open: true, limitType: 'collections' });
+      return;
+    }
     const id = await addCollection('New Collection');
     if (id) setExpandedCollections((prev) => new Set(prev).add(id));
   };
 
   // skipcq: JS-R1005
   const handleAddPage = (collectionId: string, type: PageType = 'blank') => {
+    // Check free plan limits before creating
+    if (!isPro && activePages.length >= 15) {
+      setUpgradeModal({ open: true, limitType: 'pages' });
+      setShowNewPageMenu(null);
+      return;
+    }
     addPage(collectionId, type);
     setShowNewPageMenu(null);
   };
@@ -368,13 +383,14 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
 
   // skipcq: JS-0415
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
       <aside className={`${resizableSidebar ? 'w-full' : 'w-64'} h-screen flex flex-col bg-sidebar border-r border-sidebar-border shrink-0`}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border">
@@ -537,6 +553,11 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
           >
             <Plus size={14} />
             New Collection
+            {!isPro && (
+              <span className="text-[10px] text-muted-foreground ml-auto">
+                {activeCollections.length}/5
+              </span>
+            )}
           </button>
           <button
             onClick={() => navigate('/app/trash')}
@@ -574,5 +595,12 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
         )}
       </DragOverlay>
     </DndContext>
+
+    <UpgradeModal
+      open={upgradeModal.open}
+      limitType={upgradeModal.limitType}
+      onClose={() => setUpgradeModal({ open: false, limitType: null })}
+    />
+    </>
   );
 }

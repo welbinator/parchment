@@ -247,6 +247,30 @@ Deno.serve(async (req) => {
             .single()
           if (defaultWs) targetWorkspaceId = defaultWs.id
         }
+
+        // Enforce free plan limits
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('plan')
+          .eq('user_id', userId)
+          .single()
+        const userPlan = subData?.plan ?? 'free'
+        if (userPlan === 'free') {
+          const { count } = await supabase
+            .from('collections')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+          if ((count ?? 0) >= 5) {
+            return json({
+              error: 'Free plan limit reached',
+              limit_type: 'collections',
+              limit: 5,
+              upgrade_url: 'https://theparchment.app/settings',
+            }, corsHeaders, 402)
+          }
+        }
+
         const { data: existing } = await supabase.from('collections').select('position').eq('user_id', userId).order('position', { ascending: false }).limit(1)
         const position = (existing?.[0]?.position ?? -1) + 1
         const { data, error } = await supabase.from('collections').insert({ user_id: userId, name: name || 'Untitled', position, workspace_id: targetWorkspaceId ?? null }).select().single()
@@ -298,6 +322,30 @@ Deno.serve(async (req) => {
         if (accessDenied) return accessDenied
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
         if (!col) return json({ error: 'Collection not found' }, corsHeaders, 404)
+
+        // Enforce free plan limits
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('plan')
+          .eq('user_id', userId)
+          .single()
+        const userPlan = subData?.plan ?? 'free'
+        if (userPlan === 'free') {
+          const { count } = await supabase
+            .from('pages')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+          if ((count ?? 0) >= 15) {
+            return json({
+              error: 'Free plan limit reached',
+              limit_type: 'pages',
+              limit: 15,
+              upgrade_url: 'https://theparchment.app/settings',
+            }, corsHeaders, 402)
+          }
+        }
+
         const { data: page, error } = await supabase.from('pages').insert({
           user_id: userId, collection_id, title: title || 'Untitled', type: type || 'blank',
         }).select().single()

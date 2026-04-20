@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import type { User } from '@supabase/supabase-js';
 
 export type Plan = 'free' | 'pro';
 export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';
@@ -10,7 +9,6 @@ export interface Subscription {
   plan: Plan;
   status: SubscriptionStatus;
   isPro: boolean;
-  emailVerified: boolean;
   isLoading: boolean;
   currentPeriodEnd: string | null;
   refetch: () => Promise<void>;
@@ -43,6 +41,5 @@ export function useSubscription(): Subscription {
     fetchSub(); // skipcq: JS-0045
   }, [fetchSub]);
 
-  const emailVerified = !!(user as User & { email_confirmed_at?: string })?.email_confirmed_at;
-  return { plan, status, isPro: plan === 'pro' && status === 'active' && emailVerified, emailVerified, isLoading, currentPeriodEnd, refetch: fetchSub };
+  return { plan, status, isPro: plan === 'pro' && status === 'active', isLoading, currentPeriodEnd, refetch: fetchSub };
 }

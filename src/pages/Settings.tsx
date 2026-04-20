@@ -439,7 +439,7 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 // skipcq: JS-0067
 export default function Settings() {
   const { user } = useAuth();
-  const { plan, isPro, emailVerified, isLoading: subLoading, currentPeriodEnd, refetch: refetchSub } = useSubscription();
+  const { plan, isPro, isLoading: subLoading, currentPeriodEnd, refetch: refetchSub } = useSubscription();
   const [upgradePending, setUpgradePending] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -451,8 +451,6 @@ export default function Settings() {
   const [exporting, setExporting] = useState(false);
   const [upgradingPlan, setUpgradingPlan] = useState(false);
   const [managingSubscription, setManagingSubscription] = useState(false);
-  const [sendingVerification, setSendingVerification] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
 
   const ADMIN_EMAIL = 'james.welbes@gmail.com';
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -466,20 +464,6 @@ export default function Settings() {
     enabled_for: string[];
   }
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
-
-  const handleSendVerification = async () => {
-    setSendingVerification(true);
-    try {
-      const { error } = await supabase.auth.resend({ type: 'signup', email: user?.email ?? '' });
-      if (error) throw error;
-      setVerificationSent(true);
-      toast.success('Verification email sent — check your inbox.');
-    } catch {
-      toast.error('Failed to send verification email. Try again.');
-    } finally {
-      setSendingVerification(false);
-    }
-  };
 
   const handleUpgrade = async () => {
     setUpgradingPlan(true);

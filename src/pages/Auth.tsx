@@ -19,15 +19,10 @@ export default function AuthPage() {
 
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: globalThis.location.origin },
-        });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
 
-        // Supabase returns a fake-success when the email already exists.
-        // Detect this: session is null AND identities is empty.
+        // Detect duplicate email (Supabase fake-success)
         if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
           toast.error('An account with that email already exists.', {
             description: 'Switch to Sign In below to access your account.',
@@ -37,39 +32,24 @@ export default function AuthPage() {
           return;
         }
 
-        // If Pro intent: use the session to call checkout immediately.
-        // If no session yet (email confirmation required): send to check-email page.
-        if (isProIntent) {
-          const token = data.session?.access_token;
-          if (token) {
-            // We have a session — call checkout directly
-            try {
-              const res = await fetch(
-                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
-                { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
-              );
-              const checkoutData = await res.json();
-              if (checkoutData.url) {
-                globalThis.location.href = checkoutData.url;
-                return;
-              }
-            } catch {
-              // Checkout call failed — fall through to normal redirect
-            }
+        if (isProIntent && data.session?.access_token) {
+          const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+            { method: 'POST', headers: { Authorization: `Bearer ${data.session.access_token}`, 'Content-Type': 'application/json' } }
+          );
+          const json = await res.json();
+          if (json.url) {
+            globalThis.location.href = json.url;
+            return;
           }
-          // No session yet (email confirmation pending) — tell user to check email first
-          toast.info('Check your email to confirm your account, then sign in to upgrade to Pro.');
-          return;
         }
-
-        toast.success('Account created! Check your email to confirm.');
+        // Non-pro signup — app will redirect automatically once session is set
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Something went wrong';
-      // Make Supabase rate limit error human-readable
       if (msg.toLowerCase().includes('security purposes') || msg.toLowerCase().includes('after')) {
         toast.error('Too many attempts — please wait a moment and try again.');
       } else {
@@ -98,7 +78,6 @@ export default function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm animate-fade-in">
 
-        {/* Back to home */}
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft size={14} />
@@ -106,7 +85,6 @@ export default function AuthPage() {
           </Link>
         </div>
 
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold font-display text-foreground">
             {isSignUp ? 'Create your account' : 'Welcome back'}
@@ -122,7 +100,6 @@ export default function AuthPage() {
           )}
         </div>
 
-        {/* Mode toggle — prominent tabs */}
         <div className="flex rounded-lg border border-border bg-muted p-1 mb-6">
           <button
             onClick={() => { setIsSignUp(true); }}
@@ -142,7 +119,6 @@ export default function AuthPage() {
           </button>
         </div>
 
-        {/* Google button */}
         <button
           onClick={handleGoogleAuth}
           disabled={loading}
@@ -157,14 +133,12 @@ export default function AuthPage() {
           Continue with Google
         </button>
 
-        {/* Divider */}
         <div className="my-5 flex items-center gap-3">
           <div className="flex-1 border-t border-border" />
           <span className="text-xs text-muted-foreground">or</span>
           <div className="flex-1 border-t border-border" />
         </div>
 
-        {/* Email form */}
         <form onSubmit={handleEmailAuth} className="space-y-3">
           <input
             type="email"

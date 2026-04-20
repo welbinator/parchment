@@ -126,7 +126,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // If auth resolved but store is still loading after 15s, show a reload prompt.
   useEffect(() => {
     if (!user || !storeLoading) { setStoreTimeout(false); return; }
-    const timer = setTimeout(() => { setStoreTimeout(true); }, 15000);
+    const timer = setTimeout(() => { setStoreTimeout(true); }, 30000);
     return () => { clearTimeout(timer); }; // skipcq: JS-0045
   }, [user, storeLoading]);
 

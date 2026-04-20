@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers, Zap, Mail } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 type KeyType = 'master' | 'workspace';
@@ -888,34 +888,6 @@ export default function Settings() {
           )}
         </section>
 
-        {/* Email Verification — required to unlock Pro */}
-        {!emailVerified && (
-          <section className="mb-12">
-            <div className="flex items-center gap-2 mb-4">
-              <Mail size={18} className="text-primary" />
-              <h2 className="text-lg font-semibold font-display text-foreground">Verify Your Email</h2>
-            </div>
-            <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/5">
-              {plan === 'pro' ? (
-                <p className="text-sm text-foreground mb-3">
-                  You&apos;re on Pro &mdash; but your email isn&apos;t verified yet. <strong>Verify your email to unlock Pro features.</strong> Check your inbox or send a new verification email below.
-                </p>
-              ) : (
-                <p className="text-sm text-foreground mb-3">
-                  Verify your email address to keep your account secure and enable password recovery.
-                </p>
-              )}
-              <button
-                onClick={handleSendVerification}
-                disabled={sendingVerification || verificationSent}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-60"
-              >
-                {sendingVerification ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-                {verificationSent ? 'Verification email sent!' : 'Send verification email'}
-              </button>
-            </div>
-          </section>
-        )}
 
         <section>
           <div className="flex items-center justify-between mb-4">

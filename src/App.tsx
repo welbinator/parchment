@@ -122,37 +122,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return cleanup;
   }, [user, setupRealtime]);
 
-  // Safety net: if loading takes more than 10 seconds, the session is likely stale/broken.
-  // Force sign out so the user isn't trapped in an infinite spinner.
-  const [loadTimeout, setLoadTimeout] = useState(false);
-  useEffect(() => {
-    if (!authLoading && !storeLoading) return;
-    const t = setTimeout(() => { setLoadTimeout(true); }, 10000);
-    return () => { clearTimeout(t); }; // skipcq: JS-0045
-  }, [authLoading, storeLoading]);
-
-  useEffect(() => {
-    if (!loadTimeout) return;
-    supabase.auth.signOut().then(() => { // skipcq: JS-0045
-      localStorage.clear();
-      sessionStorage.clear();
-    });
-  }, [loadTimeout]);
-
-  if (loadTimeout) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-6">
-        <div className="text-center max-w-sm">
-          <p className="text-foreground font-medium mb-2">Something went wrong loading your account.</p>
-          <p className="text-muted-foreground text-sm mb-6">Your session may have expired. Please sign in again.</p>
-          <a href="/auth" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity">
-            Sign In
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   if (authLoading || (user && storeLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">

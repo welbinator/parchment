@@ -439,7 +439,7 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 // skipcq: JS-0067
 export default function Settings() {
   const { user } = useAuth();
-  const { plan, isPro, isLoading: subLoading, currentPeriodEnd, refetch: refetchSub } = useSubscription();
+  const { plan, isPro, emailVerified, isLoading: subLoading, currentPeriodEnd, refetch: refetchSub } = useSubscription();
   const [upgradePending, setUpgradePending] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -453,7 +453,7 @@ export default function Settings() {
   const [managingSubscription, setManagingSubscription] = useState(false);
   const [sendingVerification, setSendingVerification] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
-  const emailVerified = !!user?.email_confirmed_at;
+  // emailVerified comes from useSubscription hook (gates isPro)
 
   const ADMIN_EMAIL = 'james.welbes@gmail.com';
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -896,7 +896,7 @@ export default function Settings() {
           )}
         </section>
 
-        {/* Email Verification */}
+        {/* Email Verification — required to unlock Pro */}
         {!emailVerified && (
           <section className="mb-12">
             <div className="flex items-center gap-2 mb-4">
@@ -904,9 +904,15 @@ export default function Settings() {
               <h2 className="text-lg font-semibold font-display text-foreground">Verify Your Email</h2>
             </div>
             <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/5">
-              <p className="text-sm text-foreground mb-3">
-                Your email address hasn&apos;t been verified yet. Verifying helps with account recovery and keeps your account secure.
-              </p>
+              {plan === 'pro' ? (
+                <p className="text-sm text-foreground mb-3">
+                  You&apos;re on Pro &mdash; but your email isn&apos;t verified yet. <strong>Verify your email to unlock Pro features.</strong> Check your inbox or send a new verification email below.
+                </p>
+              ) : (
+                <p className="text-sm text-foreground mb-3">
+                  Verify your email address to keep your account secure and enable password recovery.
+                </p>
+              )}
               <button
                 onClick={handleSendVerification}
                 disabled={sendingVerification || verificationSent}

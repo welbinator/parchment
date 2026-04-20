@@ -54,7 +54,7 @@ export default function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: globalThis.location.origin },
       });
       if (error) throw error;
     } catch (error: unknown) {
@@ -104,7 +104,7 @@ export default function AuthPage() {
           <button
             onClick={() => { setIsSignUp(false); }}
             className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              !isSignUp ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              isSignUp ? 'text-muted-foreground hover:text-foreground' : 'bg-background text-foreground shadow-sm'
             }`}
           >
             Sign in

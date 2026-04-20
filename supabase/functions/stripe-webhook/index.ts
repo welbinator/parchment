@@ -2,6 +2,7 @@ const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
+// skipcq: JS-0067
 async function verifyStripeSignature(body: string, signature: string, secret: string): Promise<boolean> {
   const parts = signature.split(',')
   const timestamp = parts.find((p) => p.startsWith('t='))?.slice(2)
@@ -17,6 +18,7 @@ async function verifyStripeSignature(body: string, signature: string, secret: st
   return expected === v1
 }
 
+// skipcq: JS-0067
 async function updateSubscription(filter: Record<string, string>, data: Record<string, unknown>) {
   const params = new URLSearchParams(filter as Record<string, string>)
   await fetch(`${SUPABASE_URL}/rest/v1/subscriptions?${params}`, {
@@ -30,6 +32,7 @@ async function updateSubscription(filter: Record<string, string>, data: Record<s
   })
 }
 
+// skipcq: JS-0067
 async function upsertSubscription(userId: string, data: Record<string, unknown>) {
   await fetch(`${SUPABASE_URL}/rest/v1/subscriptions`, {
     method: 'POST',

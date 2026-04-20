@@ -8,6 +8,7 @@ const APP_URL = Deno.env.get('APP_URL') ?? 'https://theparchment.app'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
+// skipcq: JS-0067
 async function getUser(authHeader: string) {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
     headers: { Authorization: authHeader, apikey: SERVICE_ROLE_KEY },
@@ -16,6 +17,7 @@ async function getUser(authHeader: string) {
   return res.json()
 }
 
+// skipcq: JS-0067
 async function getSubscription(userId: string) {
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/subscriptions?user_id=eq.${userId}&select=stripe_customer_id`,

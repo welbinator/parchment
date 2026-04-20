@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers, Zap } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers, Zap, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 type KeyType = 'master' | 'workspace';
@@ -451,6 +451,9 @@ export default function Settings() {
   const [exporting, setExporting] = useState(false);
   const [upgradingPlan, setUpgradingPlan] = useState(false);
   const [managingSubscription, setManagingSubscription] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const emailVerified = !!user?.email_confirmed_at;
 
   const ADMIN_EMAIL = 'james.welbes@gmail.com';
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -464,6 +467,20 @@ export default function Settings() {
     enabled_for: string[];
   }
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
+
+  const handleSendVerification = async () => {
+    setSendingVerification(true);
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email: user?.email ?? '' });
+      if (error) throw error;
+      setVerificationSent(true);
+      toast.success('Verification email sent — check your inbox.');
+    } catch {
+      toast.error('Failed to send verification email. Try again.');
+    } finally {
+      setSendingVerification(false);
+    }
+  };
 
   const handleUpgrade = async () => {
     setUpgradingPlan(true);
@@ -878,6 +895,29 @@ export default function Settings() {
             </div>
           )}
         </section>
+
+        {/* Email Verification */}
+        {!emailVerified && (
+          <section className="mb-12">
+            <div className="flex items-center gap-2 mb-4">
+              <Mail size={18} className="text-primary" />
+              <h2 className="text-lg font-semibold font-display text-foreground">Verify Your Email</h2>
+            </div>
+            <div className="p-4 rounded-lg border border-amber-500/30 bg-amber-500/5">
+              <p className="text-sm text-foreground mb-3">
+                Your email address hasn&apos;t been verified yet. Verifying helps with account recovery and keeps your account secure.
+              </p>
+              <button
+                onClick={handleSendVerification}
+                disabled={sendingVerification || verificationSent}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-60"
+              >
+                {sendingVerification ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                {verificationSent ? 'Verification email sent!' : 'Send verification email'}
+              </button>
+            </div>
+          </section>
+        )}
 
         <section>
           <div className="flex items-center justify-between mb-4">

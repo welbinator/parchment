@@ -37,28 +37,9 @@ export default function AuthPage() {
           return;
         }
 
-        // If this is a Pro upgrade intent AND we have a session, go straight to checkout.
-        // The verification email is still sent — they can verify later.
-        // They'll be on free until stripe webhook fires, which happens right after checkout.
-        if (isProIntent && data.session?.access_token) {
-          const res = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
-            {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${data.session.access_token}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-          const json = await res.json();
-          if (json.url) {
-            globalThis.location.href = json.url;
-            return;
-          }
-        }
-
-        toast.success('Check your email to confirm your account');
+        // Email autoconfirm is enabled — user gets a session immediately.
+        // Verification email is still sent but is not required to log in.
+        // The redirect param will handle taking Pro-intent users to checkout.
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

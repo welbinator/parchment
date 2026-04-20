@@ -34,16 +34,29 @@ async function updateSubscription(filter: Record<string, string>, data: Record<s
 
 // skipcq: JS-0067
 async function upsertSubscription(userId: string, data: Record<string, unknown>) {
-  await fetch(`${SUPABASE_URL}/rest/v1/subscriptions`, {
+  // Use on_conflict query param for PostgREST upsert (Prefer: resolution=merge-duplicates alone is insufficient)
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/subscriptions?on_conflict=user_id`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
       apikey: SERVICE_ROLE_KEY,
       'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
     },
     body: JSON.stringify({ user_id: userId, ...data }),
   })
+  if (!res.ok) {
+    // Fallback to PATCH if upsert fails
+    await fetch(`${SUPABASE_URL}/rest/v1/subscriptions?user_id=eq.${userId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        apikey: SERVICE_ROLE_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+  }
 }
 
 Deno.serve(async (req) => {

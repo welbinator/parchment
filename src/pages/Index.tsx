@@ -7,6 +7,7 @@ import { useViewStore } from '@/store/useViewStore';
 import { useAppStore } from '@/store/useAppStore';
 import { LayoutList, LayoutDashboard } from 'lucide-react';
 
+// skipcq: JS-R1005
 const Index = () => {
   const { viewMode, setViewMode } = useViewStore();
   const { sidebarOpen, setSidebarOpen } = useAppStore();

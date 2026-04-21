@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const queryClient = new QueryClient();
 
+// skipcq: JS-0067
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();

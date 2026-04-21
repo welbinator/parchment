@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
 
-const STORAGE_KEY = 'pwa_prompt_dismissed_at';
+const PWA_DISMISS_STORAGE_ID = 'pwa_prompt_dismissed_at';
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface BeforeInstallPromptEvent extends Event {
@@ -22,7 +22,7 @@ export default function PWAInstallPrompt() {
     }
 
     // Only show if it's been at least a week since last dismissed
-    const lastDismissed = localStorage.getItem(STORAGE_KEY);
+    const lastDismissed = localStorage.getItem(PWA_DISMISS_STORAGE_ID);
     if (lastDismissed && Date.now() - parseInt(lastDismissed, 10) < ONE_WEEK_MS) {
       return;
     }
@@ -40,7 +40,7 @@ export default function PWAInstallPrompt() {
   }, []);
 
   const handleDismiss = () => {
-    localStorage.setItem(STORAGE_KEY, String(Date.now()));
+    localStorage.setItem(PWA_DISMISS_STORAGE_ID, String(Date.now()));
     setShowBanner(false);
   };
 

@@ -18,7 +18,7 @@ export default function Logout() {
       }
       navigate('/auth', { replace: true });
     };
-    doLogout(); // skipcq: JS-0045
+    void doLogout();
   }, [navigate]);
 
   return (

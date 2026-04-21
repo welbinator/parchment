@@ -474,8 +474,10 @@ export default function Settings() {
         headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (typeof data.url === 'string' && data.url.startsWith('https://checkout.stripe.com/')) {
+        window.location.href = encodeURI(data.url);
+      } else if (data.url) {
+        toast.error('Unexpected redirect URL from checkout');
       } else {
         toast.error(data.error ?? 'Failed to start checkout');
       }
@@ -495,8 +497,10 @@ export default function Settings() {
         headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (typeof data.url === 'string' && data.url.startsWith('https://billing.stripe.com/')) {
+        window.location.href = encodeURI(data.url);
+      } else if (data.url) {
+        toast.error('Unexpected redirect URL from billing portal');
       } else {
         toast.error(data.error ?? 'Failed to open billing portal');
       }

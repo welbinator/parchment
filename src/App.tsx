@@ -10,6 +10,7 @@ import { useAppStore } from '@/store/useAppStore';
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import AuthPage from "./pages/Auth";
+import Logout from "./pages/Logout";
 import Settings from "./pages/Settings";
 import ApiDocs from "./pages/ApiDocs";
 import Changelog from "./pages/Changelog";
@@ -212,6 +213,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/logout" element={<Logout />} />
             <Route path="/" element={<LandingOrApp />} />
             <Route path="/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/app/trash" element={<ProtectedRoute><Trash /></ProtectedRoute>} />

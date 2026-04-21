@@ -391,7 +391,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-      <aside className={`${resizableSidebar ? 'w-full' : 'w-64'} h-screen flex flex-col bg-sidebar border-r border-sidebar-border shrink-0`}>
+      <aside className={`${resizableSidebar ? 'w-full' : 'w-64'} h-screen flex flex-col bg-sidebar border-r border-sidebar-border shrink-0 relative z-30`}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 h-14 border-b border-sidebar-border">
           <span className="font-display font-semibold text-sm tracking-wide text-gradient-primary">

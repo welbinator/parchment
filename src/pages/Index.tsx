@@ -20,10 +20,10 @@ const Index = () => {
         </ResizableSidebarWrapper>
       )}
 
-      {/* Mobile tap-to-close overlay — visible when sidebar is open on small screens */}
+      {/* Mobile tap-to-close overlay — sits behind the sidebar (z-20) but over the content area */}
       {sidebarOpen && (
         <button
-          className="md:hidden fixed inset-0 z-20 bg-transparent cursor-default"
+          className="md:hidden fixed inset-0 z-20 bg-black/20 cursor-default"
           onClick={() => { setSidebarOpen(false); }}
           aria-label="Close sidebar"
           tabIndex={-1}
@@ -31,7 +31,7 @@ const Index = () => {
       )}
 
       {/* Main content column */}
-      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+      <div className="flex flex-col flex-1 min-w-0 min-h-0 relative">
         {/* Top bar — always visible */}
         <AppTopBar />
 

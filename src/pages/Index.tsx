@@ -4,6 +4,7 @@ import PageEditor from '@/components/PageEditor';
 import KanbanView from '@/components/KanbanView';
 import ResizableSidebarWrapper from '@/components/ResizableSidebarWrapper';
 import { useViewStore } from '@/store/useViewStore';
+import { useAppStore } from '@/store/useAppStore';
 import { LayoutList, LayoutDashboard } from 'lucide-react';
 
 const Index = () => {

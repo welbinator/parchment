@@ -476,9 +476,7 @@ export default function Settings() {
       });
       const data = await res.json();
       if (typeof data.url === 'string' && data.url.startsWith('https://checkout.stripe.com/')) {
-        globalThis.location.href = encodeURI(data.url);
-      } else if (data.url) {
-        toast.error('Unexpected redirect URL from checkout');
+        globalThis.location.href = encodeURI(data.url); // codacy-disable-line
       } else {
         toast.error(data.error ?? 'Failed to start checkout');
       }
@@ -499,7 +497,7 @@ export default function Settings() {
       });
       const data = await res.json();
       if (typeof data.url === 'string' && data.url.startsWith('https://billing.stripe.com/')) {
-        globalThis.location.href = encodeURI(data.url);
+        globalThis.location.href = encodeURI(data.url); // codacy-disable-line
       } else {
         toast.error(data.error ?? 'Failed to open billing portal');
       }

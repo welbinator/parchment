@@ -152,7 +152,7 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
       <div className="flex items-start gap-2 py-0.5" style={indent > 0 ? { paddingLeft: `${indent * 1.5}rem` } : undefined}>
         <span className="text-primary mt-1 shrink-0">•</span>
         {/* nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
-        <SafeHtml className="text-base text-foreground break-words" html={html} />
+        <SafeHtml className="text-base text-foreground [overflow-wrap:anywhere]" html={html} />
       </div>
     );
   }
@@ -176,16 +176,16 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
       <div className="flex items-start gap-2 py-0.5" style={indent > 0 ? { paddingLeft: `${indent * 1.5}rem` } : undefined}>
         <span className="text-muted-foreground text-sm mt-0.5 shrink-0 w-5 text-right">{label}</span>
         {/* nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
-        <SafeHtml className="text-base text-foreground break-words" html={html} />
+        <SafeHtml className="text-base text-foreground [overflow-wrap:anywhere]" html={html} />
       </div>
     );
   }
 
   const classMap: Record<string, string> = {
-    heading1: 'text-3xl font-bold text-foreground font-display mt-6 mb-2 break-words',
-    heading2: 'text-2xl font-semibold text-foreground font-display mt-5 mb-1 break-words',
-    heading3: 'text-xl font-semibold text-foreground font-display mt-4 mb-1 break-words',
-    text: 'text-base text-foreground leading-relaxed break-words',
+    heading1: 'text-3xl font-bold text-foreground font-display mt-6 mb-2 [overflow-wrap:anywhere]',
+    heading2: 'text-2xl font-semibold text-foreground font-display mt-5 mb-1 [overflow-wrap:anywhere]',
+    heading3: 'text-xl font-semibold text-foreground font-display mt-4 mb-1 [overflow-wrap:anywhere]',
+    text: 'text-base text-foreground leading-relaxed [overflow-wrap:anywhere]',
     quote: 'text-base italic text-muted-foreground border-l-2 border-primary pl-4 py-1',
     code: 'text-sm font-mono bg-muted px-3 py-2 rounded-md text-foreground block',
   };

@@ -33,9 +33,9 @@ export const blockTypeOptions: { type: BlockType; label: string; icon: React.Rea
 
 export const blockStyles: Record<string, string> = {
   text: 'text-base text-foreground',
-  heading1: 'text-3xl font-bold text-foreground font-display break-words',
-  heading2: 'text-2xl font-semibold text-foreground font-display break-words',
-  heading3: 'text-xl font-medium text-foreground font-display break-words',
+  heading1: 'text-3xl font-bold text-foreground font-display [overflow-wrap:anywhere]',
+  heading2: 'text-2xl font-semibold text-foreground font-display [overflow-wrap:anywhere]',
+  heading3: 'text-xl font-medium text-foreground font-display [overflow-wrap:anywhere]',
   bullet_list: 'text-base text-foreground pl-4 before:content-["•"] before:absolute before:-left-0 before:text-primary relative',
   numbered_list: 'text-base text-foreground pl-4',
   todo: 'text-base text-foreground',

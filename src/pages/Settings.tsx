@@ -475,7 +475,7 @@ export default function Settings() {
       });
       const data = await res.json();
       if (typeof data.url === 'string' && data.url.startsWith('https://checkout.stripe.com/')) {
-        window.location.href = encodeURI(data.url);
+        globalThis.location.href = encodeURI(data.url);
       } else if (data.url) {
         toast.error('Unexpected redirect URL from checkout');
       } else {
@@ -498,9 +498,7 @@ export default function Settings() {
       });
       const data = await res.json();
       if (typeof data.url === 'string' && data.url.startsWith('https://billing.stripe.com/')) {
-        window.location.href = encodeURI(data.url);
-      } else if (data.url) {
-        toast.error('Unexpected redirect URL from billing portal');
+        globalThis.location.href = encodeURI(data.url);
       } else {
         toast.error(data.error ?? 'Failed to open billing portal');
       }
@@ -605,7 +603,7 @@ export default function Settings() {
     toast.success('Saved! Reloading to apply your beta features...');
     setBetaSaving(false);
     await loadBetaFlags();
-    setTimeout(() => window.location.reload(), 1200);
+    setTimeout(() => globalThis.location.reload(), 1200);
   };
 
   const [newName, setNewName] = useState('');

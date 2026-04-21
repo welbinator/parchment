@@ -16,14 +16,14 @@ export default function PWAInstallPrompt() {
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (globalThis.matchMedia('(display-mode: standalone)').matches) {
       setInstalled(true);
       return;
     }
 
     // Only show if it's been at least a week since last dismissed
     const lastDismissed = localStorage.getItem(PWA_DISMISS_STORAGE_ID);
-    if (lastDismissed && Date.now() - parseInt(lastDismissed, 10) < ONE_WEEK_MS) {
+    if (lastDismissed && Date.now() - Number.parseInt(lastDismissed, 10) < ONE_WEEK_MS) {
       return;
     }
 
@@ -33,10 +33,10 @@ export default function PWAInstallPrompt() {
       setShowBanner(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
-    window.addEventListener('appinstalled', () => { setInstalled(true); });
+    globalThis.addEventListener('beforeinstallprompt', handler);
+    globalThis.addEventListener('appinstalled', () => { setInstalled(true); });
 
-    return () => { window.removeEventListener('beforeinstallprompt', handler); }; // skipcq: JS-0045
+    return () => { globalThis.removeEventListener('beforeinstallprompt', handler); }; // skipcq: JS-0045
   }, []);
 
   const handleDismiss = () => {

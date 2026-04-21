@@ -495,6 +495,8 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
                           onSelect={() => {
                             setActivePage(page.id);
                             if (location.pathname !== '/app') navigate('/app');
+                            // Auto-collapse on mobile when a page is selected
+                            if (window.innerWidth < 768) { setSidebarOpen(false); }
                           }}
                           onDelete={() => deletePage(page.id)}
                           onMove={(targetCollectionId) => {

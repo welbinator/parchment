@@ -8,6 +8,7 @@ import { LayoutList, LayoutDashboard } from 'lucide-react';
 
 const Index = () => {
   const { viewMode, setViewMode } = useViewStore();
+  const { sidebarOpen, setSidebarOpen } = useAppStore();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background relative">
@@ -16,6 +17,16 @@ const Index = () => {
         <ResizableSidebarWrapper enabled>
           <AppSidebar resizableSidebar />
         </ResizableSidebarWrapper>
+      )}
+
+      {/* Mobile tap-to-close overlay — visible when sidebar is open on small screens */}
+      {sidebarOpen && (
+        <button
+          className="md:hidden fixed inset-0 z-20 bg-transparent cursor-default"
+          onClick={() => { setSidebarOpen(false); }}
+          aria-label="Close sidebar"
+          tabIndex={-1}
+        />
       )}
 
       {/* Main content column */}

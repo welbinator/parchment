@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
 
     // Insert child blocks inside the group
     await supabase.from('blocks').insert([
-      { page_id: FEEDBACK_PAGE_ID, type: 'heading3', content: `${user.email ?? email} — ${timestamp}`, position: 0, group_id: groupBlock.id },
+      { page_id: FEEDBACK_PAGE_ID, type: 'heading2', content: `${user.email ?? email} — ${timestamp}`, position: 0, group_id: groupBlock.id },
       { page_id: FEEDBACK_PAGE_ID, type: 'text', content: message.trim(), position: 1, group_id: groupBlock.id },
       { page_id: FEEDBACK_PAGE_ID, type: 'text', content: contactStr, position: 2, group_id: groupBlock.id },
     ])

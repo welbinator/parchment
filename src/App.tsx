@@ -162,6 +162,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         <MigrationModal onComplete={() => { setShowMigration(false); init(user.id); }} />
       )}
       <WhatsNewModal />
+      <PWAInstallPrompt />
       {children}
     </>
   );
@@ -207,7 +208,6 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <PWAInstallPrompt />
         <FeedbackWidgetPositioned />
         <BrowserRouter>
           <Routes>

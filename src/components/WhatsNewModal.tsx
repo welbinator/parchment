@@ -21,13 +21,14 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
-    version: '1.9.3',
-    title: 'Free Plan Limits & Bug Fixes',
+    version: '2.0.0',
+    title: 'Parchment 2.0 — Paid Plans & Chrome Web Store',
     changes: [
-      { type: 'feature', description: 'Free plan now enforces limits — 5 collections and 15 pages. An upgrade prompt appears when you hit the cap.' },
-      { type: 'feature', description: 'Usage indicator in the sidebar shows your collection count on the free plan.' },
+      { type: 'feature', description: 'Paid plans are live — upgrade to Pro for unlimited collections and pages.' },
+      { type: 'feature', description: 'Free plan enforces limits — 5 collections and 15 pages. Upgrade prompt appears when you hit the cap.' },
+      { type: 'feature', description: 'Parchment for Chrome is now on the Chrome Web Store — clip content to Parchment with one click.' },
       { type: 'fix', description: 'Board view columns with many pages now scroll instead of overflowing off the screen.' },
-      { type: 'fix', description: 'Mobile: returning to Parchment after switching apps no longer resets your active workspace and page.' },
+      { type: 'fix', description: 'Mobile: returning to Parchment after switching apps no longer resets your workspace.' },
     ],
   },
   {

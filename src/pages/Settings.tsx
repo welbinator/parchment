@@ -1183,38 +1183,19 @@ export default function Settings() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground mb-0.5">Parchment for Chrome</p>
               <p className="text-xs text-muted-foreground mb-3">
-                Clip recipes from any website. Ingredients become a checklist, instructions become numbered steps — all saved to your Recipes collection automatically. <span className="text-yellow-600 dark:text-yellow-400">Pending Chrome Web Store approval — install manually for now.</span>
+                Clip recipes from any website. Ingredients become a checklist, instructions become numbered steps — all saved to your Recipes collection automatically.
               </p>
               <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={async () => {
-                    const res = await fetch('https://api.github.com/repos/welbinator/parchment-chrome-extension/releases/latest');
-                    const data = await res.json();
-                    const asset = data.assets?.find((a: { name: string }) => a.name.endsWith('.zip'));
-                    if (asset) {
-                      const a = document.createElement('a');
-                      a.href = asset.browser_download_url;
-                      a.download = asset.name;
-                      a.click();
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
-                >
-                  <Download size={12} />
-                  Download Extension
-                </button>
                 <a
-                  href="https://github.com/welbinator/parchment-chrome-extension"
+                  href="https://chromewebstore.google.com/detail/parchment/mejbncemciiidpnlkdbpjjnglldadnej"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-border bg-background hover:bg-accent/40 transition-colors text-foreground"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
-                  View on GitHub
+                  <Download size={12} />
+                  Add to Chrome
                 </a>
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                💡 After downloading, unzip the file, go to <strong>chrome://extensions</strong>, enable <strong>Developer mode</strong>, click <strong>Load unpacked</strong>, and select the unzipped folder. Then open the extension and paste an API key from above.
-              </p>
             </div>
           </div>
         </section>

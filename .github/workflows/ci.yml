@@ -25,6 +25,73 @@ jobs:
       - name: Build
         run: npm run build
 
+  custom-checks:
+    name: Custom Code Rules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "No esm.sh imports in edge functions"
+        run: |
+          if grep -r "esm\.sh" supabase/functions/ --include="*.ts" -l; then
+            echo "❌ FAIL: esm.sh imports found in edge functions."
+            echo "Edge functions must use native fetch — esm.sh imports cause cold-start timeouts."
+            echo "Replace 'import X from https://esm.sh/...' with direct fetch() calls."
+            exit 1
+          fi
+          echo "✅ No esm.sh imports found in edge functions."
+
+      - name: "No deprecated escape() calls"
+        run: |
+          if grep -rn "\bescape(" src/ --include="*.ts" --include="*.tsx" -l; then
+            echo "❌ FAIL: deprecated escape() function found."
+            echo "Use encodeURI() or encodeURIComponent() instead."
+            exit 1
+          fi
+          echo "✅ No escape() calls found."
+
+      - name: "No direct location.href assignment without validation"
+        run: |
+          if grep -rn "location\.href\s*=" src/ --include="*.ts" --include="*.tsx" | grep -v "startsWith\|encodeURI\|//"; then
+            echo "❌ FAIL: Unvalidated location.href assignment found."
+            echo "Always validate the URL with startsWith() before assigning to location.href."
+            exit 1
+          fi
+          echo "✅ All location.href assignments appear validated."
+
+      - name: "No short variable names (t, r as standalone lets/consts)"
+        run: |
+          if grep -rn "^\s*const t\b\|^\s*let t\b\|^\s*const r\b\|^\s*let r\b" src/ supabase/functions/ --include="*.ts" --include="*.tsx" | grep -v "//\|skipcq"; then
+            echo "❌ FAIL: Short variable names (t, r) found."
+            echo "Use descriptive names like 'timer', 'result', 'response'."
+            exit 1
+          fi
+          echo "✅ No short variable names found."
+
+      - name: "API docs three-way sync check"
+        run: |
+          APIDOCS_CHANGED=$(git diff --name-only origin/main...HEAD 2>/dev/null | grep "ApiDocs.tsx" || true)
+          SETTINGS_CHANGED=$(git diff --name-only origin/main...HEAD 2>/dev/null | grep "Settings.tsx" || true)
+          if [ -n "$APIDOCS_CHANGED" ] && [ -z "$SETTINGS_CHANGED" ]; then
+            echo "⚠️  WARNING: ApiDocs.tsx changed but Settings.tsx did not."
+            echo "Remember: API docs must stay in sync across ApiDocs.tsx, Settings.tsx (generateSkillMd), and index.html noscript block."
+          elif [ -n "$SETTINGS_CHANGED" ] && [ -z "$APIDOCS_CHANGED" ]; then
+            echo "⚠️  WARNING: Settings.tsx changed but ApiDocs.tsx did not."
+            echo "Remember: API docs must stay in sync across ApiDocs.tsx, Settings.tsx (generateSkillMd), and index.html noscript block."
+          else
+            echo "✅ API docs sync check passed."
+          fi
+
+      - name: "Version bump reminder"
+        run: |
+          VERSION_CHANGED=$(git diff --name-only origin/main...HEAD 2>/dev/null | grep "package.json" || true)
+          if [ -z "$VERSION_CHANGED" ]; then
+            echo "⚠️  REMINDER: package.json version was not bumped in this PR."
+            echo "If this is a user-facing change, update the version in package.json, changelog.json, and WhatsNewModal.tsx."
+          else
+            echo "✅ package.json was updated."
+          fi
+
   security:
     runs-on: ubuntu-latest
     permissions:

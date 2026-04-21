@@ -18,7 +18,7 @@ export default function Logout() {
       }
       navigate('/auth', { replace: true });
     };
-    void doLogout();
+    doLogout().catch(() => { navigate('/auth', { replace: true }); });
   }, [navigate]);
 
   return (

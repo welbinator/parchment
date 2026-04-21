@@ -465,6 +465,7 @@ export default function Settings() {
   }
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
 
+  // skipcq: JS-R1005
   const handleUpgrade = async () => {
     setUpgradingPlan(true);
     try {

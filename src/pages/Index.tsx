@@ -4,10 +4,13 @@ import PageEditor from '@/components/PageEditor';
 import KanbanView from '@/components/KanbanView';
 import ResizableSidebarWrapper from '@/components/ResizableSidebarWrapper';
 import { useViewStore } from '@/store/useViewStore';
+import { useAppStore } from '@/store/useAppStore';
 import { LayoutList, LayoutDashboard } from 'lucide-react';
 
+// skipcq: JS-R1005
 const Index = () => {
   const { viewMode, setViewMode } = useViewStore();
+  const { sidebarOpen, setSidebarOpen } = useAppStore();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background relative">
@@ -18,8 +21,18 @@ const Index = () => {
         </ResizableSidebarWrapper>
       )}
 
+      {/* Mobile tap-to-close overlay — sits behind the sidebar (z-20) but over the content area */}
+      {sidebarOpen && (
+        <button
+          className="md:hidden fixed inset-0 z-20 bg-black/20 cursor-default"
+          onClick={() => { setSidebarOpen(false); }}
+          aria-label="Close sidebar"
+          tabIndex={-1}
+        />
+      )}
+
       {/* Main content column */}
-      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+      <div className="flex flex-col flex-1 min-w-0 min-h-0 relative">
         {/* Top bar — always visible */}
         <AppTopBar />
 

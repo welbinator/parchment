@@ -10,6 +10,7 @@ import { useAppStore } from '@/store/useAppStore';
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import AuthPage from "./pages/Auth";
+import Logout from "./pages/Logout";
 import Settings from "./pages/Settings";
 import ApiDocs from "./pages/ApiDocs";
 import Changelog from "./pages/Changelog";
@@ -29,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const queryClient = new QueryClient();
 
+// skipcq: JS-0067
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
@@ -162,6 +164,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         <MigrationModal onComplete={() => { setShowMigration(false); init(user.id); }} />
       )}
       <WhatsNewModal />
+      <PWAInstallPrompt />
       {children}
     </>
   );
@@ -207,11 +210,11 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <PWAInstallPrompt />
         <FeedbackWidgetPositioned />
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/logout" element={<Logout />} />
             <Route path="/" element={<LandingOrApp />} />
             <Route path="/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/app/trash" element={<ProtectedRoute><Trash /></ProtectedRoute>} />

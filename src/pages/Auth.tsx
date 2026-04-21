@@ -8,7 +8,7 @@ import { Mail, Loader2, Zap, ArrowLeft } from 'lucide-react';
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
   const isProIntent = searchParams.get('checkout') === 'true' || searchParams.get('redirect')?.includes('checkout');
-  const [isSignUp, setIsSignUp] = useState(true);
+  const [isSignUp, setIsSignUp] = useState(searchParams.get('mode') !== 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);

@@ -603,7 +603,7 @@ export default function Settings() {
     toast.success('Saved! Reloading to apply your beta features...');
     setBetaSaving(false);
     await loadBetaFlags();
-    setTimeout(() => globalThis.location.reload(), 1200);
+    setTimeout(() => { globalThis.location.reload(); }, 1200);
   };
 
   const [newName, setNewName] = useState('');

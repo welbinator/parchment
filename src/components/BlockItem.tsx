@@ -7,6 +7,7 @@ import { GripVertical, Trash2, Group } from 'lucide-react';
 import { blockStyles, toRoman } from '@/utils/blockContent';
 import { useSlashCommand } from '@/hooks/useSlashCommand';
 import { useListIndent } from '@/hooks/useListIndent';
+import { useBlockDrag } from '@/hooks/useBlockDrag';
 import { useBlockEditor } from '@/hooks/useBlockEditor';
 
 interface BlockItemProps {
@@ -74,6 +75,12 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
     pageId,
   });
 
+  const { onMouseDown: onDragMouseDown } = useBlockDrag({
+    blockId: block.id,
+    pageId,
+    groupId,
+  });
+
   // --- Divider ---
   if (block.type === 'divider') {
     return (
@@ -110,6 +117,7 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
   return (
     <div
       ref={wrapperRef}
+      data-block-id={block.id}
       className={`group flex items-start gap-1 relative rounded-md transition-colors ${
         isSelected ? 'bg-primary/10 ring-1 ring-primary/30' : ''
       }`}
@@ -136,7 +144,11 @@ export default function BlockItem({ block, pageId, listIndex, focusBlockId, onFo
 
       {/* Block handle */}
       <div className="flex items-center gap-0.5 pt-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <button className="p-0.5 text-muted-foreground hover:text-foreground cursor-grab">
+        <button
+          onMouseDown={onDragMouseDown}
+          aria-label="Drag to reorder"
+          className="p-0.5 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+        >
           <GripVertical size={14} />
         </button>
       </div>

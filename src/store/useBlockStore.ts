@@ -65,6 +65,7 @@ interface BlockState {
   deleteGroup: (pageId: string, groupBlockId: string) => Promise<void>;
   undoDeleteBlock: () => void;
   changeBlockType: (pageId: string, blockId: string, type: BlockType) => void;
+  reorderBlocks: (pageId: string, groupId: string | null, orderedIds: string[]) => void;
 }
 
 export const useBlockStore = create<BlockState>((set, get) => ({
@@ -208,5 +209,23 @@ export const useBlockStore = create<BlockState>((set, get) => ({
       ),
     }));
     supabase.from('blocks').update({ type, checked: type === 'todo' ? false : null }).eq('id', blockId);
+  },
+
+  reorderBlocks: (pageId, groupId, orderedIds) => {
+    markLocalMutation();
+    set((s) => {
+      const updated = s.blocks.map((b) => {
+        if (b.page_id !== pageId) return b;
+        if (groupId ? b.group_id !== groupId : b.group_id !== null) return b;
+        const newPos = orderedIds.indexOf(b.id);
+        if (newPos === -1) return b;
+        return { ...b, position: newPos };
+      });
+      // Persist new positions
+      orderedIds.forEach((id, pos) => {
+        supabase.from('blocks').update({ position: pos }).eq('id', id);
+      });
+      return { blocks: updated };
+    });
   },
 }));

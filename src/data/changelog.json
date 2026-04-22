@@ -1,5 +1,16 @@
 [
   {
+    "version": "2.0.1",
+    "date": "2026-04-21",
+    "title": "Block Drag-to-Reorder",
+    "changes": [
+      {
+        "type": "fix",
+        "description": "The 6-dot drag handle on blocks now works — grab it and drag to reorder blocks on a page."
+      }
+    ]
+  },
+  {
     "version": "2.0.0",
     "date": "2026-04-21",
     "title": "Parchment 2.0 — Paid Plans, Chrome Web Store & Code Quality",

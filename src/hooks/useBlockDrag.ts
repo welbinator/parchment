@@ -60,7 +60,6 @@ export function useBlockDrag({ blockId, pageId, groupId }: UseBlockDragOptions) 
     container.style.position = 'relative';
     container.appendChild(indicator);
 
-    const startY = e.clientY;
     let targetId: string | null = null;
     let insertBefore = true;
 
@@ -84,7 +83,7 @@ export function useBlockDrag({ blockId, pageId, groupId }: UseBlockDragOptions) 
         const rect = el.getBoundingClientRect();
         const mid = rect.top + rect.height / 2;
         if (me.clientY >= rect.top - 4 && me.clientY <= rect.bottom + 4) {
-          targetId = el.getAttribute('data-block-id');
+          targetId = el.dataset.blockId ?? null;
           insertBefore = me.clientY < mid;
           // Position indicator
           const containerRect = container.getBoundingClientRect();

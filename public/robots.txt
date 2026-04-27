@@ -12,3 +12,8 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Content Signals — https://contentsignals.org/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+Sitemap: https://theparchment.app/sitemap.xml

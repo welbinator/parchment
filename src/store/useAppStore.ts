@@ -66,6 +66,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ loading: true, userId });
 
     try {
+      const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),

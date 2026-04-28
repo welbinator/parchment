@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Mail, Loader2, Zap, ArrowLeft } from 'lucide-react';
+import { Mail, Loader2, Zap, ArrowLeft, CheckCircle } from 'lucide-react';
+
+// Client-side rate limiting: max 3 signup attempts per 10 minutes per browser session.
+const SIGNUP_LIMIT = 3;
+const SIGNUP_WINDOW_MS = 10 * 60 * 1000;
 
 // skipcq: JS-0067
 export default function AuthPage() {
@@ -12,6 +16,22 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+
+  // Rate-limit state (in-memory per session — server also rate-limits)
+  const signupAttempts = useRef<number[]>([]);
+
+  const isRateLimited = (): boolean => {
+    const now = Date.now();
+    // Prune old attempts outside the window
+    signupAttempts.current = signupAttempts.current.filter(t => now - t < SIGNUP_WINDOW_MS);
+    return signupAttempts.current.length >= SIGNUP_LIMIT;
+  };
+
+  const recordAttempt = () => {
+    signupAttempts.current.push(Date.now());
+  };
 
   const redirectToCheckout = async (token: string) => {
     const res = await fetch(
@@ -26,8 +46,24 @@ export default function AuthPage() {
   };
 
   const handleSignUp = async () => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (isRateLimited()) {
+      toast.error('Too many sign-up attempts. Please wait a few minutes and try again.');
+      return;
+    }
+
+    recordAttempt();
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${globalThis.location.origin}/auth/v1/callback`,
+      },
+    });
+
     if (error) throw error;
+
+    // Duplicate email detection: Supabase returns a user with no identities for existing emails
     if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
       toast.error('An account with that email already exists.', {
         description: 'Switch to Sign In below to access your account.',
@@ -36,9 +72,10 @@ export default function AuthPage() {
       setIsSignUp(false);
       return;
     }
-    if (isProIntent && data.session?.access_token) {
-      await redirectToCheckout(data.session.access_token);
-    }
+
+    // Email confirmation required — show verification state
+    setVerificationEmail(email);
+    setVerificationSent(true);
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -49,12 +86,28 @@ export default function AuthPage() {
         await handleSignUp();
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          // Surface a friendly message for unverified accounts
+          if (error.message.toLowerCase().includes('email not confirmed')) {
+            toast.error('Please verify your email before signing in.', {
+              description: 'Check your inbox for a confirmation link from Parchment.',
+              duration: 8000,
+            });
+            return;
+          }
+          throw error;
+        }
+        if (isProIntent) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session?.access_token) {
+            await redirectToCheckout(sessionData.session.access_token);
+          }
+        }
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Something went wrong';
       if (msg.toLowerCase().includes('security purposes') || msg.toLowerCase().includes('after')) {
-        toast.error('Too many attempts — please wait a moment and try again.');
+        toast.error('Too many attempts \u2014 please wait a moment and try again.');
       } else {
         toast.error(msg);
       }
@@ -77,6 +130,38 @@ export default function AuthPage() {
     }
   };
 
+  // ── Email verification sent state ────────────────────────────────────────
+  if (verificationSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm animate-fade-in text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-full bg-primary/10 p-4">
+              <CheckCircle size={32} className="text-primary" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold font-display text-foreground mb-3">Check your inbox</h1>
+          <p className="text-sm text-muted-foreground mb-2">
+            We sent a confirmation link to
+          </p>
+          <p className="text-sm font-medium text-foreground mb-6 break-all">
+            {verificationEmail}
+          </p>
+          <p className="text-sm text-muted-foreground mb-8">
+            Click the link in the email to activate your account. It may take a minute or two to arrive.
+          </p>
+          <button
+            onClick={() => { setVerificationSent(false); setIsSignUp(false); setPassword(''); }}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+          >
+            Already confirmed? Sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main auth form ────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm animate-fade-in">

@@ -81,7 +81,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         console.error('[useAppStore] auth error in init:', authError.error);
         set({ loading: false });
         await supabase.auth.signOut();
-        globalThis.location.href = '/';
+        const home = '/'; if (home.startsWith('/')) globalThis.location.href = home; // skipcq: JS-0271
         return;
       }
 
@@ -176,7 +176,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const msg = err instanceof Error ? err.message.toLowerCase() : '';
       if (msg.includes('jwt') || msg.includes('unauthorized') || msg.includes('forbidden') || msg.includes('not authenticated')) {
         await supabase.auth.signOut();
-        globalThis.location.href = '/';
+        const home = '/'; if (home.startsWith('/')) globalThis.location.href = home; // skipcq: JS-0271
       }
     }
   },

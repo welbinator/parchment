@@ -264,7 +264,7 @@ export default function AuthPage() {
         </div>
 
         <button
-          onClick={handleGoogleAuth}
+          onClick={() => { void handleGoogleAuth(); }}
           disabled={loading}
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
         >

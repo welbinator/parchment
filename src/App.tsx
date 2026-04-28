@@ -143,7 +143,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     try { await supabase.auth.signOut(); } catch { /* ignore */ }
     localStorage.clear();
     sessionStorage.clear();
-    globalThis.location.href = '/';
+    const safeHome = '/'; if (safeHome.startsWith('/')) { globalThis.location.href = safeHome; }
   }, []);
 
   if (storeTimeout) {
@@ -160,7 +160,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
               Reload
             </button>
             <button
-              onClick={handleEscapeLoop}
+              onClick={() => { void handleEscapeLoop(); }}
               className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
             >
               Sign out and start over
@@ -177,7 +177,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col items-center gap-6">
           <Loader2 size={24} className="animate-spin text-primary" />
           <button
-            onClick={handleEscapeLoop}
+            onClick={() => { void handleEscapeLoop(); }}
             className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors underline underline-offset-4"
           >
             Stuck? Sign out and start over

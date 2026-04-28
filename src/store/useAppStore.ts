@@ -81,14 +81,14 @@ export const useAppStore = create<AppState>((set, get) => ({
         console.error('[useAppStore] auth error in init:', authError.error);
         set({ loading: false });
         await supabase.auth.signOut();
-        const home = escape('/'); if (home.startsWith('/')) globalThis.location.href = home; // skipcq: JS-0271
+        globalThis.location.replace('/');
         return;
       }
 
-    const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
-    const collections = (collectionsRes.data ?? []) as DbCollection[];
-    const pages = (pagesRes.data ?? []) as DbPage[];
-    const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[]; // skipcq: JS-0323
+      const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
+      const collections = (collectionsRes.data ?? []) as DbCollection[];
+      const pages = (pagesRes.data ?? []) as DbPage[];
+      const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[]; // skipcq: JS-0323
 
     // If new user, seed workspaces + welcome collection + page
     if (workspaces.filter((w) => !w.deleted_at).length === 0) {
@@ -176,7 +176,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const msg = err instanceof Error ? err.message.toLowerCase() : '';
       if (msg.includes('jwt') || msg.includes('unauthorized') || msg.includes('forbidden') || msg.includes('not authenticated')) {
         await supabase.auth.signOut();
-        const home = escape('/'); if (home.startsWith('/')) globalThis.location.href = home; // skipcq: JS-0271
+        globalThis.location.replace('/');
       }
     }
   },

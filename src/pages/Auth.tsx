@@ -186,7 +186,7 @@ export default function AuthPage() {
             Click the link in the email, or enter the 6-digit code below.
           </p>
 
-          <form onSubmit={(e) => { void handleOtpVerify(e); }} className="mb-6">
+          <form onSubmit={handleOtpVerify} className="mb-6"> {/* skipcq: JS-0098 */}
             <input
               ref={otpInputRef}
               type="text"

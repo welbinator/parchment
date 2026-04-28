@@ -88,6 +88,26 @@ export default function AuthPage() {
     setVerificationSent(true);
   };
 
+  const handleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        toast.error('Please verify your email before signing in.', {
+          description: 'Check your inbox for a confirmation link from Parchment.',
+          duration: 8000,
+        });
+        return;
+      }
+      throw error;
+    }
+    if (isProIntent) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.access_token) {
+        await redirectToCheckout(sessionData.session.access_token);
+      }
+    }
+  };
+
   // skipcq: JS-R1005
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,24 +116,7 @@ export default function AuthPage() {
       if (isSignUp) {
         await handleSignUp();
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          // Surface a friendly message for unverified accounts
-          if (error.message.toLowerCase().includes('email not confirmed')) {
-            toast.error('Please verify your email before signing in.', {
-              description: 'Check your inbox for a confirmation link from Parchment.',
-              duration: 8000,
-            });
-            return;
-          }
-          throw error;
-        }
-        if (isProIntent) {
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (sessionData.session?.access_token) {
-            await redirectToCheckout(sessionData.session.access_token);
-          }
-        }
+        await handleSignIn();
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Something went wrong';

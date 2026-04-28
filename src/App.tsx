@@ -147,6 +147,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     globalThis.location.replace('/');
   }, []);
 
+  const onEscapeLoop = useCallback(() => { handleEscapeLoop().catch(() => { globalThis.location.replace('/'); }); }, [handleEscapeLoop]);
+
   if (storeTimeout) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
@@ -161,7 +163,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
               Reload
             </button>
             <button
-              onClick={() => { void handleEscapeLoop(); }} // skipcq: JS-0098
+              onClick={onEscapeLoop}
               className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
             >
               Sign out and start over
@@ -178,7 +180,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col items-center gap-6">
           <Loader2 size={24} className="animate-spin text-primary" />
           <button
-            onClick={() => { void handleEscapeLoop(); }} // skipcq: JS-0098
+            onClick={onEscapeLoop}
             className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors underline underline-offset-4"
           >
             Stuck? Sign out and start over

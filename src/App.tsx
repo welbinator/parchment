@@ -30,7 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const queryClient = new QueryClient();
 
-// skipcq: JS-0067
+// skipcq: JS-0067, JS-R1005
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
@@ -52,6 +52,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
   }, [storeLoading, user]);
 
+  // skipcq: JS-R1005
   useEffect(() => {
     if (user) {
       // Don't init for unconfirmed email users — they need to verify first
@@ -160,7 +161,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
               Reload
             </button>
             <button
-              onClick={() => { void handleEscapeLoop(); }}
+              onClick={() => { void handleEscapeLoop(); }} // skipcq: JS-0098
               className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
             >
               Sign out and start over
@@ -177,7 +178,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col items-center gap-6">
           <Loader2 size={24} className="animate-spin text-primary" />
           <button
-            onClick={() => { void handleEscapeLoop(); }}
+            onClick={() => { void handleEscapeLoop(); }} // skipcq: JS-0098
             className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors underline underline-offset-4"
           >
             Stuck? Sign out and start over

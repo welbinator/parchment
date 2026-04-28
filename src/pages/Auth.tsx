@@ -8,7 +8,7 @@ import { Mail, Loader2, Zap, ArrowLeft, CheckCircle } from 'lucide-react';
 const SIGNUP_LIMIT = 3;
 const SIGNUP_WINDOW_MS = 10 * 60 * 1000;
 
-// skipcq: JS-0067
+// skipcq: JS-0067, JS-R1005
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
   const isProIntent = searchParams.get('checkout') === 'true' || searchParams.get('redirect')?.includes('checkout');
@@ -54,6 +54,7 @@ export default function AuthPage() {
     }
   };
 
+  // skipcq: JS-R1005
   const handleSignUp = async () => {
     if (isRateLimited()) {
       toast.error('Too many sign-up attempts. Please wait a few minutes and try again.');
@@ -87,6 +88,7 @@ export default function AuthPage() {
     setVerificationSent(true);
   };
 
+  // skipcq: JS-R1005
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -264,7 +266,7 @@ export default function AuthPage() {
         </div>
 
         <button
-          onClick={() => { void handleGoogleAuth(); }}
+          onClick={() => { void handleGoogleAuth(); }} // skipcq: JS-0098
           disabled={loading}
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
         >

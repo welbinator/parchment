@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -18,6 +18,15 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (verificationSent) {
+      setTimeout(() => otpInputRef.current?.focus(), 100);
+    }
+  }, [verificationSent]);
 
   // Rate-limit state (in-memory per session — server also rate-limits)
   const signupAttempts = useRef<number[]>([]);
@@ -131,6 +140,29 @@ export default function AuthPage() {
   };
 
   // ── Email verification sent state ────────────────────────────────────────
+  const handleOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) return;
+    setOtpLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: verificationEmail,
+        token: otpCode,
+        type: 'signup',
+      });
+      if (error) {
+        toast.error('Invalid or expired code. Please check your email and try again.');
+        return;
+      }
+      // Success — auth state change will handle redirect
+      toast.success('Email confirmed! Welcome to Parchment.');
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   if (verificationSent) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -142,16 +174,40 @@ export default function AuthPage() {
           </div>
           <h1 className="text-2xl font-bold font-display text-foreground mb-3">Check your inbox</h1>
           <p className="text-sm text-muted-foreground mb-2">
-            We sent a confirmation link to
+            We sent a confirmation email to
           </p>
           <p className="text-sm font-medium text-foreground mb-6 break-all">
             {verificationEmail}
           </p>
-          <p className="text-sm text-muted-foreground mb-8">
-            Click the link in the email to activate your account. It may take a minute or two to arrive.
+
+          <p className="text-sm text-muted-foreground mb-6">
+            Click the link in the email, or enter the 6-digit code below.
           </p>
+
+          <form onSubmit={handleOtpVerify} className="mb-6">
+            <input
+              ref={otpInputRef}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              placeholder="6-digit code"
+              value={otpCode}
+              onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, '')); }}
+              className="w-full rounded-lg border border-border bg-card px-4 py-3 text-center text-2xl font-mono tracking-widest text-foreground outline-none placeholder:text-muted-foreground focus:border-primary transition-colors mb-3"
+            />
+            <button
+              type="submit"
+              disabled={otpLoading || otpCode.length !== 6}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
+            >
+              {otpLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+              Confirm my account
+            </button>
+          </form>
+
           <button
-            onClick={() => { setVerificationSent(false); setIsSignUp(false); setPassword(''); }}
+            onClick={() => { setVerificationSent(false); setIsSignUp(false); setPassword(''); setOtpCode(''); }}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
           >
             Already confirmed? Sign in

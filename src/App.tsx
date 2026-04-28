@@ -38,12 +38,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [storeTimeout, setStoreTimeout] = useState(false);
   const navigate = useNavigate();
   const initCalledRef = useRef(false);
+  const newUserRedirectCalledRef = useRef(false);
 
   // After store finishes loading, check if this is a new user and redirect to settings
   useEffect(() => {
-    if (!storeLoading && user) {
+    if (!storeLoading && user && !newUserRedirectCalledRef.current) {
       const isNewUser = localStorage.getItem('parchment_new_user');
       if (isNewUser) {
+        newUserRedirectCalledRef.current = true;
         localStorage.removeItem('parchment_new_user');
         setTimeout(() => navigate('/settings?new=true'), 100);
       }

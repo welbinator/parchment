@@ -50,9 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
       clearTimeout(timeout);
-      setUser(isConfirmed ? u : null);
-      setLoading(false);
-      clearTimeout(timeout);
     });
 
     return () => {

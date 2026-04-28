@@ -81,8 +81,15 @@ function convertStyledJsonToHtml(content: string): string {
 // skipcq: JS-0067
 function renderBlockContent(content: string): string {
   const converted = convertStyledJsonToHtml(content);
-  const URL_REGEX = /(?<!\S)(https?:\/\/[^\s<]+[^\s<.,;:!?)"'\]])/g;
-  const linked = converted.replace(URL_REGEX, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${url}</a>`);
+  // Parse inline markdown bold/italic if not already JSON-styled
+  const withInline = content.trim().startsWith('[')
+    ? converted
+    : converted
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code>$1</code>');
+  const URL_REGEX = /(?<!\S)(https?:\/\/[^\s<]+[^\s<.,;:!?"'\]])/g;
+  const linked = withInline.replace(URL_REGEX, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary underline">${url}</a>`);
   return DOMPurify.sanitize(linked, { ADD_ATTR: ['target', 'rel', 'style'] });
 }
 

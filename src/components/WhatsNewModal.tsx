@@ -21,6 +21,17 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '2.2.0',
+    title: 'Auth Reliability & Chrome Extension Improvements',
+    changes: [
+      { type: 'fix', description: 'Google OAuth login no longer hangs on a loading spinner.' },
+      { type: 'feature', description: 'Email verification now supports entering a 6-digit code directly in the app.' },
+      { type: 'fix', description: 'Loading spinner now shows a &apos;Sign out and start over&apos; escape hatch so users are never permanently stuck.' },
+      { type: 'improvement', description: 'Chrome extension lets you choose which workspace to save articles and videos to.' },
+      { type: 'improvement', description: 'Chrome extension AI summaries now save as properly formatted bold/italic blocks.' },
+    ],
+  },
+  {
     version: '2.0.0',
     title: 'Parchment 2.0 — Paid Plans & Chrome Web Store',
     changes: [

@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Mail, Loader2, Zap, ArrowLeft } from 'lucide-react';
+import { Mail, Loader2, Zap, ArrowLeft, CheckCircle } from 'lucide-react';
 
-// skipcq: JS-0067
+// Client-side rate limiting: max 3 signup attempts per 10 minutes per browser session.
+const SIGNUP_LIMIT = 3;
+const SIGNUP_WINDOW_MS = 10 * 60 * 1000;
+
+// skipcq: JS-0067, JS-R1005
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
   const isProIntent = searchParams.get('checkout') === 'true' || searchParams.get('redirect')?.includes('checkout');
@@ -12,6 +16,31 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (verificationSent) {
+      setTimeout(() => otpInputRef.current?.focus(), 100);
+    }
+  }, [verificationSent]);
+
+  // Rate-limit state (in-memory per session — server also rate-limits)
+  const signupAttempts = useRef<number[]>([]);
+
+  const isRateLimited = (): boolean => {
+    const now = Date.now();
+    // Prune old attempts outside the window
+    signupAttempts.current = signupAttempts.current.filter(t => now - t < SIGNUP_WINDOW_MS);
+    return signupAttempts.current.length >= SIGNUP_LIMIT;
+  };
+
+  const recordAttempt = () => {
+    signupAttempts.current.push(Date.now());
+  };
 
   const redirectToCheckout = async (token: string) => {
     const res = await fetch(
@@ -25,9 +54,26 @@ export default function AuthPage() {
     }
   };
 
+  // skipcq: JS-R1005
   const handleSignUp = async () => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (isRateLimited()) {
+      toast.error('Too many sign-up attempts. Please wait a few minutes and try again.');
+      return;
+    }
+
+    recordAttempt();
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: globalThis.location.origin,
+      },
+    });
+
     if (error) throw error;
+
+    // Duplicate email detection: Supabase returns a user with no identities for existing emails
     if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
       toast.error('An account with that email already exists.', {
         description: 'Switch to Sign In below to access your account.',
@@ -36,11 +82,33 @@ export default function AuthPage() {
       setIsSignUp(false);
       return;
     }
-    if (isProIntent && data.session?.access_token) {
-      await redirectToCheckout(data.session.access_token);
+
+    // Email confirmation required — show verification state
+    setVerificationEmail(email);
+    setVerificationSent(true);
+  };
+
+  const handleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        toast.error('Please verify your email before signing in.', {
+          description: 'Check your inbox for a confirmation link from Parchment.',
+          duration: 8000,
+        });
+        return;
+      }
+      throw error;
+    }
+    if (isProIntent) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.access_token) {
+        await redirectToCheckout(sessionData.session.access_token);
+      }
     }
   };
 
+  // skipcq: JS-R1005
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -48,13 +116,12 @@ export default function AuthPage() {
       if (isSignUp) {
         await handleSignUp();
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        await handleSignIn();
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Something went wrong';
       if (msg.toLowerCase().includes('security purposes') || msg.toLowerCase().includes('after')) {
-        toast.error('Too many attempts — please wait a moment and try again.');
+        toast.error('Too many attempts \u2014 please wait a moment and try again.');
       } else {
         toast.error(msg);
       }
@@ -77,6 +144,85 @@ export default function AuthPage() {
     }
   };
 
+  // ── Email verification sent state ────────────────────────────────────────
+  const handleOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) return;
+    setOtpLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: verificationEmail,
+        token: otpCode,
+        type: 'signup',
+      });
+      if (error) {
+        toast.error('Invalid or expired code. Please check your email and try again.');
+        return;
+      }
+      // Success — auth state change will handle redirect
+      toast.success('Email confirmed! Welcome to Parchment.');
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  if (verificationSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm animate-fade-in text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-full bg-primary/10 p-4">
+              <CheckCircle size={32} className="text-primary" />
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold font-display text-foreground mb-3">Check your inbox</h1>
+          <p className="text-sm text-muted-foreground mb-2">
+            We sent a confirmation email to
+          </p>
+          <p className="text-sm font-medium text-foreground mb-6 break-all">
+            {verificationEmail}
+          </p>
+
+          <p className="text-sm text-muted-foreground mb-6">
+            Click the link in the email, or enter the 6-digit code below.
+          </p>
+
+          <form onSubmit={handleOtpVerify} className="mb-6"> {/* skipcq: JS-0098 */}
+            <input
+              ref={otpInputRef}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              placeholder="6-digit code"
+              value={otpCode}
+              onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, '')); }}
+              className="w-full rounded-lg border border-border bg-card px-4 py-3 text-center text-2xl font-mono tracking-widest text-foreground outline-none placeholder:text-muted-foreground focus:border-primary transition-colors mb-3"
+            />
+            <button
+              type="submit"
+              disabled={otpLoading || otpCode.length !== 6}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90 disabled:opacity-50"
+            >
+              {otpLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+              Confirm my account
+            </button>
+          </form>
+
+          <button
+            onClick={() => { setVerificationSent(false); setIsSignUp(false); setPassword(''); setOtpCode(''); }}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+          >
+            Already confirmed? Sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main auth form ────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm animate-fade-in">
@@ -123,7 +269,7 @@ export default function AuthPage() {
         </div>
 
         <button
-          onClick={handleGoogleAuth}
+          onClick={() => { void handleGoogleAuth(); }} // skipcq: JS-0098
           disabled={loading}
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
         >

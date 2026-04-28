@@ -18,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+// skipcq: JS-0067
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -38,15 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearTimeout(timeout);
         return;
       }
+      // SIGNED_IN after email confirmation (USER_UPDATED fires when email_confirmed_at is set)
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       clearTimeout(timeout);
     });
 
-    // getSession seeds the initial state; onAuthStateChange will also fire INITIAL_SESSION,
-    // but we still call getSession as a fallback for environments where the event may be missed.
-    // The store's initInProgress guard prevents double-seeding of welcome data.
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);

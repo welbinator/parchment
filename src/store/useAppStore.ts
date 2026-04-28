@@ -45,6 +45,47 @@ function uid() {
   return crypto.randomUUID();
 }
 
+// skipcq: JS-0067, JS-R1005
+async function seedNewUser(userId: string, set: (s: Partial<AppState>) => void) {
+  const { data: recheck } = await supabase.from('workspaces').select('id').eq('user_id', userId).limit(1);
+  if (recheck && recheck.length > 0) { useAppStore.getState().refetch(); return true; }
+
+  const personalWsId = uid();
+  await supabase.from('workspaces').insert({ id: personalWsId, user_id: userId, name: 'Personal', position: 0 });
+  await supabase.from('workspaces').insert({ id: uid(), user_id: userId, name: 'Work', position: 1 });
+
+  const colId = uid();
+  const pageId = uid();
+  const { data: col } = await supabase.from('collections').insert({ id: colId, user_id: userId, name: 'Getting Started', position: 0, workspace_id: personalWsId }).select().single();
+  const { data: page } = await supabase.from('pages').insert({ id: pageId, user_id: userId, collection_id: colId, title: 'Welcome', type: 'blank' }).select().single();
+
+  const welcomeBlocks = [
+    { id: uid(), page_id: pageId, type: 'heading1', content: 'Welcome to Parchment', position: 0 },
+    { id: uid(), page_id: pageId, type: 'text', content: 'A simple place for your thoughts. No databases, no complexity — just pages.', position: 1 },
+    { id: uid(), page_id: pageId, type: 'divider', content: '', position: 2 },
+    { id: uid(), page_id: pageId, type: 'heading2', content: 'Quick start', position: 3 },
+    { id: uid(), page_id: pageId, type: 'todo', content: 'Create a new collection in the sidebar', checked: false, position: 4 },
+    { id: uid(), page_id: pageId, type: 'todo', content: 'Add a page to your collection', checked: false, position: 5 },
+    { id: uid(), page_id: pageId, type: 'todo', content: 'Start writing — press / for block types', checked: false, position: 6 },
+    { id: uid(), page_id: pageId, type: 'divider', content: '', position: 7 },
+    { id: uid(), page_id: pageId, type: 'quote', content: 'Simplicity is the ultimate sophistication.', position: 8 },
+  ];
+  await supabase.from('blocks').insert(welcomeBlocks);
+
+  localStorage.setItem('activePageId', pageId);
+  localStorage.setItem('activeCollectionId', colId);
+  localStorage.setItem('activeWorkspaceId', personalWsId);
+  localStorage.setItem('parchment_new_user', 'true');
+
+  const { data: freshWorkspaces } = await supabase.from('workspaces').select('*').eq('user_id', userId).order('position');
+  useWorkspaceStore.getState().setWorkspaces((freshWorkspaces ?? []) as DbWorkspace[]);
+  useBlockStore.getState().setBlocks(welcomeBlocks as DbBlock[]);
+  usePageStore.getState().setPages(page ? [page] : []);
+  useCollectionStore.getState().setCollections(col ? [col] : []);
+  set({ activePageId: pageId, activeCollectionId: colId, loading: false });
+  return true;
+}
+
 // Capture ?page= param at module load time, before anything cleans the URL
 const _urlPageId = new URLSearchParams(window.location.search).get('page');
 if (_urlPageId) {
@@ -65,65 +106,34 @@ export const useAppStore = create<AppState>((set, get) => ({
   init: async (userId: string) => {
     set({ loading: true, userId });
 
-    const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
+    try {
+      const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
       supabase.from('blocks').select('id, page_id, type, content, checked, list_start, indent_level, position, created_at, group_id, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
     ]);
 
-    const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
-    const collections = (collectionsRes.data ?? []) as DbCollection[];
-    const pages = (pagesRes.data ?? []) as DbPage[];
-    const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[]; // skipcq: JS-0323
+      // If any query returned an auth error, bail out — don't hang on loading
+      const authError = [workspacesRes, collectionsRes, pagesRes, blocksRes].find(
+        r => r.error && (r.error.code === 'PGRST301' || r.error.message?.toLowerCase().includes('jwt') || r.error.message?.toLowerCase().includes('not authenticated'))
+      );
+      if (authError) {
+        console.error('[useAppStore] auth error in init:', authError.error);
+        set({ loading: false });
+        await supabase.auth.signOut();
+        globalThis.location.replace('/');
+        return;
+      }
+
+      const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
+      const collections = (collectionsRes.data ?? []) as DbCollection[];
+      const pages = (pagesRes.data ?? []) as DbPage[];
+      const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[]; // skipcq: JS-0323
 
     // If new user, seed workspaces + welcome collection + page
     if (workspaces.filter((w) => !w.deleted_at).length === 0) {
-      const { data: recheck } = await supabase.from('workspaces').select('id').eq('user_id', userId).limit(1);
-      if (recheck && recheck.length > 0) {
-        get().refetch();
-        return;
-      }
-      // Create Personal workspace first
-      const personalWsId = uid();
-      await supabase.from('workspaces').insert({ id: personalWsId, user_id: userId, name: 'Personal', position: 0 });
-      // Create Work workspace (empty)
-      await supabase.from('workspaces').insert({ id: uid(), user_id: userId, name: 'Work', position: 1 });
-
-      const colId = uid();
-      const pageId = uid();
-      const { data: col } = await supabase.from('collections').insert({ id: colId, user_id: userId, name: 'Getting Started', position: 0, workspace_id: personalWsId }).select().single();
-      const { data: page } = await supabase.from('pages').insert({ id: pageId, user_id: userId, collection_id: colId, title: 'Welcome', type: 'blank' }).select().single();
-
-      const welcomeBlocks = [
-        { id: uid(), page_id: pageId, type: 'heading1', content: 'Welcome to Parchment', position: 0 },
-        { id: uid(), page_id: pageId, type: 'text', content: 'A simple place for your thoughts. No databases, no complexity — just pages.', position: 1 },
-        { id: uid(), page_id: pageId, type: 'divider', content: '', position: 2 },
-        { id: uid(), page_id: pageId, type: 'heading2', content: 'Quick start', position: 3 },
-        { id: uid(), page_id: pageId, type: 'todo', content: 'Create a new collection in the sidebar', checked: false, position: 4 },
-        { id: uid(), page_id: pageId, type: 'todo', content: 'Add a page to your collection', checked: false, position: 5 },
-        { id: uid(), page_id: pageId, type: 'todo', content: "Start writing — press / for block types", checked: false, position: 6 },
-        { id: uid(), page_id: pageId, type: 'divider', content: '', position: 7 },
-        { id: uid(), page_id: pageId, type: 'quote', content: 'Simplicity is the ultimate sophistication.', position: 8 },
-      ];
-
-      await supabase.from('blocks').insert(welcomeBlocks);
-
-      localStorage.setItem('activePageId', pageId);
-      localStorage.setItem('activeCollectionId', colId);
-      localStorage.setItem('activeWorkspaceId', personalWsId);
-      localStorage.setItem('parchment_new_user', 'true');
-
-      const { data: freshWorkspaces } = await supabase.from('workspaces').select('*').eq('user_id', userId).order('position');
-      useWorkspaceStore.getState().setWorkspaces((freshWorkspaces ?? []) as DbWorkspace[]);
-      useBlockStore.getState().setBlocks(welcomeBlocks as DbBlock[]);
-      usePageStore.getState().setPages(page ? [page] : []);
-      useCollectionStore.getState().setCollections(col ? [col] : []);
-      set({
-        activePageId: pageId,
-        activeCollectionId: colId,
-        loading: false,
-      });
+      await seedNewUser(userId, set);
       return;
     }
 
@@ -154,6 +164,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeCollectionId: newActiveCollectionId,
       loading: false,
     });
+    } catch (err) {
+      // If init fails (e.g. expired/invalid session), stop the loading spinner.
+      // The auth layer will handle sign-out if the session is truly invalid.
+      console.error('[useAppStore] init failed:', err);
+      set({ loading: false });
+      // If it looks like an auth error, force sign-out so the user isn't stuck
+      const msg = err instanceof Error ? err.message.toLowerCase() : '';
+      if (msg.includes('jwt') || msg.includes('unauthorized') || msg.includes('forbidden') || msg.includes('not authenticated')) {
+        await supabase.auth.signOut();
+        globalThis.location.replace('/');
+      }
+    }
   },
 
   // skipcq: JS-R1005

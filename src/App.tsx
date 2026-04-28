@@ -30,7 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const queryClient = new QueryClient();
 
-// skipcq: JS-0067
+// skipcq: JS-0067, JS-R1005
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { init, loading: storeLoading, reset, refetch, setupRealtime } = useAppStore();
@@ -38,20 +38,27 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [storeTimeout, setStoreTimeout] = useState(false);
   const navigate = useNavigate();
   const initCalledRef = useRef(false);
+  const newUserRedirectCalledRef = useRef(false);
 
   // After store finishes loading, check if this is a new user and redirect to settings
   useEffect(() => {
-    if (!storeLoading && user) {
+    if (!storeLoading && user && !newUserRedirectCalledRef.current) {
       const isNewUser = localStorage.getItem('parchment_new_user');
       if (isNewUser) {
+        newUserRedirectCalledRef.current = true;
         localStorage.removeItem('parchment_new_user');
         setTimeout(() => navigate('/settings?new=true'), 100);
       }
     }
   }, [storeLoading, user]);
 
+  // skipcq: JS-R1005
   useEffect(() => {
     if (user) {
+      // Don't init for unconfirmed email users — they need to verify first
+      if (!user.email_confirmed_at && user.app_metadata?.provider === 'email') {
+        return;
+      }
       // Only call init once per login session — guards against double-fire from
       // onAuthStateChange + getSession() both updating user state
       if (!initCalledRef.current) {
@@ -83,6 +90,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ dry_run: true }),
+          signal: AbortSignal.timeout(8000),
         }
       );
       const result = await response.json();
@@ -132,18 +140,35 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return () => { clearTimeout(timer); }; // skipcq: JS-0045
   }, [user, storeLoading]);
 
+  const handleEscapeLoop = useCallback(async () => {
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+    localStorage.clear();
+    sessionStorage.clear();
+    globalThis.location.replace('/');
+  }, []);
+
+  const onEscapeLoop = useCallback(() => { handleEscapeLoop().catch(() => { globalThis.location.replace('/'); }); }, [handleEscapeLoop]);
+
   if (storeTimeout) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="text-center max-w-sm">
           <p className="text-foreground font-medium mb-3">Taking longer than expected&hellip;</p>
-          <p className="text-muted-foreground text-sm mb-6">There may be a connection issue. Try reloading.</p>
-          <button
-            onClick={() => { globalThis.location.reload(); }}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
-          >
-            Reload
-          </button>
+          <p className="text-muted-foreground text-sm mb-6">There may be a connection issue.</p>
+          <div className="flex flex-col gap-3 items-center">
+            <button
+              onClick={() => { globalThis.location.reload(); }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              Reload
+            </button>
+            <button
+              onClick={onEscapeLoop}
+              className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
+            >
+              Sign out and start over
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -152,12 +177,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (authLoading || (user && storeLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 size={24} className="animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-6">
+          <Loader2 size={24} className="animate-spin text-primary" />
+          <button
+            onClick={onEscapeLoop}
+            className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors underline underline-offset-4"
+          >
+            Stuck? Sign out and start over
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+  // Unconfirmed email user — send back to auth page to show verification screen
+  if (user.app_metadata?.provider === 'email' && !user.email_confirmed_at) {
+    return <Navigate to="/auth" replace />;
+  }
   return (
     <>
       {showMigration && (

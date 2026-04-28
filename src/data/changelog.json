@@ -1,5 +1,36 @@
 [
   {
+    "version": "2.2.0",
+    "date": "2026-04-28",
+    "title": "Auth Reliability & Chrome Extension Improvements",
+    "changes": [
+      {
+        "type": "fix",
+        "description": "Google OAuth login no longer hangs on a loading spinner \u2014 sessions are now handled correctly for all OAuth providers."
+      },
+      {
+        "type": "feature",
+        "description": "Email verification now supports entering a 6-digit code directly in the app \u2014 no need to click the link if you prefer typing the code."
+      },
+      {
+        "type": "fix",
+        "description": "Loading spinner now shows a 'Sign out and start over' escape hatch so users are never permanently stuck in an auth loop."
+      },
+      {
+        "type": "fix",
+        "description": "Shared page view now correctly renders bold, italic, and code formatting from AI-generated summaries."
+      },
+      {
+        "type": "improvement",
+        "description": "Chrome extension now lets you choose which workspace to save articles and videos to."
+      },
+      {
+        "type": "improvement",
+        "description": "Chrome extension AI summaries now save as properly formatted blocks \u2014 bold text renders as bold in the editor instead of showing asterisks."
+      }
+    ]
+  },
+  {
     "version": "2.1.0",
     "date": "2026-04-27",
     "title": "Agent Readiness",

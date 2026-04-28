@@ -40,27 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       // SIGNED_IN after email confirmation (USER_UPDATED fires when email_confirmed_at is set)
       setSession(session);
-      // Only treat the user as authenticated if their email is confirmed
-      // (or if they signed in via OAuth which is always confirmed)
-      const u = session?.user ?? null;
-      // Only block unconfirmed email/password signups — OAuth (Google etc) is always valid
-      const provider = u?.app_metadata?.provider ?? u?.identities?.[0]?.provider ?? 'email';
-      const isEmailSignup = provider === 'email';
-      const isConfirmed = !u ? false : !isEmailSignup || !!u.email_confirmed_at;
-      setUser(isConfirmed ? u : null);
+      setUser(session?.user ?? null);
       setLoading(false);
       clearTimeout(timeout);
     });
 
-    // getSession seeds the initial state; onAuthStateChange will also fire INITIAL_SESSION,
-    // but we still call getSession as a fallback for environments where the event may be missed.
-    // The store's initInProgress guard prevents double-seeding of welcome data.
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      const u = session?.user ?? null;
-      const provider = u?.app_metadata?.provider ?? u?.identities?.[0]?.provider ?? 'email';
-      const isEmailSignup = provider === 'email';
-      const isConfirmed = !u ? false : !isEmailSignup || !!u.email_confirmed_at;
+      setUser(session?.user ?? null);
+      setLoading(false);
+      clearTimeout(timeout);
       setUser(isConfirmed ? u : null);
       setLoading(false);
       clearTimeout(timeout);

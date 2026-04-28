@@ -54,6 +54,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
+      // Don't init for unconfirmed email users — they need to verify first
+      if (!user.email_confirmed_at && user.app_metadata?.provider === 'email') {
+        return;
+      }
       // Only call init once per login session — guards against double-fire from
       // onAuthStateChange + getSession() both updating user state
       if (!initCalledRef.current) {
@@ -184,6 +188,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+  // Unconfirmed email user — send back to auth page to show verification screen
+  if (user.app_metadata?.provider === 'email' && !user.email_confirmed_at) {
+    return <Navigate to="/auth" replace />;
+  }
   return (
     <>
       {showMigration && (

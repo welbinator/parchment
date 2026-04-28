@@ -134,18 +134,33 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return () => { clearTimeout(timer); }; // skipcq: JS-0045
   }, [user, storeLoading]);
 
+  const handleEscapeLoop = useCallback(async () => {
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+    localStorage.clear();
+    sessionStorage.clear();
+    globalThis.location.href = '/';
+  }, []);
+
   if (storeTimeout) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="text-center max-w-sm">
           <p className="text-foreground font-medium mb-3">Taking longer than expected&hellip;</p>
-          <p className="text-muted-foreground text-sm mb-6">There may be a connection issue. Try reloading.</p>
-          <button
-            onClick={() => { globalThis.location.reload(); }}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
-          >
-            Reload
-          </button>
+          <p className="text-muted-foreground text-sm mb-6">There may be a connection issue.</p>
+          <div className="flex flex-col gap-3 items-center">
+            <button
+              onClick={() => { globalThis.location.reload(); }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              Reload
+            </button>
+            <button
+              onClick={handleEscapeLoop}
+              className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
+            >
+              Sign out and start over
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -154,7 +169,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (authLoading || (user && storeLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 size={24} className="animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-6">
+          <Loader2 size={24} className="animate-spin text-primary" />
+          <button
+            onClick={handleEscapeLoop}
+            className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors underline underline-offset-4"
+          >
+            Stuck? Sign out and start over
+          </button>
+        </div>
       </div>
     );
   }

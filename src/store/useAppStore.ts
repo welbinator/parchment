@@ -65,7 +65,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   init: async (userId: string) => {
     set({ loading: true, userId });
 
-    const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
+    try {
       supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
       supabase.from('pages').select('*').eq('user_id', userId).order('created_at'),
@@ -154,6 +154,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeCollectionId: newActiveCollectionId,
       loading: false,
     });
+    } catch (err) {
+      // If init fails (e.g. expired/invalid session), stop the loading spinner.
+      // The auth layer will handle sign-out if the session is truly invalid.
+      console.error('[useAppStore] init failed:', err);
+      set({ loading: false });
+      // If it looks like an auth error, force sign-out so the user isn't stuck
+      const msg = err instanceof Error ? err.message.toLowerCase() : '';
+      if (msg.includes('jwt') || msg.includes('unauthorized') || msg.includes('forbidden') || msg.includes('not authenticated')) {
+        await supabase.auth.signOut();
+        globalThis.location.href = '/';
+      }
+    }
   },
 
   // skipcq: JS-R1005

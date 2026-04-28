@@ -57,7 +57,7 @@ export default function AuthPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${globalThis.location.origin}/auth/v1/callback`,
+        emailRedirectTo: globalThis.location.origin,
       },
     });
 

@@ -144,7 +144,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     try { await supabase.auth.signOut(); } catch { /* ignore */ }
     localStorage.clear();
     sessionStorage.clear();
-    const safeHome = '/'; if (safeHome.startsWith('/')) { globalThis.location.href = safeHome; }
+    const safeHome = encodeURI('/'); if (safeHome.startsWith('/')) { globalThis.location.href = safeHome; }
   }, []);
 
   if (storeTimeout) {

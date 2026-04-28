@@ -85,6 +85,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ dry_run: true }),
+          signal: AbortSignal.timeout(8000),
         }
       );
       const result = await response.json();

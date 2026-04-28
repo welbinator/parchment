@@ -73,6 +73,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       supabase.from('blocks').select('id, page_id, type, content, checked, list_start, indent_level, position, created_at, group_id, pages!inner(user_id)').eq('pages.user_id', userId).order('position'),
     ]);
 
+      // If any query returned an auth error, bail out — don't hang on loading
+      const authError = [workspacesRes, collectionsRes, pagesRes, blocksRes].find(
+        r => r.error && (r.error.code === 'PGRST301' || r.error.message?.toLowerCase().includes('jwt') || r.error.message?.toLowerCase().includes('not authenticated'))
+      );
+      if (authError) {
+        console.error('[useAppStore] auth error in init:', authError.error);
+        set({ loading: false });
+        await supabase.auth.signOut();
+        globalThis.location.href = '/';
+        return;
+      }
+
     const workspaces = (workspacesRes.data ?? []) as DbWorkspace[];
     const collections = (collectionsRes.data ?? []) as DbCollection[];
     const pages = (pagesRes.data ?? []) as DbPage[];

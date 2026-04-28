@@ -38,8 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearTimeout(timeout);
         return;
       }
+      // SIGNED_IN after email confirmation (USER_UPDATED fires when email_confirmed_at is set)
       setSession(session);
-      setUser(session?.user ?? null);
+      // Only treat the user as authenticated if their email is confirmed
+      // (or if they signed in via OAuth which is always confirmed)
+      const u = session?.user ?? null;
+      const isConfirmed = u ? (!!u.email_confirmed_at || u.app_metadata?.provider !== 'email') : false;
+      setUser(isConfirmed ? u : null);
       setLoading(false);
       clearTimeout(timeout);
     });
@@ -49,7 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // The store's initInProgress guard prevents double-seeding of welcome data.
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      const isConfirmed = u ? (!!u.email_confirmed_at || u.app_metadata?.provider !== 'email') : false;
+      setUser(isConfirmed ? u : null);
       setLoading(false);
       clearTimeout(timeout);
     });

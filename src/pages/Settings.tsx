@@ -5,6 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePWAInstall } from '@/components/PWAInstallPrompt';
 
 type KeyType = 'master' | 'workspace';
 
@@ -440,6 +441,7 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 export default function Settings() {
   const { user } = useAuth();
   const { plan, isPro, isLoading: subLoading, currentPeriodEnd, refetch: refetchSub } = useSubscription();
+  const { canInstall, isInstalled, triggerInstall } = usePWAInstall();
   const [upgradePending, setUpgradePending] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1165,6 +1167,32 @@ export default function Settings() {
         </section>
 
         {/* Chrome Extension */}
+        {/* Install App */}
+        {!isInstalled && (
+          <section className="mt-12 pt-8 border-t border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <Download size={18} className="text-primary" />
+              <h2 className="text-lg font-semibold font-display text-foreground">Install App</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Install Parchment on your device for quick access — works like a native app.
+            </p>
+            {canInstall ? (
+              <button
+                onClick={() => { void triggerInstall(); }}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Download size={14} />
+                Install Parchment
+              </button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Parchment is already installed, or your browser doesn&apos;t support installation prompts. On iPhone, use Safari &rarr; Share &rarr; Add to Home Screen.
+              </p>
+            )}
+          </section>
+        )}
+
         <section className="mt-12 pt-8 border-t border-border">
           <div className="flex items-center gap-2 mb-2">
             <Puzzle size={18} className="text-primary" />

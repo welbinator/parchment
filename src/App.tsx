@@ -20,7 +20,7 @@ import Trash from "./pages/Trash";
 import NotFound from "./pages/NotFound";
 import SharedPageView from "./pages/SharedPageView";
 import Features from "./pages/Features";
-import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import { PWAInstallProvider } from "./components/PWAInstallPrompt";
 import FeedbackWidget from "./components/FeedbackWidget";
 import { useViewStore } from '@/store/useViewStore';
 import { Loader2 } from 'lucide-react';
@@ -196,14 +196,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
   return (
-    <>
+    <PWAInstallProvider>
       {showMigration && (
         <MigrationModal onComplete={() => { setShowMigration(false); init(user.id); }} />
       )}
       <WhatsNewModal />
-      <PWAInstallPrompt />
       {children}
-    </>
+    </PWAInstallProvider>
   );
 }
 

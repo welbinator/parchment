@@ -70,7 +70,7 @@ export default function ResizableSidebarWrapper({ children, enabled }: Props) {
       {/* Drag handle */}
       <div
         onMouseDown={onMouseDown}
-        className={`absolute right-0 top-0 h-full w-1.5 cursor-col-resize z-10 group transition-colors ${
+        className={`absolute right-0 top-0 h-full w-1.5 cursor-col-resize z-40 group transition-colors ${
           dragging ? 'bg-primary/40' : 'hover:bg-primary/30'
         }`}
         style={{ userSelect: 'none' }}

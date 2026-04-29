@@ -81,7 +81,12 @@ Deno.serve(async (req) => {
 
     // Validate key — rate limiting is handled atomically inside validate_api_key
     const { data: validation, error: valError } = await supabase.rpc('validate_api_key', { p_key: apiKey })
-    if (valError || !validation?.valid) {
+    if (valError) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired API key' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    if (!validation?.valid) {
       if (validation?.rate_limited) {
         return new Response(JSON.stringify({
           error: validation.reason,

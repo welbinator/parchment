@@ -1185,11 +1185,20 @@ export default function Settings() {
                 <Download size={14} />
                 Install Parchment
               </button>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Parchment is already installed, or your browser doesn&apos;t support installation prompts. On iPhone, use Safari &rarr; Share &rarr; Add to Home Screen.
-              </p>
-            )}
+            ) : (() => {
+              const isIOS = /iphone|ipad|ipod/i.test(globalThis.navigator?.userAgent ?? '');
+              const isAndroid = /android/i.test(globalThis.navigator?.userAgent ?? '');
+              return (
+                <p className="text-sm text-muted-foreground">
+                  {isIOS
+                    ? <span>On iPhone, open in Safari then tap <strong>Share &rarr; Add to Home Screen</strong>.</span>
+                    : isAndroid
+                    ? <span>Tap the <strong>three-dot menu (&hellip;) &rarr; Add to Home Screen</strong> in Chrome. If the option is missing, Chrome may have a cooldown after a recent uninstall &mdash; try again in a day or two.</span>
+                    : <span>Open in Chrome and look for the install icon in the address bar, or use the browser menu &rarr; Install app.</span>
+                  }
+                </p>
+              );
+            })()}
           </section>
         )}
 

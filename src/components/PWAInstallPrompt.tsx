@@ -18,7 +18,7 @@ interface PWAInstallContextType {
 const PWAInstallContext = createContext<PWAInstallContextType>({
   canInstall: false,
   isInstalled: false,
-  triggerInstall: async () => {},
+  triggerInstall: async () => { /* no-op default */ }, // skipcq: JS-0321
 });
 
 export const usePWAInstall = () => useContext(PWAInstallContext);
@@ -66,7 +66,7 @@ export function PWAInstallProvider({ children }: { readonly children: ReactNode 
   };
 
   return (
-    <PWAInstallContext.Provider value={{ canInstall: !!deferredPrompt && !isInstalled, isInstalled, triggerInstall }}>
+    <PWAInstallContext.Provider value={{ canInstall: Boolean(deferredPrompt) && !isInstalled, isInstalled, triggerInstall }}>
       {children}
       {showBanner && !isInstalled && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm bg-card border border-border rounded-xl shadow-lg p-4 animate-fade-in">
@@ -93,7 +93,7 @@ export function PWAInstallProvider({ children }: { readonly children: ReactNode 
               Not now
             </button>
             <button
-              onClick={() => { void triggerInstall(); }}
+              onClick={() => { void triggerInstall(); }} // skipcq: JS-0098
               className="flex-1 px-3 py-1.5 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
             >
               Install

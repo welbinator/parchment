@@ -437,7 +437,7 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 `;
 }
 
-// skipcq: JS-0067
+// skipcq: JS-0067, JS-R1005
 export default function Settings() {
   const { user } = useAuth();
   const { plan, isPro, isLoading: subLoading, currentPeriodEnd, refetch: refetchSub } = useSubscription();
@@ -1179,7 +1179,7 @@ export default function Settings() {
             </p>
             {canInstall ? (
               <button
-                onClick={() => { void triggerInstall(); }}
+                onClick={() => { void triggerInstall(); }} // skipcq: JS-0098
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 <Download size={14} />

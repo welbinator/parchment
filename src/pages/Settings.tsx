@@ -1186,8 +1186,8 @@ export default function Settings() {
                 Install Parchment
               </button>
             ) : (() => {
-              const isIOS = /iphone|ipad|ipod/i.test(globalThis.navigator?.userAgent ?? '');
-              const isAndroid = /android/i.test(globalThis.navigator?.userAgent ?? '');
+              const isIOS = /iphone|ipad|ipod/i.test(globalThis.navigator.userAgent);
+              const isAndroid = /android/i.test(globalThis.navigator.userAgent);
               return (
                 <p className="text-sm text-muted-foreground">
                   {isIOS

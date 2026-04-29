@@ -18,6 +18,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
 }
 
 const MAX_BLOCK_CONTENT_BYTES = 10 * 1024 // 10KB per block
+const MAX_TITLE_LENGTH = 512 // max chars for page/collection titles and names
 const APP_URL = Deno.env.get('APP_URL') ?? 'https://theparchment.app'
 const VALID_BLOCK_TYPES = new Set(['text', 'heading1', 'heading2', 'heading3', 'bullet_list', 'numbered_list', 'todo', 'quote', 'divider', 'code', 'group'])
 
@@ -187,6 +188,8 @@ Deno.serve(async (req) => {
       case 'create_collection': {
         if (!permissions.can_create_collections) return deny(corsHeaders)
         const { name, workspace_id, workspace_name } = body
+        if (!name || typeof name !== 'string' || name.trim().length === 0) return json({ error: 'name is required' }, corsHeaders, 400)
+        if (name.length > MAX_TITLE_LENGTH) return json({ error: `name exceeds maximum length of ${MAX_TITLE_LENGTH} characters` }, corsHeaders, 400)
         // Workspace keys must provide a workspace_id that is in their allowed list
         let targetWorkspaceId = workspace_id
 
@@ -318,6 +321,7 @@ Deno.serve(async (req) => {
       case 'create_page': {
         if (!permissions.can_create_pages) return deny(corsHeaders)
         const { collection_id, title, type } = body
+        if (title && title.length > MAX_TITLE_LENGTH) return json({ error: `title exceeds maximum length of ${MAX_TITLE_LENGTH} characters` }, corsHeaders, 400)
         const accessDenied = await assertCollectionAccess(collection_id)
         if (accessDenied) return accessDenied
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
@@ -529,26 +533,24 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Delete all existing blocks on the page
-        await supabase.from('blocks').delete().eq('page_id', page_id)
-
-        // Insert new blocks with sequential positions based on array order
-        const insertedBlocks: Record<string, unknown>[] = []
-        for (let i = 0; i < blocks.length; i++) {
-          const block = blocks[i]
-          const content = convertStyledJsonToHtml(block.content || '')
-          const { data: inserted } = await supabase.from('blocks').insert({
-            page_id,
-            type: block.type || 'text',
-            content,
-            checked: block.checked ?? null,
-            indent_level: block.indent_level ?? 0,
-            position: i,
-            group_id: block.group_id || null,
-          }).select().single()
-          if (inserted) insertedBlocks.push(inserted)
+        // Delete all existing blocks and insert new ones atomically via RPC
+        const blocksForRpc = blocks.map((block: Record<string, unknown>, i: number) => ({
+          type: block.type || 'text',
+          content: convertStyledJsonToHtml(block.content as string || ''),
+          checked: block.checked ?? null,
+          indent_level: block.indent_level ?? 0,
+          position: i,
+          group_id: block.group_id || '',
+        }))
+        const { error: rpcError } = await supabase.rpc('replace_blocks_tx', {
+          p_page_id: page_id,
+          p_blocks: blocksForRpc,
+        })
+        if (rpcError) {
+          console.error('[replace_blocks] RPC error:', rpcError)
+          return json({ error: 'Failed to replace blocks' }, corsHeaders, 500)
         }
-        return json({ success: true, mode: 'replace', blocks_written: insertedBlocks.length, blocks: insertedBlocks }, corsHeaders)
+        return json({ success: true, mode: 'replace', blocks_written: blocks.length }, corsHeaders)
       }
 
       case 'delete_block': {
@@ -584,6 +586,7 @@ Deno.serve(async (req) => {
         if (!permissions.can_create_pages) return deny(corsHeaders)
         const { page_id, title } = body
         if (!page_id || !title) return json({ error: 'page_id and title are required' }, corsHeaders, 400)
+        if (title.length > MAX_TITLE_LENGTH) return json({ error: `title exceeds maximum length of ${MAX_TITLE_LENGTH} characters` }, corsHeaders, 400)
         const { data: pg } = await supabase.from('pages').select('id').eq('id', page_id).eq('user_id', userId).single()
         if (!pg) return json({ error: 'Page not found' }, corsHeaders, 404)
         const { error } = await supabase.from('pages').update({ title }).eq('id', page_id)
@@ -610,6 +613,7 @@ Deno.serve(async (req) => {
         if (!permissions.can_create_collections) return deny(corsHeaders)
         const { collection_id, name } = body
         if (!collection_id || !name) return json({ error: 'collection_id and name are required' }, corsHeaders, 400)
+        if (name.length > MAX_TITLE_LENGTH) return json({ error: `name exceeds maximum length of ${MAX_TITLE_LENGTH} characters` }, corsHeaders, 400)
         const accessDenied = await assertCollectionAccess(collection_id)
         if (accessDenied) return accessDenied
         const { data: col } = await supabase.from('collections').select('id').eq('id', collection_id).eq('user_id', userId).single()
@@ -799,7 +803,8 @@ Deno.serve(async (req) => {
         ]}, corsHeaders, 400)
     }
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('[api] unhandled error:', err)
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

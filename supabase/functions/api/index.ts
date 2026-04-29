@@ -79,39 +79,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Validate key
+    // Validate key — rate limiting is handled atomically inside validate_api_key
     const { data: validation, error: valError } = await supabase.rpc('validate_api_key', { p_key: apiKey })
     if (valError || !validation?.valid) {
+      if (validation?.rate_limited) {
+        return new Response(JSON.stringify({
+          error: validation.reason,
+          retry_after: validation.retry_after,
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': validation.retry_after === 'tomorrow' ? '86400' : '60' },
+        })
+      }
       return new Response(JSON.stringify({ error: 'Invalid or expired API key' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
-    }
-
-    // Rate limiting — look up key ID from hash
-    const keyHash = await hashKeyServer(apiKey)
-    const { data: keyRecord } = await supabase
-      .from('api_keys')
-      .select('id')
-      .eq('key_hash', keyHash)
-      .eq('revoked', false)
-      .single()
-
-    if (keyRecord) {
-      const { data: rateLimitResult } = await supabase.rpc('check_and_increment_rate_limit', {
-        p_api_key_id: keyRecord.id,
-      })
-
-      if (rateLimitResult && !rateLimitResult.allowed) {
-        return new Response(JSON.stringify({
-          error: rateLimitResult.reason,
-          retry_after: rateLimitResult.retry_after,
-          daily_count: rateLimitResult.daily_count,
-          minute_count: rateLimitResult.minute_count,
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': rateLimitResult.retry_after === 'tomorrow' ? '86400' : '60' },
-        })
-      }
     }
 
     const userId = validation.user_id

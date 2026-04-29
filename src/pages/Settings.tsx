@@ -5,6 +5,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Copy, Check, Key, Shield, Download, Loader2, FlaskConical, Puzzle, Crown, Layers, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePWAInstall } from '@/components/PWAInstallPrompt';
 
 type KeyType = 'master' | 'workspace';
 
@@ -436,10 +437,11 @@ Visit **https://theparchment.app/docs/api** for the complete API reference with 
 `;
 }
 
-// skipcq: JS-0067
+// skipcq: JS-0067, JS-R1005
 export default function Settings() {
   const { user } = useAuth();
   const { plan, isPro, isLoading: subLoading, currentPeriodEnd, refetch: refetchSub } = useSubscription();
+  const { canInstall, isInstalled, triggerInstall } = usePWAInstall();
   const [upgradePending, setUpgradePending] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1165,6 +1167,41 @@ export default function Settings() {
         </section>
 
         {/* Chrome Extension */}
+        {/* Install App */}
+        {!isInstalled && (
+          <section className="mt-12 pt-8 border-t border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <Download size={18} className="text-primary" />
+              <h2 className="text-lg font-semibold font-display text-foreground">Install App</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Install Parchment on your device for quick access — works like a native app.
+            </p>
+            {canInstall ? (
+              <button
+                onClick={() => { void triggerInstall(); }} // skipcq: JS-0098
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Download size={14} />
+                Install Parchment
+              </button>
+            ) : (() => {
+              const isIOS = /iphone|ipad|ipod/i.test(globalThis.navigator.userAgent);
+              const isAndroid = /android/i.test(globalThis.navigator.userAgent);
+              return (
+                <p className="text-sm text-muted-foreground">
+                  {isIOS
+                    ? <span>On iPhone, open in Safari then tap <strong>Share &rarr; Add to Home Screen</strong>.</span>
+                    : isAndroid
+                    ? <span>Tap the <strong>three-dot menu (&hellip;) &rarr; Add to Home Screen</strong> in Chrome. If the option is missing, Chrome may have a cooldown after a recent uninstall &mdash; try again in a day or two.</span>
+                    : <span>Open in Chrome and look for the install icon in the address bar, or use the browser menu &rarr; Install app.</span>
+                  }
+                </p>
+              );
+            })()}
+          </section>
+        )}
+
         <section className="mt-12 pt-8 border-t border-border">
           <div className="flex items-center gap-2 mb-2">
             <Puzzle size={18} className="text-primary" />

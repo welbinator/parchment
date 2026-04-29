@@ -454,8 +454,13 @@ export default function Settings() {
   const [upgradingPlan, setUpgradingPlan] = useState(false);
   const [managingSubscription, setManagingSubscription] = useState(false);
 
-  const ADMIN_EMAIL = 'james.welbes@gmail.com';
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('is_admin').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => { setIsAdmin(data?.is_admin ?? false); });
+  }, [user]);
 
   // Feature flags (admin only)
   interface FeatureFlag {

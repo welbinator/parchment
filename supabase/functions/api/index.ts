@@ -79,8 +79,11 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Validate key — rate limiting is handled atomically inside validate_api_key
-    const { data: validation, error: valError } = await supabase.rpc('validate_api_key', { p_key: apiKey })
+    // Hash key in edge function (HMAC if secret configured, SHA-256 fallback)
+    const keyHash = await hashKeyServer(apiKey)
+
+    // Validate key — rate limiting is handled atomically inside validate_api_key_hash
+    const { data: validation, error: valError } = await supabase.rpc('validate_api_key_hash', { p_hash: keyHash })
     if (valError) {
       return new Response(JSON.stringify({ error: 'Invalid or expired API key' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -798,6 +801,17 @@ Deno.serve(async (req) => {
 })
 
 async function hashKeyServer(key: string): Promise<string> {
+  const hmacSecret = Deno.env.get('API_KEY_HMAC_SECRET')
+  if (hmacSecret) {
+    // HMAC-SHA256 with server secret (preferred)
+    const encoder = new TextEncoder()
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', encoder.encode(hmacSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    )
+    const sig = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(key))
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+  // Fallback: bare SHA-256 (legacy, used when secret not configured)
   const encoded = new TextEncoder().encode(key)
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoded)
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('')

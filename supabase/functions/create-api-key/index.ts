@@ -17,6 +17,15 @@ function getCorsHeaders(req: Request): Record<string, string> {
   }
 }
 
+async function hmacKey(key: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  )
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(key))
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -24,6 +33,12 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders })
+
+    const hmacSecret = Deno.env.get('API_KEY_HMAC_SECRET')
+    if (!hmacSecret) {
+      console.error('[create-api-key] API_KEY_HMAC_SECRET not set')
+      return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: corsHeaders })
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -42,17 +57,12 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'raw_key is required' }), { status: 400, headers: corsHeaders })
     }
 
-    const { data: hashData, error: hashError } = await supabase.rpc('hmac_api_key', { p_key: raw_key })
-    if (hashError || !hashData) {
-      console.error('[create-api-key] hash error:', hashError)
-      return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: corsHeaders })
-    }
-
+    const keyHash = await hmacKey(raw_key, hmacSecret)
     const keyPrefix = raw_key.slice(0, 8)
 
     const { error: insertError } = await supabase.from('api_keys').insert({
       user_id: user.id,
-      key_hash: hashData,
+      key_hash: keyHash,
       key_prefix: keyPrefix,
       name: name || 'Untitled Key',
       key_type: key_type || 'master',

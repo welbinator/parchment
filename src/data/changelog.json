@@ -1,5 +1,40 @@
 [
   {
+    "version": "2.4.0",
+    "date": "2026-04-29",
+    "title": "Board View Mobile Fixes & Security Hardening",
+    "changes": [
+      {
+        "type": "fix",
+        "description": "Board view now scrolls horizontally on mobile immediately \u2014 invisible overlay was blocking all touch input until tapped."
+      },
+      {
+        "type": "fix",
+        "description": "Sidebar toggle button no longer appears in board view."
+      },
+      {
+        "type": "improvement",
+        "description": "Board view drag-and-drop now uses a touch delay to prevent accidental drags when scrolling on mobile."
+      },
+      {
+        "type": "fix",
+        "description": "Admin status is now verified server-side \u2014 removed hardcoded admin email from client bundle."
+      },
+      {
+        "type": "fix",
+        "description": "replace_blocks API action is now fully transactional \u2014 no risk of data loss on connection drop."
+      },
+      {
+        "type": "fix",
+        "description": "Rate limiting is now atomic with key validation \u2014 no bypass possible."
+      },
+      {
+        "type": "improvement",
+        "description": "API error messages no longer leak internal details \u2014 full errors logged server-side only."
+      }
+    ]
+  },
+  {
     "version": "2.2.0",
     "date": "2026-04-28",
     "title": "Auth Reliability & Chrome Extension Improvements",

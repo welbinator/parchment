@@ -54,8 +54,8 @@ export default function AppTopBar() {
 
   return (
     <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0 bg-background z-10">
-      {/* Sidebar toggle */}
-      {!sidebarOpen && (
+      {/* Sidebar toggle — list view only, no sidebar in board view */}
+      {!sidebarOpen && viewMode === 'list' && (
         <button
           onClick={() => { setSidebarOpen(true); }}
           className="p-1.5 rounded hover:bg-accent text-muted-foreground transition-colors"

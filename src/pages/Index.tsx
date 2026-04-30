@@ -21,8 +21,8 @@ const Index = () => {
         </ResizableSidebarWrapper>
       )}
 
-      {/* Mobile tap-to-close overlay — sits behind the sidebar (z-20) but over the content area */}
-      {sidebarOpen && (
+      {/* Mobile tap-to-close overlay — list view only, not needed in board view */}
+      {sidebarOpen && viewMode === 'list' && (
         <button
           className="md:hidden fixed inset-0 z-20 bg-black/20 cursor-default"
           onClick={() => { setSidebarOpen(false); }}

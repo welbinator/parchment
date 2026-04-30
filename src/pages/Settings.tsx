@@ -710,12 +710,6 @@ export default function Settings() {
     return key;
   };
 
-  const hashKey = async (key: string) => {
-    const encoded = new TextEncoder().encode(key);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
-    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-  };
-
   const createKey = async () => {
     if (!user) return;
 
@@ -726,35 +720,40 @@ export default function Settings() {
     }
 
     const rawKey = generateKey();
-    const keyHash = await hashKey(rawKey);
-    const keyPrefix = rawKey.slice(0, 8);
 
-    const insertPayload: Record<string, unknown> = {
-      user_id: user.id,
-      name: newName || 'Untitled Key',
-      key_hash: keyHash,
-      key_prefix: keyPrefix,
-      key_type: newKeyType,
-      expires_at: newExpiry ? new Date(newExpiry).toISOString() : null,
-    };
-
+    // Build permissions payload
+    const perms: Record<string, unknown> = {};
     if (newKeyType === 'master') {
-      // Master keys: respect individually checked permissions
-      insertPayload.can_manage_workspaces = newCanCreateWorkspaces || newCanDeleteWorkspaces;
-      insertPayload.can_create_workspaces = newCanCreateWorkspaces;
-      insertPayload.can_delete_workspaces = newCanDeleteWorkspaces;
-      insertPayload.workspace_ids = null;
-      Object.assign(insertPayload, newPerms);
+      perms.can_manage_workspaces = newCanCreateWorkspaces || newCanDeleteWorkspaces;
+      perms.workspace_ids = null;
+      Object.assign(perms, newPerms);
     } else {
-      // Workspace key — scoped permissions + workspace list
-      insertPayload.can_manage_workspaces = false;
-      insertPayload.workspace_ids = newWorkspaceIds;
-      Object.assign(insertPayload, newPerms);
+      perms.can_manage_workspaces = false;
+      perms.workspace_ids = newWorkspaceIds;
+      Object.assign(perms, newPerms);
     }
 
-    const { error } = await supabase.from('api_keys').insert(insertPayload);
+    // Hash server-side via edge function (HMAC-SHA256)
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) { toast.error('Session expired — please sign in again'); return; }
 
-    if (error) {
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-api-key`,
+      {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          raw_key: rawKey,
+          name: newName || 'Untitled Key',
+          key_type: newKeyType,
+          expires_at: newExpiry ? new Date(newExpiry).toISOString() : null,
+          ...perms,
+        }),
+      }
+    );
+    const result = await res.json();
+    if (!result.success) {
       toast.error('Failed to create key');
       return;
     }

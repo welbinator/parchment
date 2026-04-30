@@ -27,7 +27,8 @@ interface SharedBlock {
 // A tiny wrapper so dangerouslySetInnerHTML lives on its own return line where skipcq works
 // skipcq: JS-0067
 function SafeHtml({ html, className }: { html: string; className?: string }) {
-  return <span className={className} dangerouslySetInnerHTML={{ __html: html }} />; // skipcq: JS-0440
+  const clean = DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel', 'style'] });
+  return <span className={className} dangerouslySetInnerHTML={{ __html: clean }} />; // skipcq: JS-0440
 }
 
 // skipcq: JS-0067
@@ -198,11 +199,12 @@ function ReadOnlyBlock({ block, index, blocks }: { block: SharedBlock; index: nu
   };
 
   const Tag = block.type === 'heading1' ? 'h1' : block.type === 'heading2' ? 'h2' : block.type === 'heading3' ? 'h3' : block.type === 'code' ? 'pre' : 'p';
+  const safeHtml = DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'rel', 'style'] });
   return (
     <Tag
       className={classMap[block.type] ?? 'text-base text-foreground'}
       // nosemgrep: javascript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml skipcq: JS-0440
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: safeHtml }}
     />
   );
 }

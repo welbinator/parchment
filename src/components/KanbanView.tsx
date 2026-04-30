@@ -359,7 +359,7 @@ export default function KanbanView() {
         onDragEnd={handleDragEnd}
       >
         {/* Trello-style horizontal scroll board */}
-        <div ref={boardRef} className="flex-1 overflow-x-auto overflow-y-hidden bg-background">
+        <div ref={boardRef} className="flex-1 overflow-x-auto overflow-y-hidden bg-background" style={{ touchAction: 'pan-x pan-y' }}>
           <div className="flex flex-row gap-4 p-6 pb-20 h-full items-start" style={{ minWidth: 'max-content' }}>
             <SortableContext
               items={activeCollections.map((c) => c.id)}

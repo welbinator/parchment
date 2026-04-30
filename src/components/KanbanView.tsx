@@ -3,6 +3,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragStartEvent,
@@ -243,7 +244,9 @@ export default function KanbanView() {
   const boardRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // TouchSensor with a delay lets native scroll start before dnd-kit intercepts
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } })
   );
 
   const { activeWorkspaceId, workspaces } = useWorkspaceStore();
@@ -359,7 +362,7 @@ export default function KanbanView() {
         onDragEnd={handleDragEnd}
       >
         {/* Trello-style horizontal scroll board */}
-        <div ref={boardRef} className="flex-1 overflow-x-auto overflow-y-hidden bg-background" style={{ touchAction: 'pan-x pan-y' }}>
+        <div ref={boardRef} className="flex-1 overflow-x-auto overflow-y-hidden bg-background">
           <div className="flex flex-row gap-4 p-6 pb-20 h-full items-start" style={{ minWidth: 'max-content' }}>
             <SortableContext
               items={activeCollections.map((c) => c.id)}

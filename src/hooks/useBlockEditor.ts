@@ -122,18 +122,65 @@ export function useBlockEditor({
     });
   }, [deleteBlock, undoDeleteBlock, pageId, block.id]);
 
+  /**
+   * Toggle inline formatting (bold/italic) without using deprecated execCommand.
+   * - If the selection is collapsed or outside a contentEditable, do nothing.
+   * - If the selected content is already entirely wrapped in the tag, unwrap it.
+   * - Otherwise wrap the selection in the tag.
+   */
+  const toggleInlineFormat = useCallback((tag: 'b' | 'i') => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    // Ensure the selection is inside our contentEditable
+    if (!ref.current || !ref.current.contains(range.commonAncestorContainer)) return;
+
+    // Check if the selection is already fully wrapped in the given tag by looking
+    // at the parentElement of the range's common ancestor.
+    const ancestor = range.commonAncestorContainer;
+    const parentEl = ancestor.nodeType === Node.TEXT_NODE ? ancestor.parentElement : (ancestor as Element);
+    const alreadyWrapped = parentEl?.closest(tag) !== null;
+
+    if (alreadyWrapped) {
+      // Unwrap: replace the wrapper element with its children
+      const wrapper = parentEl!.closest(tag) as HTMLElement;
+      const parent = wrapper.parentNode!;
+      while (wrapper.firstChild) {
+        parent.insertBefore(wrapper.firstChild, wrapper);
+      }
+      parent.removeChild(wrapper);
+    } else {
+      // Wrap: surround the range contents with the new element
+      try {
+        const el = document.createElement(tag);
+        range.surroundContents(el);
+      } catch {
+        // surroundContents throws if the range partially spans elements;
+        // fall back to extracting and re-inserting.
+        const el = document.createElement(tag);
+        el.appendChild(range.extractContents());
+        range.insertNode(el);
+        // Restore selection to the newly inserted element
+        sel.removeAllRanges();
+        const newRange = document.createRange();
+        newRange.selectNodeContents(el);
+        sel.addRange(newRange);
+      }
+    }
+  }, [ref]);
+
   // skipcq: JS-R1005
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     // Bold/Italic shortcuts
     if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
       e.preventDefault();
-      document.execCommand('bold');
+      toggleInlineFormat('b');
       updateBlock(pageId, block.id, { content: getContentForStore() });
       return;
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
       e.preventDefault();
-      document.execCommand('italic');
+      toggleInlineFormat('i');
       updateBlock(pageId, block.id, { content: getContentForStore() });
       return;
     }

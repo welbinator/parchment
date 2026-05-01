@@ -23,8 +23,8 @@ function uid() {
   return crypto.randomUUID();
 }
 
-// Debounce for page title
-let titleTimer: ReturnType<typeof setTimeout> | null = null;
+// Debounce for page title — keyed by page ID to avoid cross-page timer collisions
+const titleTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 interface PageState {
   pages: DbPage[];
@@ -79,10 +79,11 @@ export const usePageStore = create<PageState>((set, get) => ({
 
   updatePageTitle: (id, title) => {
     set((s) => ({ pages: s.pages.map((p) => (p.id === id ? { ...p, title } : p)) }));
-    if (titleTimer) clearTimeout(titleTimer);
-    titleTimer = setTimeout(async () => {
+    if (titleTimers.has(id)) clearTimeout(titleTimers.get(id)!);
+    titleTimers.set(id, setTimeout(async () => {
+      titleTimers.delete(id);
       await supabase.from('pages').update({ title }).eq('id', id);
-    }, 500);
+    }, 500));
   },
 
   updatePageSharing: (id, updates) => {

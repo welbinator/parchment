@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2, Lock } from 'lucide-react';
 import DOMPurify from 'dompurify';
+import { convertStyledJsonToHtml } from '@/utils/convertStyledJsonToHtml';
 
 interface SharedPage {
   id: string;
@@ -42,42 +43,7 @@ function toRoman(n: number): string {
   return result;
 }
 
-interface StyledJsonItem {
-  text?: string;
-  bold?: boolean;
-  italic?: boolean;
-  underline?: boolean;
-  strikethrough?: boolean;
-  code?: boolean;
-  color?: string;
-  link?: string;
-  href?: string;
-}
 
-// skipcq: JS-0067
-// skipcq: JS-R1005
-function convertStyledJsonToHtml(content: string): string {
-  if (!content || !content.trim().startsWith('[')) return content;
-  try {
-    const parsed = JSON.parse(content);
-    if (!Array.isArray(parsed)) return content;
-    return parsed.map((item: StyledJsonItem) => {
-      if (typeof item === 'string') return item;
-      if (typeof item !== 'object' || !item.text) return '';
-      let html: string = item.text;
-      if (item.bold) html = `<b>${html}</b>`;
-      if (item.italic) html = `<i>${html}</i>`;
-      if (item.underline) html = `<u>${html}</u>`;
-      if (item.strikethrough) html = `<s>${html}</s>`;
-      if (item.code) html = `<code>${html}</code>`;
-      if (item.color) html = `<span style="color:${item.color}">${html}</span>`;
-      if (item.link || item.href) html = `<a href="${item.link || item.href}" target="_blank" rel="noopener noreferrer">${html}</a>`;
-      return html;
-    }).join('');
-  } catch {
-    return content;
-  }
-}
 
 // skipcq: JS-0067
 function renderBlockContent(content: string): string {

@@ -22,20 +22,3 @@ export interface Block {
 }
 
 export type PageType = 'blank' | 'notes' | 'roadmap' | 'checklist';
-
-export interface Page {
-  id: string;
-  title: string;
-  type: PageType;
-  blocks: Block[];
-  collectionId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Collection {
-  id: string;
-  name: string;
-  icon?: string;
-  createdAt: string;
-}

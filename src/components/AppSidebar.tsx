@@ -5,6 +5,7 @@ import { usePageStore } from '@/store/usePageStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import CollectionContextMenu from './CollectionContextMenu';
+import ContextMenuDropdown from './ContextMenuDropdown';
 import { useTrashStore } from '@/store/useTrashStore';
 import EditableName from './EditableName';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,7 +34,6 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   Plus,
   ChevronRight,
-  Trash2,
   FolderOpen,
   PanelLeftClose,
   CheckSquare,
@@ -43,7 +43,6 @@ import {
   Archive,
   Users,
   MoreHorizontal,
-  MoveRight,
   GripVertical,
 } from 'lucide-react';
 import type { PageType } from '@/types';
@@ -190,53 +189,19 @@ function DraggablePage({
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-6 z-50 w-40 bg-popover border border-border rounded-md shadow-lg py-1 text-sm animate-fade-in">
-            {/* Move to → */}
-            <button
-              className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-accent text-popover-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                setMoveMenuOpen((o) => !o);
-              }}
-            >
-              <MoveRight size={13} />
-              Move to…
-              <ChevronRight size={12} className="ml-auto" />
-            </button>
-
-            {moveMenuOpen && (
-              <div className="border-t border-border mt-1 pt-1 max-h-48 overflow-y-auto">
-                {collections.map((col) => (
-                  <button
-                    key={col.id}
-                    className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-accent text-popover-foreground truncate"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMove(col.id);
-                      setMenuOpen(false);
-                      setMoveMenuOpen(false);
-                    }}
-                  >
-                    <FolderOpen size={12} className="shrink-0 text-primary/70" />
-                    <span className="truncate">{col.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Delete */}
-            <button
-              className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-destructive/10 text-destructive border-t border-border mt-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-                setMenuOpen(false);
-              }}
-            >
-              <Trash2 size={13} />
-              Delete
-            </button>
-          </div>
+          <ContextMenuDropdown
+            moveTargets={collections.map((col) => ({
+              id: col.id,
+              name: col.name,
+              icon: <FolderOpen size={12} className="shrink-0 text-primary/70" />,
+            }))}
+            moveMenuOpen={moveMenuOpen}
+            onToggleMoveMenu={(e) => { e.stopPropagation(); setMoveMenuOpen((o) => !o); }}
+            onMove={(colId) => { onMove(colId); setMenuOpen(false); setMoveMenuOpen(false); }}
+            onDelete={(e) => { e.stopPropagation(); onDelete(); setMenuOpen(false); }}
+            emptyMoveLabel="No other collections"
+            className="absolute right-0 top-6 z-50 w-40"
+          />
         )}
       </div>
     </div>

@@ -1,6 +1,28 @@
 [
   {
-    "version": "2.4.0",
+    "version": "2.5.0",
+    "date": "2026-05-01",
+    "title": "Cleaner Codebase & Bug Fixes",
+    "changes": [
+      {
+        "type": "fix",
+        "description": "Fixed a race condition on first login that could create duplicate default workspaces."
+      },
+      {
+        "type": "fix",
+        "description": "Board view now always adds new columns after existing ones instead of at a random position."
+      },
+      {
+        "type": "improvement",
+        "description": "API docs updated — move_page and move_collection documented, plus notes on response shapes, plan limits, and the default blank block on new pages."
+      },
+      {
+        "type": "improvement",
+        "description": "Removed ~3,800 lines of unused code — faster builds and smaller bundle."
+      }
+    ]
+  },
+  {
     "date": "2026-04-29",
     "title": "Board View Mobile Fixes & Security Hardening",
     "changes": [

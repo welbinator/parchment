@@ -45,8 +45,14 @@ function uid() {
   return crypto.randomUUID();
 }
 
+// Module-level lock: prevents seedNewUser from running concurrently (React Strict Mode / double-init race)
+const _seedingUsers = new Set<string>();
+
 // skipcq: JS-0067, JS-R1005
 async function seedNewUser(userId: string, set: (s: Partial<AppState>) => void) {
+  if (_seedingUsers.has(userId)) return false;
+  _seedingUsers.add(userId);
+  try {
   const { data: recheck } = await supabase.from('workspaces').select('id').eq('user_id', userId).limit(1);
   if (recheck && recheck.length > 0) { useAppStore.getState().refetch(); return true; }
 
@@ -84,6 +90,9 @@ async function seedNewUser(userId: string, set: (s: Partial<AppState>) => void) 
   useCollectionStore.getState().setCollections(col ? [col] : []);
   set({ activePageId: pageId, activeCollectionId: colId, loading: false });
   return true;
+  } finally {
+    _seedingUsers.delete(userId);
+  }
 }
 
 // Capture ?page= param at module load time, before anything cleans the URL

@@ -21,6 +21,16 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '2.5.0',
+    title: 'Cleaner Codebase & Bug Fixes',
+    changes: [
+      { type: 'fix', description: 'Duplicate workspaces no longer appear on first login — fixed a race condition that could create two default workspaces simultaneously.' },
+      { type: 'fix', description: 'Board view collection ordering is now correct — new columns are always added after existing ones, not at a random position.' },
+      { type: 'improvement', description: 'API docs updated — move_page and move_collection are now documented, plus notes on response shapes and plan limits.' },
+      { type: 'improvement', description: 'Removed ~3,800 lines of unused code — faster builds, smaller bundle.' },
+    ],
+  },
+  {
     version: '2.2.0',
     title: 'Auth Reliability & Chrome Extension Improvements',
     changes: [

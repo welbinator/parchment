@@ -75,6 +75,7 @@ export default function ApiDocs() {
             <li>60 requests/minute per API key</li>
             <li>1000 requests/day per API key</li>
             <li>10KB max content per block</li>
+            <li>Free plan accounts are limited to 5 collections. <code className="bg-muted px-1 py-0.5 rounded">create_collection</code> returns HTTP 402 when the limit is reached.</li>
           </ul>
         </section>
 
@@ -159,6 +160,12 @@ export default function ApiDocs() {
   }'`}</CodeBlock>
           <p className="text-muted-foreground mt-2 text-sm">
             <strong>Note:</strong> <code className="bg-muted px-1 py-0.5 rounded">update_blocks</code> is kept as an alias for <code className="bg-muted px-1 py-0.5 rounded">append_blocks</code> for backwards compatibility.
+          </p>
+          <p className="text-muted-foreground mt-2 text-sm">
+            <strong>Response shape difference:</strong> <code className="bg-muted px-1 py-0.5 rounded">append_blocks</code> returns the full <code className="bg-muted px-1 py-0.5 rounded">blocks</code> array in its response. <code className="bg-muted px-1 py-0.5 rounded">replace_blocks</code> returns only <code className="bg-muted px-1 py-0.5 rounded">{`{success, mode, blocks_written}`}</code> — no block data echoed back. Use <code className="bg-muted px-1 py-0.5 rounded">get_page</code> after <code className="bg-muted px-1 py-0.5 rounded">replace_blocks</code> if you need the block IDs.
+          </p>
+          <p className="text-muted-foreground mt-2 text-sm">
+            <strong>New pages start with a blank block:</strong> Every newly created page automatically gets an empty <code className="bg-muted px-1 py-0.5 rounded">text</code> block at position 0. <code className="bg-muted px-1 py-0.5 rounded">replace_blocks</code> removes it; <code className="bg-muted px-1 py-0.5 rounded">append_blocks</code> leaves it in place.
           </p>
         </section>
 

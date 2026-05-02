@@ -36,6 +36,7 @@ export function convertStyledJsonToHtml(content: string): string {
       .map((item: StyledJsonItem | string) => {
         if (typeof item === 'string') return escapeHtml(item);
         if (typeof item !== 'object' || !item.text) return '';
+        // codacy-disable-next-line javascript.xss -- escapeHtml sanitizes user input before HTML injection
         let html: string = escapeHtml(item.text);
         if (item.bold) html = `<b>${html}</b>`;
         if (item.italic) html = `<i>${html}</i>`;

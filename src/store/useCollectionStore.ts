@@ -44,7 +44,10 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     if (!userId || !workspaceId) return '';
     const { collections } = get();
     const id = uid();
-    const position = collections.filter((c) => c.workspace_id === workspaceId && !c.deleted_at).length;
+    const workspaceCollections = collections.filter((c) => c.workspace_id === workspaceId && !c.deleted_at);
+    const position = workspaceCollections.length > 0
+      ? Math.max(...workspaceCollections.map((c) => c.position)) + 1
+      : 0;
     const { data } = await supabase
       .from('collections')
       .insert({ id, user_id: userId, name, position, workspace_id: workspaceId })

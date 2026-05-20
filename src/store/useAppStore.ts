@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import type { PageType } from '@/types';
-import { useBlockStore, isInLocalCooldown } from './useBlockStore';
+import { useBlockStore, isInLocalCooldown, isBlockPending } from './useBlockStore';
 import { usePageStore } from './usePageStore';
 import { useCollectionStore } from './useCollectionStore';
 import { useWorkspaceStore } from './useWorkspaceStore';
@@ -235,6 +235,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { userId } = get();
     if (!userId) return () => {}; // skipcq: JS-0321
 
+    // For block events: check if the specific block ID is pending before ignoring.
+    // This means a remote collaborator editing a different block still triggers a refetch,
+    // but OUR OWN in-flight mutations never cause flicker.
+    const handleBlockChange = (payload: { new?: { id?: string }; old?: { id?: string } }) => {
+      const blockId = (payload.new as { id?: string } | undefined)?.id ?? (payload.old as { id?: string } | undefined)?.id;
+      if (blockId && isBlockPending(blockId)) return;
+      // If no specific block ID or it's not pending, fall through to coarse guard
+      if (isInLocalCooldown()) return;
+      clearTimeout((window as any).__syncTimer); // skipcq: JS-0323
+      (window as any).__syncTimer = setTimeout(() => { // skipcq: JS-0323
+        if (!isInLocalCooldown()) get().refetch();
+      }, 1000);
+    };
+
     const handleRealtimeChange = () => {
       if (isInLocalCooldown()) return;
       clearTimeout((window as any).__syncTimer); // skipcq: JS-0323
@@ -245,7 +259,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const channel = supabase
       .channel('sync-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks' }, handleRealtimeChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blocks' }, handleBlockChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pages' }, handleRealtimeChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'collections' }, handleRealtimeChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces' }, handleRealtimeChange)

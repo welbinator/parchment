@@ -22,23 +22,40 @@ function uid() {
 // Debounce map for block saves
 const blockSaveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-// Track local mutation cooldown to suppress realtime refetch flicker
-let localMutationCooldown = 0;
+// Per-block pending mutation tracking — replaces the old global timestamp cooldown.
+// A block ID lives in this set while any local mutation is in-flight or debounced.
+// The realtime handler checks this before scheduling a refetch, so a racing DB
+// event for a block WE just mutated never triggers an overwrite.
+const pendingBlockIds = new Set<string>();
 
-export function markLocalMutation() {
-  localMutationCooldown = Date.now() + 2000;
+export function markBlockPending(blockId: string) {
+  pendingBlockIds.add(blockId);
 }
 
+export function unmarkBlockPending(blockId: string) {
+  pendingBlockIds.delete(blockId);
+}
+
+export function isBlockPending(blockId: string) {
+  return pendingBlockIds.has(blockId);
+}
+
+/** Returns true if ANY block is currently pending (coarse guard for non-block realtime events). */
 export function isInLocalCooldown() {
-  return Date.now() < localMutationCooldown || blockSaveTimers.size > 0;
+  return pendingBlockIds.size > 0 || blockSaveTimers.size > 0;
+}
+
+/** @deprecated No-op — per-block tracking is now the source of truth. */
+export function markLocalMutation() {
+  // intentionally empty
 }
 
 function debounceSaveBlock(block: DbBlock) {
   const existing = blockSaveTimers.get(block.id);
   if (existing) clearTimeout(existing);
+  markBlockPending(block.id);
   blockSaveTimers.set(block.id, setTimeout(async () => {
     blockSaveTimers.delete(block.id);
-    markLocalMutation();
     await supabase.from('blocks').update({
       content: block.content,
       checked: block.checked,
@@ -47,6 +64,7 @@ function debounceSaveBlock(block: DbBlock) {
       type: block.type,
       position: block.position,
     }).eq('id', block.id);
+    unmarkBlockPending(block.id);
   }, 500));
 }
 
@@ -105,13 +123,18 @@ export const useBlockStore = create<BlockState>((set, get) => ({
       updatedScoped.splice(insertIdx, 0, newBlock);
       const repositioned = updatedScoped.map((b, i) => ({ ...b, position: i }));
 
-      markLocalMutation();
-      supabase.from('blocks').insert({ ...newBlock, position: insertIdx, group_id: groupId }).then(() => {
-        repositioned.forEach((b) => {
-          if (b.id !== blockId) {
-            supabase.from('blocks').update({ position: b.position }).eq('id', b.id);
-          }
-        });
+      // Mark every affected block as pending BEFORE firing any async work
+      repositioned.forEach((b) => markBlockPending(b.id));
+
+      supabase.from('blocks').insert({ ...newBlock, position: insertIdx, group_id: groupId }).then(async () => {
+        const positionUpdates = repositioned.filter((b) => b.id !== blockId);
+        await Promise.all(
+          positionUpdates.map((b) =>
+            supabase.from('blocks').update({ position: b.position }).eq('id', b.id)
+          )
+        );
+        // All DB writes done — unmark the whole batch
+        repositioned.forEach((b) => unmarkBlockPending(b.id));
       });
 
       const otherBlocks = s.blocks.filter((b) => !(b.page_id === pageId && (groupId ? b.group_id === groupId : !b.group_id)));
@@ -121,7 +144,7 @@ export const useBlockStore = create<BlockState>((set, get) => ({
   },
 
   updateBlock: (pageId, blockId, updates) => {
-    markLocalMutation();
+    markBlockPending(blockId); // debounceSaveBlock will unmark after DB write
     set((s) => {
       const newBlocks = s.blocks.map((b) => {
         if (b.id !== blockId) return b;
@@ -142,8 +165,11 @@ export const useBlockStore = create<BlockState>((set, get) => ({
 
   deleteBlock: async (pageId, blockId) => {
     const deletedBlock = get().blocks.find((b) => b.id === blockId);
-    markLocalMutation();
-    await supabase.from('blocks').delete().eq('id', blockId);
+    markBlockPending(blockId);
+
+    // Optimistically remove from UI IMMEDIATELY — don't wait for the DB round-trip.
+    // The old pattern (await delete, THEN set) left a window where the realtime event
+    // could fire before the UI updated, causing the block to flicker back.
     set((s) => {
       const remaining = s.blocks.filter((b) => b.id !== blockId);
       const pageBlocks = remaining.filter((b) => b.page_id === pageId);
@@ -163,28 +189,39 @@ export const useBlockStore = create<BlockState>((set, get) => ({
           created_at: new Date().toISOString(),
           group_id: null,
         };
-        supabase.from('blocks').insert(newBlock);
+        markBlockPending(newBlock.id);
+        supabase.from('blocks').insert(newBlock).then(() => unmarkBlockPending(newBlock.id));
         newState.blocks = [...remaining, newBlock];
       }
-      return newState as any;
+      return newState as BlockState;
     });
+
+    await supabase.from('blocks').delete().eq('id', blockId);
+    unmarkBlockPending(blockId);
   },
 
   deleteGroup: async (pageId, groupBlockId) => {
-    markLocalMutation();
-    await supabase.from('blocks').delete().eq('group_id', groupBlockId);
-    await supabase.from('blocks').delete().eq('id', groupBlockId);
+    const groupMemberIds = get().blocks
+      .filter((b) => b.id === groupBlockId || b.group_id === groupBlockId)
+      .map((b) => b.id);
+    groupMemberIds.forEach((id) => markBlockPending(id));
+
+    // Optimistically remove from UI before awaiting DB
     set((s) => ({
       blocks: s.blocks.filter((b) => b.id !== groupBlockId && b.group_id !== groupBlockId),
       lastDeletedBlock: null,
     }));
+
+    await supabase.from('blocks').delete().eq('group_id', groupBlockId);
+    await supabase.from('blocks').delete().eq('id', groupBlockId);
+    groupMemberIds.forEach((id) => unmarkBlockPending(id));
   },
 
   undoDeleteBlock: () => {
     const { lastDeletedBlock } = get();
     if (!lastDeletedBlock) return;
     const { block } = lastDeletedBlock;
-    markLocalMutation();
+    markBlockPending(block.id);
     supabase.from('blocks').insert({
       id: block.id,
       page_id: block.page_id,
@@ -194,7 +231,7 @@ export const useBlockStore = create<BlockState>((set, get) => ({
       list_start: block.list_start,
       position: block.position,
       group_id: block.group_id,
-    });
+    }).then(() => unmarkBlockPending(block.id));
     set((s) => ({
       blocks: [...s.blocks, block],
       lastDeletedBlock: null,
@@ -202,17 +239,18 @@ export const useBlockStore = create<BlockState>((set, get) => ({
   },
 
   changeBlockType: (pageId, blockId, type) => {
-    markLocalMutation();
+    markBlockPending(blockId);
     set((s) => ({
       blocks: s.blocks.map((b) =>
         b.id === blockId ? { ...b, type, checked: type === 'todo' ? false : b.checked } : b
       ),
     }));
-    supabase.from('blocks').update({ type, checked: type === 'todo' ? false : null }).eq('id', blockId);
+    supabase.from('blocks').update({ type, checked: type === 'todo' ? false : null }).eq('id', blockId)
+      .then(() => unmarkBlockPending(blockId));
   },
 
   reorderBlocks: (pageId, groupId, orderedIds) => {
-    markLocalMutation();
+    orderedIds.forEach((id) => markBlockPending(id));
     set((s) => {
       const updated = s.blocks.map((b) => {
         if (b.page_id !== pageId) return b;
@@ -222,9 +260,11 @@ export const useBlockStore = create<BlockState>((set, get) => ({
         return { ...b, position: newPos };
       });
       // Persist new positions
-      orderedIds.forEach((id, pos) => {
-        supabase.from('blocks').update({ position: pos }).eq('id', id);
-      });
+      Promise.all(
+        orderedIds.map((id, pos) =>
+          supabase.from('blocks').update({ position: pos }).eq('id', id)
+        )
+      ).then(() => orderedIds.forEach((id) => unmarkBlockPending(id)));
       return { blocks: updated };
     });
   },

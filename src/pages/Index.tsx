@@ -41,8 +41,8 @@ const Index = () => {
         {viewMode === 'kanban' ? <KanbanView /> : <PageEditor />}
       </div>
 
-      {/* Quick Note floating button */}
-      <QuickNoteButton />
+      {/* Quick Note floating button — list view only; board view renders its own with modal wiring */}
+      {viewMode === 'list' && <QuickNoteButton />}
 
       {/* Floating view toggle pill */}
       <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 bg-popover border border-border rounded-full shadow-lg px-1.5 py-1.5">

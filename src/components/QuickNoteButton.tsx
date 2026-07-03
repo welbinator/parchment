@@ -4,6 +4,11 @@ import { useAppStore } from '@/store/useAppStore';
 import { useCollectionStore } from '@/store/useCollectionStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 
+interface QuickNoteButtonProps {
+  /** Called with the new page ID after creation — lets the parent open an editor modal */
+  onCreated?: (pageId: string) => void;
+}
+
 /**
  * QuickNoteButton — floating lightning bolt in the bottom-right corner.
  * Creates a new blank page inside the active workspace's "Quick Notes"
@@ -11,7 +16,7 @@ import { useWorkspaceStore } from '@/store/useWorkspaceStore';
  */
 
 // skipcq: JS-0067
-export default function QuickNoteButton() {
+export default function QuickNoteButton({ onCreated }: Readonly<QuickNoteButtonProps> = {}) {
   const { addPage } = useAppStore();
   const { collections } = useCollectionStore();
   const { activeWorkspaceId } = useWorkspaceStore();
@@ -29,7 +34,8 @@ export default function QuickNoteButton() {
 
     setLoading(true);
     try {
-      await addPage(quickNotesCollection.id, 'blank');
+      const pageId = await addPage(quickNotesCollection.id, 'blank');
+      if (pageId && onCreated) onCreated(pageId);
     } finally {
       setLoading(false);
     }

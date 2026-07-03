@@ -42,9 +42,9 @@ export default function QuickNoteButton() {
       title="Quick Note"
       aria-label="Create a quick note"
       className={`
-        fixed bottom-28 right-6 z-40
+        fixed bottom-24 right-6 z-40
         w-14 h-14 rounded-full
-        bg-primary text-primary-foreground shadow-lg
+        bg-primary text-white shadow-lg
         flex items-center justify-center
         hover:bg-primary/90 hover:scale-105 active:scale-95
         transition-all duration-150

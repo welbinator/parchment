@@ -394,7 +394,7 @@ export default function KanbanView() {
       {/* FAB — Add collection (bottom-right) */}
       <button
         onClick={handleAddCollection}
-        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
         title="Add collection"
       >
         <Plus size={24} />

@@ -186,6 +186,7 @@ export type Database = {
           deleted_at: string | null
           icon: string | null
           id: string
+          is_system: boolean
           name: string
           position: number
           user_id: string
@@ -196,6 +197,7 @@ export type Database = {
           deleted_at?: string | null
           icon?: string | null
           id?: string
+          is_system?: boolean
           name?: string
           position?: number
           user_id: string
@@ -206,6 +208,7 @@ export type Database = {
           deleted_at?: string | null
           icon?: string | null
           id?: string
+          is_system?: boolean
           name?: string
           position?: number
           user_id?: string

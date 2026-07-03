@@ -3,6 +3,7 @@ import AppTopBar from '@/components/AppTopBar';
 import PageEditor from '@/components/PageEditor';
 import KanbanView from '@/components/KanbanView';
 import ResizableSidebarWrapper from '@/components/ResizableSidebarWrapper';
+import QuickNoteButton from '@/components/QuickNoteButton';
 import { useViewStore } from '@/store/useViewStore';
 import { useAppStore } from '@/store/useAppStore';
 import { LayoutList, LayoutDashboard } from 'lucide-react';
@@ -39,6 +40,9 @@ const Index = () => {
         {/* Page/board area */}
         {viewMode === 'kanban' ? <KanbanView /> : <PageEditor />}
       </div>
+
+      {/* Quick Note floating button */}
+      <QuickNoteButton />
 
       {/* Floating view toggle pill */}
       <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 bg-popover border border-border rounded-full shadow-lg px-1.5 py-1.5">

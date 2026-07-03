@@ -59,8 +59,15 @@ async function seedNewUser(userId: string, set: (s: Partial<AppState>) => void) 
   if (recheck && recheck.length > 0) { useAppStore.getState().refetch(); return true; }
 
   const personalWsId = uid();
+  const workWsId = uid();
   await supabase.from('workspaces').insert({ id: personalWsId, user_id: userId, name: 'Personal', position: 0 });
-  await supabase.from('workspaces').insert({ id: uid(), user_id: userId, name: 'Work', position: 1 });
+  await supabase.from('workspaces').insert({ id: workWsId, user_id: userId, name: 'Work', position: 1 });
+
+  // Seed Quick Notes system collection in both workspaces
+  const personalQnId = uid();
+  const workQnId = uid();
+  await supabase.from('collections').insert({ id: personalQnId, user_id: userId, name: 'Quick Notes', position: 0, workspace_id: personalWsId, is_system: true });
+  await supabase.from('collections').insert({ id: workQnId, user_id: userId, name: 'Quick Notes', position: 0, workspace_id: workWsId, is_system: true });
 
   const colId = uid();
   const pageId = uid();
@@ -346,7 +353,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   addWorkspace: async (name) => {
     const { userId } = get();
     if (!userId) return '';
-    return await useWorkspaceStore.getState().addWorkspace(name, userId);
+    const wsId = await useWorkspaceStore.getState().addWorkspace(name, userId);
+    if (wsId) {
+      // Automatically provision a Quick Notes system collection for the new workspace
+      await useCollectionStore.getState().addSystemCollection('Quick Notes', userId, wsId);
+    }
+    return wsId;
   },
 
   switchWorkspace: (id) => {

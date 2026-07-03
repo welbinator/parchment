@@ -13,6 +13,7 @@ export interface DbCollection {
   user_id: string;
   deleted_at: string | null;
   workspace_id: string;
+  is_system: boolean;
 }
 
 // skipcq: JS-0067
@@ -29,6 +30,7 @@ interface CollectionState {
 
   // Collection CRUD
   addCollection: (name: string, userId: string, workspaceId: string) => Promise<string>;
+  addSystemCollection: (name: string, userId: string, workspaceId: string) => Promise<string>;
   renameCollection: (id: string, name: string) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
   reorderCollections: (orderedIds: string[]) => Promise<void>;
@@ -53,6 +55,26 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     const { data } = await supabase
       .from('collections')
       .insert({ id, user_id: userId, name, position, workspace_id: workspaceId })
+      .select()
+      .single();
+    if (data) {
+      set((s) => ({ collections: [...s.collections, data as DbCollection] }));
+    }
+    return id;
+  },
+
+  addSystemCollection: async (name, userId, workspaceId) => {
+    if (!userId || !workspaceId) return '';
+    bumpMutationVersion();
+    const { collections } = get();
+    const id = uid();
+    const workspaceCollections = collections.filter((c) => c.workspace_id === workspaceId && !c.deleted_at);
+    const position = workspaceCollections.length > 0
+      ? Math.max(...workspaceCollections.map((c) => c.position)) + 1
+      : 0;
+    const { data } = await supabase
+      .from('collections')
+      .insert({ id, user_id: userId, name, position, workspace_id: workspaceId, is_system: true })
       .select()
       .single();
     if (data) {
@@ -97,6 +119,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   },
 
   deleteCollection: async (id) => {
+    const { collections } = get();
+    const col = collections.find((c) => c.id === id);
+    if (col?.is_system) return; // system collections cannot be deleted
     const now = new Date().toISOString();
     bumpMutationVersion();
     markLocalMutation();

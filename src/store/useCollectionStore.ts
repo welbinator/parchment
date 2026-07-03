@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { markLocalMutation } from './useBlockStore';
 import { usePageStore } from './usePageStore';
+import { bumpMutationVersion } from '@/lib/mutationTracker';
 
 export interface DbCollection {
   id: string;
@@ -42,6 +43,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
 
   addCollection: async (name, userId, workspaceId) => {
     if (!userId || !workspaceId) return '';
+    bumpMutationVersion();
     const { collections } = get();
     const id = uid();
     const workspaceCollections = collections.filter((c) => c.workspace_id === workspaceId && !c.deleted_at);
@@ -60,6 +62,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   },
 
   moveToWorkspace: async (id, workspaceId) => {
+    bumpMutationVersion();
     await supabase.from('collections').update({ workspace_id: workspaceId }).eq('id', id);
     set((s) => ({
       collections: s.collections.map((c) => (c.id === id ? { ...c, workspace_id: workspaceId } : c)),
@@ -67,11 +70,13 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   },
 
   renameCollection: async (id, name) => {
+    bumpMutationVersion();
     await supabase.from('collections').update({ name }).eq('id', id);
     set((s) => ({ collections: s.collections.map((c) => (c.id === id ? { ...c, name } : c)) }));
   },
 
   reorderCollections: async (orderedIds) => {
+    bumpMutationVersion();
     // Optimistic update
     const { collections } = get();
     const reordered = orderedIds
@@ -93,6 +98,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
 
   deleteCollection: async (id) => {
     const now = new Date().toISOString();
+    bumpMutationVersion();
     markLocalMutation();
     await supabase.from('collections').update({ deleted_at: now }).eq('id', id);
     await supabase.from('pages').update({ deleted_at: now }).match({ collection_id: id, deleted_at: null });

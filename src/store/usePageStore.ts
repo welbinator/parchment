@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { PageType } from '@/types';
 import { useBlockStore, markLocalMutation } from './useBlockStore';
 import type { DbBlock } from './useBlockStore';
+import { bumpMutationVersion } from '@/lib/mutationTracker';
 
 export interface DbPage {
   id: string;
@@ -49,6 +50,7 @@ export const usePageStore = create<PageState>((set, get) => ({
 
   addPage: async (collectionId, userId, type = 'blank') => {
     if (!userId) return '';
+    bumpMutationVersion();
     const id = uid();
     const { data: page } = await supabase.from('pages').insert({ id, user_id: userId, collection_id: collectionId, title: 'Untitled', type }).select().single();
 
@@ -91,6 +93,7 @@ export const usePageStore = create<PageState>((set, get) => ({
   },
 
   movePage: async (pageId, targetCollectionId) => {
+    bumpMutationVersion();
     markLocalMutation();
     set((s) => ({
       pages: s.pages.map((p) => p.id === pageId ? { ...p, collection_id: targetCollectionId } : p),
@@ -100,6 +103,7 @@ export const usePageStore = create<PageState>((set, get) => ({
 
   deletePage: async (id) => {
     const now = new Date().toISOString();
+    bumpMutationVersion();
     markLocalMutation();
     await supabase.from('pages').update({ deleted_at: now }).eq('id', id);
 

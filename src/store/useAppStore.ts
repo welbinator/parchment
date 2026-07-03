@@ -9,6 +9,8 @@ import type { DbBlock } from './useBlockStore';
 import type { DbPage } from './usePageStore';
 import type { DbCollection } from './useCollectionStore';
 import type { DbWorkspace } from './useWorkspaceStore';
+import { loadFromCache, saveToCache, clearCache } from '@/lib/parchmentDb';
+import { bumpMutationVersion, getMutationVersion } from '@/lib/mutationTracker';
 
 interface AppState {
   activePageId: string | null;
@@ -116,6 +118,44 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ loading: true, userId });
 
     try {
+      // ── Step 1: Paint from cache immediately (no spinner on repeat visits) ──
+      const cached = await loadFromCache(userId);
+      if (cached) {
+        const currentState = get();
+        const { workspaces, collections, pages, blocks } = cached;
+
+        // Validate active IDs against cached data and hydrate stores
+        const urlPageValid = _urlPageId && pages.some((p) => p.id === _urlPageId && !p.deleted_at);
+        const cachedActivePageId = urlPageValid
+          ? _urlPageId
+          : (currentState.activePageId && pages.some((p) => p.id === currentState.activePageId && !p.deleted_at)
+            ? currentState.activePageId
+            : (pages.filter(p => !p.deleted_at)[0]?.id ?? null));
+        const cachedActiveCollectionId = (() => {
+          if (urlPageValid) {
+            const col = pages.find(p => p.id === _urlPageId)?.collection_id;
+            return col || (currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at)
+              ? currentState.activeCollectionId
+              : (collections.filter(c => !c.deleted_at)[0]?.id ?? null));
+          }
+          return currentState.activeCollectionId && collections.some((c) => c.id === currentState.activeCollectionId && !c.deleted_at)
+            ? currentState.activeCollectionId
+            : (collections.filter(c => !c.deleted_at)[0]?.id ?? null);
+        })();
+
+        useWorkspaceStore.getState().setWorkspaces(workspaces);
+        useBlockStore.getState().setBlocks(blocks);
+        usePageStore.getState().setPages(pages);
+        useCollectionStore.getState().setCollections(collections);
+        set({ activePageId: cachedActivePageId, activeCollectionId: cachedActiveCollectionId, loading: false });
+        // Keep loading: false — the network fetch below updates stores silently in the background
+      }
+
+      // ── Step 2: Fetch fresh data from Supabase ──
+      // Capture version before the async fetch. If a user mutation happens while
+      // we're waiting for Supabase, we'll abort the store overwrite — a realtime
+      // event will trigger a fresh corrective refetch once their write lands.
+      const versionAtFetch = getMutationVersion();
       const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
@@ -148,6 +188,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const currentState = get();
 
+    // If a user mutation happened while we were fetching, this data is stale.
+    // Don't overwrite the stores — the realtime subscription will trigger a
+    // fresh refetch once the mutation's DB write confirms.
+    if (getMutationVersion() !== versionAtFetch) return;
+
     // Use page ID captured from URL at module load time
     const urlPageValid = _urlPageId && pages.some((p) => p.id === _urlPageId && !p.deleted_at);
 
@@ -173,6 +218,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       activeCollectionId: newActiveCollectionId,
       loading: false,
     });
+
+    // ── Step 3: Persist fresh data to cache for next load ──
+    void saveToCache(userId, { workspaces, collections, pages, blocks });
     } catch (err) {
       // If init fails (e.g. expired/invalid session), stop the loading spinner.
       // The auth layer will handle sign-out if the session is truly invalid.
@@ -192,6 +240,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { userId } = get();
     if (!userId) return;
 
+    const versionAtFetch = getMutationVersion();
     const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
@@ -203,6 +252,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const collections = (collectionsRes.data ?? []) as DbCollection[];
     const pages = (pagesRes.data ?? []) as DbPage[];
     const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[]; // skipcq: JS-0323
+
+    // If a mutation happened while we were fetching, this data is already stale — skip.
+    if (getMutationVersion() !== versionAtFetch) return;
 
     useWorkspaceStore.getState().setWorkspaces(workspaces);
     useBlockStore.getState().setBlocks(blocks);
@@ -228,6 +280,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       activePageId: newActivePageId,
       activeCollectionId: s.activeCollectionId === newActiveCollectionId ? s.activeCollectionId : newActiveCollectionId,
     }));
+
+    // Persist fresh data to cache so the next load is instant
+    void saveToCache(userId, { workspaces, collections, pages, blocks });
   },
 
   // skipcq: JS-R1005
@@ -272,6 +327,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // skipcq: JS-R1005
   reset: () => {
+    const { userId } = get();
     useWorkspaceStore.getState().resetWorkspaces();
     useBlockStore.getState().resetBlocks();
     usePageStore.getState().resetPages();
@@ -282,6 +338,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       loading: false,
       userId: null,
     });
+    // Clear the IndexedDB cache so a new user on this device starts fresh
+    if (userId) void clearCache(userId);
   },
 
   // skipcq: JS-R1005

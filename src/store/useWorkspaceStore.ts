@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
+import { bumpMutationVersion } from '@/lib/mutationTracker';
 
 export interface DbWorkspace {
   id: string;
@@ -51,6 +52,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   addWorkspace: async (name, userId) => {
+    bumpMutationVersion();
     const { workspaces } = get();
     const active = workspaces.filter((w) => !w.deleted_at);
     const position = active.length;
@@ -67,6 +69,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   renameWorkspace: async (id, name) => {
+    bumpMutationVersion();
     await supabase.from('workspaces').update({ name }).eq('id', id);
     set((s) => ({
       workspaces: s.workspaces.map((w) => (w.id === id ? { ...w, name } : w)),
@@ -74,6 +77,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   deleteWorkspace: async (id) => {
+    bumpMutationVersion();
     const now = new Date().toISOString();
     await supabase.from('workspaces').update({ deleted_at: now }).eq('id', id);
     set((s) => ({

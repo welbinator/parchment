@@ -95,7 +95,7 @@ export default function FeedbackWidget({ className }: { className?: string } = {
                 <button
                   onClick={handleSubmit}
                   disabled={!message.trim() || submitting}
-                  className="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium"
+                  className="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium"
                 >
                   {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   {submitting ? 'Sending...' : 'Send feedback'}
@@ -109,7 +109,7 @@ export default function FeedbackWidget({ className }: { className?: string } = {
       {/* Trigger button */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-2.5 sm:px-4 sm:py-2.5 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 text-sm font-medium w-11 h-11 sm:w-auto sm:h-auto justify-center"
+        className="flex items-center gap-2 px-4 py-2.5 sm:px-4 sm:py-2.5 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all hover:scale-105 text-sm font-medium w-11 h-11 sm:w-auto sm:h-auto justify-center"
       >
         <MessageSquare size={15} />
         <span className="hidden sm:inline">Feedback</span>

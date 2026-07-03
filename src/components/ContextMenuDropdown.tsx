@@ -22,6 +22,8 @@ interface Props {
   onDelete: (e: React.MouseEvent) => void;
   /** Extra message shown when there are no move targets */
   emptyMoveLabel?: string;
+  /** When true, the Delete option is hidden (e.g. system collections) */
+  hideDelete?: boolean;
   className?: string;
 }
 
@@ -32,6 +34,7 @@ export default function ContextMenuDropdown({
   onMove,
   onDelete,
   emptyMoveLabel = 'No other destinations',
+  hideDelete = false,
   className = '',
 }: Readonly<Props>) {
   return (
@@ -66,6 +69,7 @@ export default function ContextMenuDropdown({
       )}
 
       {/* Delete */}
+      {!hideDelete && (
       <button
         className="flex items-center gap-2 w-full px-3 py-1.5 hover:bg-destructive/10 text-destructive border-t border-border mt-1"
         onClick={onDelete}
@@ -73,6 +77,7 @@ export default function ContextMenuDropdown({
         <Trash2 size={13} />
         Delete
       </button>
+      )}
     </div>
   );
 }

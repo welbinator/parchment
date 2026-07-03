@@ -27,6 +27,7 @@ import PageEditor from '@/components/PageEditor';
 import TrashContent from '@/components/TrashContent';
 import PageContextMenu from '@/components/PageContextMenu';
 import ShareButton from '@/components/ShareButton';
+import QuickNoteButton from '@/components/QuickNoteButton';
 import { Plus, X, File, FileText, Map, CheckSquare, Trash2, GripVertical, Clock } from 'lucide-react';
 import type { DbCollection } from '@/store/useCollectionStore';
 import type { DbWorkspace } from '@/store/useWorkspaceStore';
@@ -391,10 +392,13 @@ export default function KanbanView() {
         </DragOverlay>
       </DndContext>
 
+      {/* Quick Note FAB */}
+      <QuickNoteButton onCreated={() => { setPageModalOpen(true); }} />
+
       {/* FAB — Add collection (bottom-right) */}
       <button
         onClick={handleAddCollection}
-        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
         title="Add collection"
       >
         <Plus size={24} />

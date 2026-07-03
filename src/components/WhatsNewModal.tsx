@@ -21,6 +21,14 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '2.7.0',
+    title: 'Quick Note',
+    changes: [
+      { type: 'feature', description: 'New ⚡ Quick Note button in the bottom-right — one tap creates a note in your Quick Notes collection instantly.' },
+      { type: 'feature', description: 'Every workspace gets a protected Quick Notes collection that can&apos;t be deleted.' },
+    ],
+  },
+  {
     version: '2.6.0',
     title: 'Faster Loading with Offline Cache',
     changes: [

@@ -426,6 +426,7 @@ export default function AppSidebar({ resizableSidebar = false }: AppSidebarProps
                       </button>
                       <CollectionContextMenu
                         collectionId={collection.id}
+                        isSystem={collection.is_system}
                         workspaces={workspaces}
                         activeWorkspaceId={activeWorkspaceId}
                         onDelete={() => deleteCollection(collection.id)}

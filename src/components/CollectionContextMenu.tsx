@@ -7,6 +7,7 @@ interface Props {
   collectionId: string;
   workspaces: DbWorkspace[];
   activeWorkspaceId: string | null;
+  isSystem?: boolean;
   onDelete: () => void;
   onMoveToWorkspace: (workspaceId: string) => void;
   /** Icon size for the trigger button — defaults to 14 */
@@ -19,6 +20,7 @@ interface Props {
 export default function CollectionContextMenu({
   workspaces,
   activeWorkspaceId,
+  isSystem = false,
   onDelete,
   onMoveToWorkspace,
   iconSize = 14,
@@ -65,6 +67,7 @@ export default function CollectionContextMenu({
           onToggleMoveMenu={(e) => { e.stopPropagation(); setMoveMenuOpen((o) => !o); }}
           onMove={(wsId) => { onMoveToWorkspace(wsId); setMenuOpen(false); setMoveMenuOpen(false); }}
           onDelete={(e) => { e.stopPropagation(); onDelete(); setMenuOpen(false); }}
+          hideDelete={isSystem}
           emptyMoveLabel="No other workspaces"
           className="absolute right-0 top-6 z-50 w-44"
         />

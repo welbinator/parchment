@@ -1,5 +1,15 @@
 [
   {
+    "version": "2.7.0",
+    "date": "2026-07-03",
+    "title": "Quick Note",
+    "changes": [
+      "Added Quick Note button — tap the ⚡ button in the bottom-right to instantly create a new page in your Quick Notes collection",
+      "Every workspace automatically gets a protected Quick Notes collection that cannot be deleted",
+      "Quick Note button is positioned above the view toggle so it never overlaps in list or board view"
+    ]
+  },
+  {
     "version": "2.6.0",
     "date": "2026-07-03",
     "title": "Faster Loading with Offline Cache",

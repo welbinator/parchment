@@ -1,5 +1,20 @@
 [
   {
+    "version": "2.6.0",
+    "date": "2026-07-03",
+    "title": "Faster Loading with Offline Cache",
+    "changes": [
+      {
+        "type": "improvement",
+        "description": "App now loads your notes instantly from local cache — no waiting for the network on repeat visits."
+      },
+      {
+        "type": "improvement",
+        "description": "Pages and collections are stored locally in IndexedDB and synced in the background."
+      }
+    ]
+  },
+  {
     "version": "2.5.0",
     "date": "2026-05-01",
     "title": "Cleaner Codebase & Bug Fixes",

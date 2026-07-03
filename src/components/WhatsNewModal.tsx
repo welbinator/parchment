@@ -21,6 +21,14 @@ interface WhatsNewVersion {
  */
 const WHATS_NEW: WhatsNewVersion[] = [
   {
+    version: '2.6.0',
+    title: 'Faster Loading with Offline Cache',
+    changes: [
+      { type: 'improvement', description: 'App now loads your notes instantly from local cache — no waiting for the network on repeat visits.' },
+      { type: 'improvement', description: 'Pages and collections are stored locally in IndexedDB and synced in the background.' },
+    ],
+  },
+  {
     version: '2.5.0',
     title: 'Cleaner Codebase & Bug Fixes',
     changes: [

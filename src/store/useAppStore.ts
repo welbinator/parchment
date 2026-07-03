@@ -10,6 +10,7 @@ import type { DbPage } from './usePageStore';
 import type { DbCollection } from './useCollectionStore';
 import type { DbWorkspace } from './useWorkspaceStore';
 import { loadFromCache, saveToCache, clearCache } from '@/lib/parchmentDb';
+import { bumpMutationVersion, getMutationVersion } from '@/lib/mutationTracker';
 
 interface AppState {
   activePageId: string | null;
@@ -151,6 +152,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
 
       // ── Step 2: Fetch fresh data from Supabase ──
+      // Capture version before the async fetch. If a user mutation happens while
+      // we're waiting for Supabase, we'll abort the store overwrite — a realtime
+      // event will trigger a fresh corrective refetch once their write lands.
+      const versionAtFetch = getMutationVersion();
       const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
@@ -182,6 +187,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
 
     const currentState = get();
+
+    // If a user mutation happened while we were fetching, this data is stale.
+    // Don't overwrite the stores — the realtime subscription will trigger a
+    // fresh refetch once the mutation's DB write confirms.
+    if (getMutationVersion() !== versionAtFetch) return;
 
     // Use page ID captured from URL at module load time
     const urlPageValid = _urlPageId && pages.some((p) => p.id === _urlPageId && !p.deleted_at);
@@ -230,6 +240,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { userId } = get();
     if (!userId) return;
 
+    const versionAtFetch = getMutationVersion();
     const [workspacesRes, collectionsRes, pagesRes, blocksRes] = await Promise.all([
       supabase.from('workspaces').select('*').eq('user_id', userId).order('position'),
       supabase.from('collections').select('*').eq('user_id', userId).order('position'),
@@ -241,6 +252,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const collections = (collectionsRes.data ?? []) as DbCollection[];
     const pages = (pagesRes.data ?? []) as DbPage[];
     const blocks = ((blocksRes.data ?? []) as any[]).map(({ pages: _, ...b }) => b) as DbBlock[]; // skipcq: JS-0323
+
+    // If a mutation happened while we were fetching, this data is already stale — skip.
+    if (getMutationVersion() !== versionAtFetch) return;
 
     useWorkspaceStore.getState().setWorkspaces(workspaces);
     useBlockStore.getState().setBlocks(blocks);

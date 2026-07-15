@@ -57,7 +57,7 @@ curl -X POST https://theparchment.app/functions/v1/api \
 - create_collection
 - delete_collection
 - rename_collection
-- list_pages
+- list_pages (response includes app_url and share_url per page)
 - create_page
 - delete_page
 - rename_page
@@ -177,6 +177,7 @@ curl -X POST https://theparchment.app/functions/v1/api \
 ## Data Export
 Use list_collections to get all collections, list_pages for each collection,
 and get_page for each page (which includes all blocks with id, type, content, position).
+list_pages response includes app_url (direct editor link) and share_url (public share link, or null) per page.
       </article>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

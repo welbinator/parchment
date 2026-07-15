@@ -191,6 +191,10 @@ curl -X POST https://theparchment.app/functions/v1/api \\\\
   -d '{"action": "list_pages", "collection_id": "COLLECTION_ID"}'
 \`\`\`
 
+Each page in the response includes:
+- app_url: direct link to open the page in the Parchment editor (requires sign-in)
+- share_url: public share link (string if sharing is enabled, null otherwise)
+
 ### Create a page
 \`\`\`bash
 curl -X POST https://theparchment.app/functions/v1/api \\\\

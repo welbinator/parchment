@@ -325,6 +325,22 @@ curl -X POST ${API_BASE} \\
 
         {/* Data export */}
         <section className="mb-8">
+          <h2 className="text-2xl font-semibold font-display mb-3">list_pages</h2>
+          <p className="text-muted-foreground mb-3">
+            Returns all pages for the authenticated user, optionally filtered by <code className="bg-muted px-1 py-0.5 rounded">collection_id</code>. Requires <code className="bg-muted px-1 py-0.5 rounded">can_read_pages</code> permission.
+          </p>
+          <CodeBlock>{`curl -X POST ${API_BASE} \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: pmt_your_key" \\
+  -d '{"action":"list_pages","collection_id":"<collection_id>"}'`}</CodeBlock>
+          <p className="text-muted-foreground text-sm mt-2">Each page object in the response includes:</p>
+          <ul className="list-disc pl-6 text-muted-foreground space-y-1 mt-1 text-sm">
+            <li><code className="bg-muted px-1 py-0.5 rounded">app_url</code> — direct link to open the page in the Parchment editor (requires sign-in)</li>
+            <li><code className="bg-muted px-1 py-0.5 rounded">share_url</code> — public share link (string if sharing is enabled, <code className="bg-muted px-1 py-0.5 rounded">null</code> otherwise)</li>
+          </ul>
+        </section>
+
+        <section className="mb-8">
           <h2 className="text-2xl font-semibold font-display mb-3">share_page</h2>
           <p className="text-muted-foreground mb-3">
             Share a page publicly (anyone with the link) or privately (specific Parchment users by email). All fields are optional — only the ones you pass are changed. Requires <code className="bg-muted px-1 py-0.5 rounded">can_create_pages</code> permission.

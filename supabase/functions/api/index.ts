@@ -290,7 +290,7 @@ Deno.serve(async (req) => {
           const accessDenied = await assertCollectionAccess(collection_id)
           if (accessDenied) return accessDenied
         }
-        let query = supabase.from('pages').select('id, title, type, collection_id, created_at, updated_at').eq('user_id', userId)
+        let query = supabase.from('pages').select('id, title, type, collection_id, created_at, updated_at, share_enabled, share_token').eq('user_id', userId)
         if (collection_id) {
           query = query.eq('collection_id', collection_id)
         } else if (keyType === 'workspace' && keyWorkspaceIds && keyWorkspaceIds.length > 0) {
@@ -305,7 +305,14 @@ Deno.serve(async (req) => {
           query = query.in('collection_id', colIds)
         }
         const { data } = await query.order('created_at')
-        return json({ pages: data }, corsHeaders)
+        const pages = (data ?? []).map((p: Record<string, unknown>) => ({
+          ...p,
+          app_url: `https://theparchment.app/app/page/${p.id}`,
+          share_url: p.share_enabled && p.share_token
+            ? `https://theparchment.app/share/${p.share_token}`
+            : null,
+        }))
+        return json({ pages }, corsHeaders)
       }
 
       case 'create_page': {

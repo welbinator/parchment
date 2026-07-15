@@ -7,11 +7,20 @@ import QuickNoteButton from '@/components/QuickNoteButton';
 import { useViewStore } from '@/store/useViewStore';
 import { useAppStore } from '@/store/useAppStore';
 import { LayoutList, LayoutDashboard } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
 
 // skipcq: JS-R1005
 const Index = () => {
   const { viewMode, setViewMode } = useViewStore();
-  const { sidebarOpen, setSidebarOpen } = useAppStore();
+  const { sidebarOpen, setSidebarOpen, setActivePage } = useAppStore();
+  const { pageId } = useParams<{ pageId?: string }>();
+
+  useEffect(() => {
+    if (pageId && setActivePage) {
+      setActivePage(pageId);
+    }
+  }, [pageId]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background relative">

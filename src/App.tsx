@@ -253,6 +253,7 @@ const App = () => (
             <Route path="/logout" element={<Logout />} />
             <Route path="/" element={<LandingOrApp />} />
             <Route path="/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/app/page/:pageId" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/app/trash" element={<ProtectedRoute><Trash /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/docs/api" element={<ApiDocs />} />
